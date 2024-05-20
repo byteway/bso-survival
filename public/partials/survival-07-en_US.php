@@ -15,7 +15,7 @@
 
 
 <h1>Scooping water</h1>
-<p><b>Plaats</b>: Near water in front of Valeriaanweg
+<p><b>Location</b>: Near water in front of Valeriaanweg
 <br><b>Number of participants</b>: 8 participants per team
 <br><b>Playing time</b>: 20 minutes
 <br><b>Penalties</b>: See below</p>
