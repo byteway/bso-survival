@@ -1,0 +1,203 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: BSO Survival\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-05-13 16:07+0000\n"
+"PO-Revision-Date: 2024-05-13 16:24+0000\n"
+"Last-Translator: Berend Otten\n"
+"Language-Team: Dutch\n"
+"Language: nl_NL\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.6.9; wp-6.5.3\n"
+"X-Domain: bso-survival"
+
+#. Author of the plugin
+msgid "Berend Otten"
+msgstr ""
+
+#. Name of the plugin
+msgid "BSO Survival"
+msgstr "BSO Survival"
+
+#. Description of the plugin
+msgid "BSO WordPress Plugin for Survivals"
+msgstr "BSO WordPress Plugin voor Survivals"
+
+#: admin/class-survival-admin.php:306
+msgid "Calculate Interim Team Score"
+msgstr "Bereken tussenstand Team Score"
+
+#: admin/class-survival-admin.php:352
+msgid "Done calculating score."
+msgstr "Klaar met het berekenen van de score."
+
+#: admin/class-survival-admin.php:771 admin/class-survival-admin.php:905
+msgid "Error"
+msgstr "Fout"
+
+#: admin/class-survival-admin.php:860
+msgid "Field"
+msgstr "Veld"
+
+#. URI of the plugin
+msgid "https://byteway.eu/bso-survival/"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://byteway.eu/contact/"
+msgstr ""
+
+#: admin/class-survival-admin.php:414 admin/class-survival-admin.php:473
+msgid "Identification"
+msgstr "Identificatie"
+
+#: admin/class-survival-admin.php:595 admin/class-survival-admin.php:896
+msgid "Joker"
+msgstr "Joker"
+
+#: admin/class-survival-admin.php:415 admin/class-survival-admin.php:449
+#: admin/class-survival-admin.php:474
+msgid "Name"
+msgstr "Naam"
+
+#: admin/class-survival-admin.php:615
+msgid "No"
+msgstr "Nee"
+
+#: admin/class-survival-admin.php:255
+msgid "Please change the settings accordingly."
+msgstr "Wijzig de instellingen dienovereenkomstig."
+
+#: admin/class-survival-admin.php:772 admin/class-survival-admin.php:903
+msgid "Points"
+msgstr "Punten"
+
+#: admin/class-survival-admin.php:386 admin/class-survival-admin.php:594
+#: admin/class-survival-admin.php:907
+msgid "Position"
+msgstr "Positie"
+
+#: admin/class-survival-admin.php:507
+msgid "Referee"
+msgstr "Scheidsrechter"
+
+#: admin/class-survival-admin.php:388
+msgid "Score"
+msgstr "Score"
+
+#: admin/class-survival-admin.php:652 admin/class-survival-admin.php:734
+msgid "Select a survival:"
+msgstr "Selecteer een survival:"
+
+#: admin/class-survival-admin.php:558
+msgid "Select a team:"
+msgstr "Selecteer een team:"
+
+#: admin/class-survival-admin.php:892
+msgid "Start Time"
+msgstr "Starttijd"
+
+#: admin/class-survival-admin.php:588 admin/class-survival-admin.php:682
+msgid "Start time"
+msgstr "Starttijd"
+
+#: admin/class-survival-admin.php:508
+msgid "Survival"
+msgstr "Survival"
+
+#: admin/class-survival-admin.php:593
+msgid "Survival Name"
+msgstr "Survival naam"
+
+#: admin/class-survival-admin.php:370 admin/class-survival-admin.php:651
+msgid "Survival score"
+msgstr "Survival score"
+
+#: admin/class-survival-admin.php:387 admin/class-survival-admin.php:769
+#: admin/class-survival-admin.php:872
+msgid "Team"
+msgstr "Team"
+
+#: admin/class-survival-admin.php:683
+msgid "Team A"
+msgstr "Team A"
+
+#: admin/class-survival-admin.php:684
+msgid "Team B"
+msgstr "Team B"
+
+#: admin/class-survival-admin.php:349
+msgid "The total score has been calculated."
+msgstr "De totaalscore is berekend."
+
+#: admin/class-survival-admin.php:770
+msgid "Time"
+msgstr "Tijd"
+
+#: admin/class-survival-admin.php:900
+msgid "Time score"
+msgstr "Tijd score"
+
+#: admin/class-survival-admin.php:604 admin/class-survival-admin.php:911
+msgid "Update"
+msgstr "Bijwerken"
+
+#: admin/class-survival-admin.php:733
+msgid "Update survival position"
+msgstr "Survival positie bijwerken"
+
+#: admin/class-survival-admin.php:438
+msgid ""
+"URL not found! Make sure to provide  the URL for 'team_score_page' in the "
+"Survival Setting."
+msgstr ""
+"URL niet gevonden! Zorg ervoor dat u de URL voor 'team_score_page' opgeeft "
+"in de instelling."
+
+#: admin/class-survival-admin.php:637
+msgid ""
+"URL not found! Make sure to provide the '_team_score_page' in the Survival "
+"Setting."
+msgstr ""
+"URL niet gevonden! Zorg ervoor dat u de URL voor 'team_score_page' opgeeft "
+"in de instelling."
+
+#: admin/class-survival-admin.php:536
+msgid ""
+"URL not found! Make sure to provide the 'score_update' in the Survival "
+"Setting."
+msgstr ""
+"URL niet gevonden! Zorg ervoor dat u de 'score_update' opgeeft in de "
+"instelling."
+
+#: admin/class-survival-admin.php:549
+msgid ""
+"URL not found! Make sure to provide the 'survival_page' in the Survival "
+"Setting."
+msgstr ""
+"URL niet gevonden! Zorg ervoor dat u de 'survival_page' opgeeft in de "
+"instelling."
+
+#: admin/class-survival-admin.php:497
+msgid ""
+"URL not found! Make sure to provide the 'team_score_survival_list' in the "
+"Survival Setting."
+msgstr ""
+"URL niet gevonden! Zorg ervoor dat u de 'team_score_survival_list' opgeeft "
+"in de instelling."
+
+#: admin/class-survival-admin.php:861
+msgid "Value"
+msgstr "Waarde"
+
+#: admin/class-survival-admin.php:615
+msgid "Yes"
+msgstr "Ja"
+
+#: admin/class-survival-admin.php:800
+msgid "You need to be logged in as Referee!"
+msgstr "U dient ingelogd te zijn als scheidsrechter!"
