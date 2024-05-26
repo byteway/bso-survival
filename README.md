@@ -116,18 +116,18 @@ Answer to foo bar dilemma.
 
 == Screenshots ==
 
-1. ![Example survival menu](assets/screenshot-01.png)
-1. ![Survival and referee](assets/screenshot-02.png)
-1. ![Survival score](assets/screenshot-03.png)
-1. ![Score](assets/screenshot-04.png)
-1. ![Team score](assets/screenshot-05.png)
-1. ![Survival settings](assets/screenshot-06.png)
-1. ![General settings](assets/screenshot-07.png)
-1. ![Shortcode settings](assets/screenshot-08.png)
-1. ![Help shortcodes](assets/screenshot-09.png)
-1. ![Survival Tools](assets/screenshot-10.png)
-1. ![General tools](assets/screenshot-11.png)
-1. ![Update survival](assets/screenshot-12.png)
+1. Example survival menu ![Example survival menu](assets/screenshot-01.png)
+1. Survival and referee ![Survival and referee](assets/screenshot-02.png)
+1. Survival score ![Survival score](assets/screenshot-03.png)
+1. Score ![Score](assets/screenshot-04.png)
+1. Team score ![Team score](assets/screenshot-05.png)
+1. Survival settings ![Survival settings](assets/screenshot-06.png)
+1. General settings ![General settings](assets/screenshot-07.png)
+1. Shortcode settings ![Shortcode settings](assets/screenshot-08.png)
+1. Help shortcodes ![Help shortcodes](assets/screenshot-09.png)
+1. Survival Tools ![Survival Tools](assets/screenshot-10.png)
+1. General tools ![General tools](assets/screenshot-11.png)
+1. Update survival ![Update survival](assets/screenshot-12.png)
 1. ![Overview team position](assets/screenshot-13.png)
 
 
