@@ -288,7 +288,7 @@ class Survival_Admin {
      *   The second position gets count(Team)-1 points
      *   The third position gets count(Team)-2 points, and so on until the last position
      * 
-     * A team doubles there points when joker is given.
+     * A team doubles their points when joker is given.
      */ 
     public function calculateScore() {
         global $wpdb;
