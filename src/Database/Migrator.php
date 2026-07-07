@@ -67,35 +67,80 @@ class Migrator {
     private static function applyForeignKeys(array $tableDefinitions): void {
         global $wpdb;
 
-        foreach ($tableDefinitions as $tableName => $definition) {
-            $foreignKeys = $definition['foreign_keys'] ?? [];
-            if (empty($foreignKeys)) {
-                continue;
-            }
+        if (!isset($wpdb) || !is_object($wpdb)) {
+            return;
+        }
 
-            $fullTableName = $wpdb->prefix . 'bso_survival_' . $tableName;
+        $previousSuppressState = $wpdb->suppress_errors(true);
 
-            foreach ($foreignKeys as $fk) {
-                $column = $fk['column'] ?? null;
-                $references = $fk['references'] ?? null;
-                $onDelete = $fk['on_delete'] ?? 'RESTRICT';
-
-                if (!$column || !$references) {
+        try {
+            foreach ($tableDefinitions as $tableName => $definition) {
+                $foreignKeys = $definition['foreign_keys'] ?? [];
+                if (empty($foreignKeys)) {
                     continue;
                 }
 
-                [$refTable, $refColumn] = explode('.', $references, 2);
-                $fullRefTable = $wpdb->prefix . 'bso_survival_' . $refTable;
-                $constraintName = 'fk_' . $tableName . '_' . $column;
+                $fullTableName = $wpdb->prefix . 'bso_survival_' . $tableName;
+                if (!self::tableExists($fullTableName)) {
+                    continue;
+                }
 
-                // Drop first to keep activation idempotent on environments that support FKs.
-                $wpdb->query("ALTER TABLE {$fullTableName} DROP FOREIGN KEY {$constraintName}");
-                $wpdb->query(
-                    "ALTER TABLE {$fullTableName} " .
-                    "ADD CONSTRAINT {$constraintName} FOREIGN KEY ({$column}) " .
-                    "REFERENCES {$fullRefTable}({$refColumn}) ON DELETE {$onDelete}"
-                );
+                foreach ($foreignKeys as $fk) {
+                    $column = $fk['column'] ?? null;
+                    $references = $fk['references'] ?? null;
+                    $onDelete = $fk['on_delete'] ?? 'RESTRICT';
+
+                    if (!$column || !$references || strpos($references, '.') === false) {
+                        continue;
+                    }
+
+                    [$refTable, $refColumn] = explode('.', $references, 2);
+                    $fullRefTable = $wpdb->prefix . 'bso_survival_' . $refTable;
+                    if (!self::tableExists($fullRefTable)) {
+                        continue;
+                    }
+
+                    $constraintName = 'fk_' . $tableName . '_' . $column;
+
+                    if (self::foreignKeyExists($fullTableName, $constraintName)) {
+                        $wpdb->query("ALTER TABLE `{$fullTableName}` DROP FOREIGN KEY `{$constraintName}`");
+                    }
+
+                    if (!self::foreignKeyExists($fullTableName, $constraintName)) {
+                        $wpdb->query(
+                            "ALTER TABLE `{$fullTableName}` " .
+                            "ADD CONSTRAINT `{$constraintName}` FOREIGN KEY (`{$column}`) " .
+                            "REFERENCES `{$fullRefTable}`(`{$refColumn}`) ON DELETE {$onDelete}"
+                        );
+                    }
+                }
             }
+        } finally {
+            $wpdb->suppress_errors($previousSuppressState);
         }
+    }
+
+    private static function tableExists(string $tableName): bool {
+        global $wpdb;
+
+        $found = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $tableName));
+        return $found === $tableName;
+    }
+
+    private static function foreignKeyExists(string $tableName, string $constraintName): bool {
+        global $wpdb;
+
+        $sql = "
+            SELECT CONSTRAINT_NAME
+            FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE()
+              AND TABLE_NAME = %s
+              AND CONSTRAINT_NAME = %s
+              AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+            LIMIT 1
+        ";
+
+        $found = $wpdb->get_var($wpdb->prepare($sql, $tableName, $constraintName));
+        return !empty($found);
     }
 }
