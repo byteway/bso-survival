@@ -1,0 +1,37 @@
+{
+  "name": "bso/survival",
+  "description": "BSO Survival v2 - WordPress plugin for survival event management",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "BSO Survival Team",
+      "email": "dev@bso-survival.local"
+    }
+  ],
+  "require": {
+    "php": ">=7.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.5",
+    "squizlabs/php_codesniffer": "^3.7",
+    "phpstan/phpstan": "^1.8"
+  },
+  "autoload": {
+    "psr-4": {
+      "BSO\\Survival\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "BSO\\Survival\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "test:coverage": "phpunit --coverage-html coverage",
+    "lint": "phpcs --standard=PSR12 src/ tests/",
+    "lint:fix": "phpcbf --standard=PSR12 src/ tests/",
+    "analyze": "phpstan analyse src/"
+  }
+}
