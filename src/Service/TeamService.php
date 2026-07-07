@@ -2,14 +2,14 @@
 
 namespace BSO\Survival\Service;
 
-use BSO\Survival\Database\Repository\TeamRepository;
+use BSO\Survival\Database\Repository\TeamRepositoryInterface;
 use InvalidArgumentException;
 
 class TeamService {
-    /** @var TeamRepository */
+    /** @var TeamRepositoryInterface */
     private $teams;
 
-    public function __construct(TeamRepository $teams) {
+    public function __construct(TeamRepositoryInterface $teams) {
         $this->teams = $teams;
     }
 

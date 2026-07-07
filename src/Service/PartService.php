@@ -2,14 +2,14 @@
 
 namespace BSO\Survival\Service;
 
-use BSO\Survival\Database\Repository\PartRepository;
+use BSO\Survival\Database\Repository\PartRepositoryInterface;
 use InvalidArgumentException;
 
 class PartService {
-    /** @var PartRepository */
+    /** @var PartRepositoryInterface */
     private $parts;
 
-    public function __construct(PartRepository $parts) {
+    public function __construct(PartRepositoryInterface $parts) {
         $this->parts = $parts;
     }
 

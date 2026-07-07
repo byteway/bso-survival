@@ -2,7 +2,7 @@
 
 namespace BSO\Survival\Database\Repository;
 
-class PartRepository {
+class PartRepository implements PartRepositoryInterface {
     /** @var object */
     private $wpdb;
 

@@ -98,6 +98,54 @@ if (!function_exists('add_filter')) {
     }
 }
 
+if (!function_exists('shortcode_atts')) {
+    /**
+     * Merge shortcode attributes.
+     */
+    function shortcode_atts($pairs, $atts, $shortcode = '') {
+        return array_merge($pairs, is_array($atts) ? $atts : []);
+    }
+}
+
+if (!function_exists('__')) {
+    /**
+     * Translation stub.
+     */
+    function __($text, $domain = null) {
+        return $text;
+    }
+}
+
+if (!function_exists('esc_html')) {
+    /**
+     * Escape HTML for output.
+     */
+    function esc_html($text) {
+        return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+    }
+}
+
+if (!function_exists('esc_html_e')) {
+    /**
+     * Escape and echo translation.
+     */
+    function esc_html_e($text, $domain = null) {
+        echo esc_html($text);
+    }
+}
+
+if (!function_exists('wp_enqueue_style')) {
+    function wp_enqueue_style($handle, $src = '', $deps = [], $ver = false, $media = 'all') {
+        return true;
+    }
+}
+
+if (!function_exists('wp_enqueue_script')) {
+    function wp_enqueue_script($handle, $src = '', $deps = [], $ver = false, $in_footer = false) {
+        return true;
+    }
+}
+
 if (!function_exists('wp_mail')) {
     /**
      * Send mail

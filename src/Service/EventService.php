@@ -2,14 +2,14 @@
 
 namespace BSO\Survival\Service;
 
-use BSO\Survival\Database\Repository\EventRepository;
+use BSO\Survival\Database\Repository\EventRepositoryInterface;
 use InvalidArgumentException;
 
 class EventService {
-    /** @var EventRepository */
+    /** @var EventRepositoryInterface */
     private $events;
 
-    public function __construct(EventRepository $events) {
+    public function __construct(EventRepositoryInterface $events) {
         $this->events = $events;
     }
 

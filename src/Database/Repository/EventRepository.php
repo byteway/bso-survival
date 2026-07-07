@@ -2,7 +2,7 @@
 
 namespace BSO\Survival\Database\Repository;
 
-class EventRepository {
+class EventRepository implements EventRepositoryInterface {
     /** @var object */
     private $wpdb;
 

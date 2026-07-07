@@ -4,6 +4,20 @@
 
 Dit document biedt een stap-voor-stap plan om de extensibility gaps op te lossen vóór v2.1.
 
+### Afbakening voor dagafsluiting
+
+De volledige dagafsluiting wordt in deze roadmap nog niet functioneel uitgewerkt. Die stap komt pas nadat de leeslaag, scoreverwerking en statusovergangen voldoende stabiel zijn. Voor een latere valide dagafsluiting zijn in elk geval nodig:
+
+- definitieve tussenstand- en eindstandberekening
+- read-only afscherming na sluiting
+- certificaatgeneratie op basis van afgeronde resultaten
+- logging van afsluit- en publicatiestatus
+- consistente koppeling met repository- en service-laag
+
+Dit document houdt die stap bewust open, zodat de uiteindelijke dagafsluiting later vanuit de werkende kernlogica kan worden opgesteld.
+
+Voor de tussentijd is de voorbereidende checklist uitgewerkt in [Dagafsluiting_Voorbereiding.md](Dagafsluiting_Voorbereiding.md). Dat document beschrijft alleen de preconditions en voorbereiding; de echte afsluitflow blijft daar expliciet buiten.
+
 **Timeline:** 3-4 maanden (parallel werk op meerdere fronten mogelijk)
 
 **Prioriteit:**

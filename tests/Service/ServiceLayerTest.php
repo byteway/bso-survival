@@ -5,6 +5,9 @@ namespace BSO\Survival\Tests\Service;
 use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\PartService;
 use BSO\Survival\Service\TeamService;
+use BSO\Survival\Database\Repository\EventRepositoryInterface;
+use BSO\Survival\Database\Repository\PartRepositoryInterface;
+use BSO\Survival\Database\Repository\TeamRepositoryInterface;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
@@ -66,7 +69,7 @@ class ServiceLayerTest extends TestCase {
     }
 }
 
-class FakeEventRepository {
+class FakeEventRepository implements EventRepositoryInterface {
     /** @return array<int, object> */
     public function findAll(): array {
         return [
@@ -94,7 +97,7 @@ class FakeEventRepository {
     }
 }
 
-class FakePartRepository {
+class FakePartRepository implements PartRepositoryInterface {
     /** @return array<int, object> */
     public function findByEventId(int $eventId): array {
         return [
@@ -113,7 +116,7 @@ class FakePartRepository {
     }
 }
 
-class FakeTeamRepository {
+class FakeTeamRepository implements TeamRepositoryInterface {
     /** @return array<int, object> */
     public function findByEventId(int $eventId): array {
         return [

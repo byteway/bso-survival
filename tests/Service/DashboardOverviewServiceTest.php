@@ -1,0 +1,139 @@
+<?php
+
+namespace BSO\Survival\Tests\Service;
+
+use BSO\Survival\Database\Repository\EventRepositoryInterface;
+use BSO\Survival\Database\Repository\PartRepositoryInterface;
+use BSO\Survival\Database\Repository\TeamRepositoryInterface;
+use BSO\Survival\Service\DashboardOverviewService;
+use BSO\Survival\Service\EventService;
+use BSO\Survival\Service\PartService;
+use BSO\Survival\Service\TeamService;
+use InvalidArgumentException;
+use PHPUnit\Framework\TestCase;
+
+class DashboardOverviewServiceTest extends TestCase {
+    /**
+     * @test
+     */
+    public function it_builds_a_dashboard_overview_for_an_event(): void {
+        $service = $this->buildService();
+
+        $overview = $service->getOverviewForEvent(1);
+
+        $this->assertSame(1, $overview['event']->id);
+        $this->assertSame('gepland', $overview['event']->status);
+        $this->assertCount(2, $overview['parts']);
+        $this->assertCount(3, $overview['teams']);
+        $this->assertSame(12, $overview['counts']['parts']);
+        $this->assertSame(22, $overview['counts']['teams']);
+        $this->assertTrue($overview['status']['has_parts']);
+        $this->assertTrue($overview['status']['has_teams']);
+        $this->assertTrue($overview['status']['is_ready_for_planning']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_for_invalid_event_ids(): void {
+        $this->expectException(InvalidArgumentException::class);
+        $this->buildService()->getOverviewForEvent(0);
+    }
+
+    /**
+     * @test
+     */
+    public function it_throws_when_the_event_is_missing(): void {
+        $service = new DashboardOverviewService(
+            new EventService(new MissingDashboardEventRepository()),
+            new PartService(new DashboardFakePartRepository()),
+            new TeamService(new DashboardFakeTeamRepository())
+        );
+
+        $this->expectException(InvalidArgumentException::class);
+        $service->getOverviewForEvent(999);
+    }
+
+    private function buildService(): DashboardOverviewService {
+        return new DashboardOverviewService(
+            new EventService(new DashboardFakeEventRepository()),
+            new PartService(new DashboardFakePartRepository()),
+            new TeamService(new DashboardFakeTeamRepository())
+        );
+    }
+}
+
+class DashboardFakeEventRepository implements EventRepositoryInterface {
+    /** @return array<int, object> */
+    public function findAll(): array {
+        return [
+            (object) ['id' => 1, 'status' => 'gepland'],
+        ];
+    }
+
+    /** @return object|null */
+    public function findById(int $id) {
+        return $id === 1 ? (object) ['id' => 1, 'status' => 'gepland'] : null;
+    }
+
+    /** @return array<int, object> */
+    public function findByStatus(string $status): array {
+        return [];
+    }
+}
+
+class MissingDashboardEventRepository implements EventRepositoryInterface {
+    /** @return array<int, object> */
+    public function findAll(): array {
+        return [];
+    }
+
+    /** @return object|null */
+    public function findById(int $id) {
+        return null;
+    }
+
+    /** @return array<int, object> */
+    public function findByStatus(string $status): array {
+        return [];
+    }
+}
+
+class DashboardFakePartRepository implements PartRepositoryInterface {
+    /** @return object|null */
+    public function findById(int $id) {
+        return (object) ['id' => 1, 'name' => 'Kanovaren'];
+    }
+
+    /** @return array<int, object> */
+    public function findByEventId(int $eventId): array {
+        return [
+            (object) ['id' => 1, 'name' => 'Kanovaren'],
+            (object) ['id' => 2, 'name' => 'Touwbaan'],
+        ];
+    }
+
+    public function countByEventId(int $eventId): int {
+        return 12;
+    }
+}
+
+class DashboardFakeTeamRepository implements TeamRepositoryInterface {
+    /** @return object|null */
+    public function findById(int $id) {
+        return (object) ['id' => 2, 'name' => 'Team002'];
+    }
+
+    /** @return array<int, object> */
+    public function findByEventId(int $eventId): array {
+        return [
+            (object) ['id' => 1, 'name' => 'Team001'],
+            (object) ['id' => 2, 'name' => 'Team002'],
+            (object) ['id' => 3, 'name' => 'Team003'],
+        ];
+    }
+
+    public function countByEventId(int $eventId): int {
+        return 22;
+    }
+}

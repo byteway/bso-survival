@@ -2,7 +2,7 @@
 
 namespace BSO\Survival\Database\Repository;
 
-class TeamRepository {
+class TeamRepository implements TeamRepositoryInterface {
     /** @var object */
     private $wpdb;
 
