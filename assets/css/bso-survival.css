@@ -1,0 +1,15 @@
+.bso-survival-dashboard {
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f6f8fa;
+}
+
+.bso-survival-dashboard__header h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.bso-survival-dashboard__content p {
+    margin: 0;
+}
