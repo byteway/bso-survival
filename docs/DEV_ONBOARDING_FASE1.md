@@ -5,6 +5,20 @@
 **Target Audience:** Development team implementing Phases 1–6  
 **Duration:** 1–2 days orientation + then ongoing reference
 
+## Actuele status (7 juli 2026)
+
+Sinds de oorspronkelijke Fase 1 onboarding is extra functionaliteit opgeleverd:
+- read-only frontend shortcodes voor dashboard, onderdelen en teams
+- gecombineerde shortcodes voor volledig en compact eventoverzicht
+- robuuste foutafhandeling met admin notice bij ongeldig event_id
+- testsuite groen: 72/72
+
+Belangrijke referenties:
+- [src/Frontend/ShortcodeController.php](../src/Frontend/ShortcodeController.php)
+- [src/Frontend/EventOverviewController.php](../src/Frontend/EventOverviewController.php)
+- [src/Frontend/EventSummaryController.php](../src/Frontend/EventSummaryController.php)
+- [docs/hooks-and-filters.md](hooks-and-filters.md)
+
 ---
 
 ## 📋 Quick Start (First 2 Hours)
@@ -19,6 +33,8 @@ BSO Survival v2 is a **WordPress plugin for survival event management**. You're 
 
 ### Your Role This Sprint
 Implement **Fase 1: Datamodel & MetaDataHelper** to enable flexible data storage.
+
+Voor huidig onderhoud van de shortcode-laag: volg eerst [docs/hooks-and-filters.md](hooks-and-filters.md) en draai daarna `./vendor/bin/phpunit`.
 
 ---
 

@@ -44,3 +44,120 @@
     margin: 0;
     padding-left: 20px;
 }
+
+.bso-survival-parts {
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f6f8fa;
+}
+
+.bso-survival-parts__header h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.bso-survival-parts__meta {
+    margin: 0 0 12px;
+    color: #57606a;
+    font-size: 0.95rem;
+}
+
+.bso-survival-parts__list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.bso-survival-teams {
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f6f8fa;
+}
+
+.bso-survival-teams__header h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.bso-survival-teams__meta {
+    margin: 0 0 12px;
+    color: #57606a;
+    font-size: 0.95rem;
+}
+
+.bso-survival-teams__list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.bso-survival-overview {
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f6f8fa;
+}
+
+.bso-survival-overview__header h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.bso-survival-overview__meta {
+    margin: 0 0 12px;
+    color: #57606a;
+    font-size: 0.95rem;
+}
+
+.bso-survival-overview__summary {
+    display: grid;
+    gap: 6px;
+    margin: 16px 0;
+}
+
+.bso-survival-overview__summary p {
+    margin: 0;
+}
+
+.bso-survival-overview__lists {
+    display: grid;
+    gap: 16px;
+}
+
+.bso-survival-overview__list h3 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+}
+
+.bso-survival-overview__list ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.bso-survival-summary {
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f6f8fa;
+}
+
+.bso-survival-summary__header h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.bso-survival-summary__meta {
+    margin: 0 0 12px;
+    color: #57606a;
+    font-size: 0.95rem;
+}
+
+.bso-survival-summary__stats {
+    display: grid;
+    gap: 6px;
+}
+
+.bso-survival-summary__stats p {
+    margin: 0;
+}
+

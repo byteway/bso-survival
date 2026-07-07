@@ -1,5 +1,23 @@
 # Quick Start – Fase 1 Implementation (30 Minutes)
 
+## Actuele status (7 juli 2026)
+
+Deze quick start blijft bruikbaar voor de Fase 1 basis, maar de codebase is inmiddels verder:
+- frontend read-only shortcodes zijn geïmplementeerd
+- gecombineerde shortcodes zijn beschikbaar
+- volledige testsuite staat op 72/72 groen
+
+Directe smoke-test shortcodes:
+
+```text
+[bso_survival_dashboard]
+[bso_survival_parts event_id="2"]
+[bso_survival_teams event_id="2"]
+[bso_survival_event_overview event_id="2"]
+[bso_survival_event_overview event_id="2" compact="yes"]
+[bso_survival_event_summary event_id="2"]
+```
+
 **Goal:** Get MetaDataHelper working and all tests passing  
 **Time:** 30–45 minutes  
 **For:** First-time developer on this project
@@ -69,20 +87,20 @@ All should exist ✅
 ## Step 3: Run Tests (5 min)
 
 ```bash
-# Run all MetaDataHelper tests
-./vendor/bin/phpunit tests/Support/MetaDataHelperTest.php
+# Run all tests
+./vendor/bin/phpunit
 
 # Or with verbose output
-./vendor/bin/phpunit tests/Support/MetaDataHelperTest.php -v
+./vendor/bin/phpunit -v
 ```
 
-**Expected Output:**
+**Expected Output (indicatie):**
 ```
-PHPUnit 9.5.27
+PHPUnit 9.6.x
 
-Time: 0.456 seconds, Memory: 8.00 MB
+Time: < 1 second
 
-OK (120 tests, 0 failures)
+OK (72 tests, 0 failures)
 ```
 
 **If any failures:**
@@ -258,8 +276,9 @@ Once all tests pass ✅:
 # Run all tests
 ./vendor/bin/phpunit
 
-# Run specific test file
-./vendor/bin/phpunit tests/Support/MetaDataHelperTest.php
+# Run specific test files
+./vendor/bin/phpunit tests/Service/EventOverviewControllerTest.php
+./vendor/bin/phpunit tests/Service/EventSummaryControllerTest.php
 
 # Run specific test method
 ./vendor/bin/phpunit tests/Support/MetaDataHelperTest.php --filter test_get

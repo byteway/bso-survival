@@ -1,5 +1,7 @@
 # Functioneel Ontwerp v2 - BSO Survival
 
+> Statusnotitie 7 juli 2026: de read-only shortcode-laag uit dit ontwerp is nu deels operationeel met dashboard, onderdelen, teams, gecombineerd overzicht en compacte overzichtsvariant.
+
 ## Inhoudsopgave
 
 1. [Visie en uitgangspunten](#1-visie-en-uitgangspunten)

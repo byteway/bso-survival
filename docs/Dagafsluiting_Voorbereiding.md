@@ -1,5 +1,7 @@
 # Dagafsluiting Voorbereiding
 
+> Statusnotitie 7 juli 2026: read-only overzichtsschermen zijn nu beschikbaar via frontend shortcodes, maar de definitieve dagafsluitflow blijft buiten scope van dit document.
+
 Dit document bereidt de dagafsluiting voor, maar maakt die nog niet definitief.
 
 De survivaldag is in deze fase nog actief of nog niet afgerond. Daarom bevat dit document alleen de voorbereidingsstappen, afbakeningen en checklists die nodig zijn om later een valide dagafsluiting te bouwen zonder de huidige daglogica te blokkeren.

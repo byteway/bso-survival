@@ -1,5 +1,18 @@
 # Implementation Roadmap – BSO Survival v2 Extensibility Gaps
 
+## Voortgangsupdate (7 juli 2026)
+
+Afgerond in de huidige codebase:
+- read-only shortcode `bso_survival_dashboard`
+- read-only shortcode `bso_survival_parts`
+- read-only shortcode `bso_survival_teams`
+- gecombineerde shortcode `bso_survival_event_overview` met `compact=yes/no`
+- compacte gecombineerde shortcode `bso_survival_event_summary`
+- admin notice flow voor renderfouten op ongeldige `event_id`
+- testsuite groen (72/72)
+
+Let op: deze roadmap blijft een gap-document. Niet alle voorgestelde fases zijn al geïmplementeerd.
+
 ## Overzicht
 
 Dit document biedt een stap-voor-stap plan om de extensibility gaps op te lossen vóór v2.1.

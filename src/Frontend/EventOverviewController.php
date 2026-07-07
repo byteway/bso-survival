@@ -5,7 +5,7 @@ namespace BSO\Survival\Frontend;
 use BSO\Survival\Service\DashboardOverviewService;
 use Throwable;
 
-class DashboardController {
+class EventOverviewController {
     public const DEFAULT_EVENT_ID = 1;
 
     /** @var DashboardOverviewService */
@@ -23,30 +23,32 @@ class DashboardController {
         wp_enqueue_script('bso-survival-frontend');
 
         $attributes = shortcode_atts([
-            'title' => __('BSO Survival Dashboard', 'bso-survival'),
+            'title' => __('BSO Survival Eventoverzicht', 'bso-survival'),
             'event_id' => self::DEFAULT_EVENT_ID,
-        ], $atts, 'bso_survival_dashboard');
+            'compact' => 'no',
+        ], $atts, 'bso_survival_event_overview');
 
         $eventId = (int) $attributes['event_id'];
 
         try {
             $overview = $this->overviewService->getOverviewForEvent($eventId);
         } catch (Throwable $exception) {
-            $message = sprintf(__('Dashboard niet beschikbaar voor event_id %d.', 'bso-survival'), $eventId);
+            $message = sprintf(__('Eventoverzicht niet beschikbaar voor event_id %d.', 'bso-survival'), $eventId);
 
             if (function_exists('do_action')) {
-                do_action('bso_survival_dashboard_render_error', $message, $eventId);
+                do_action('bso_survival_event_overview_render_error', $message, $eventId);
             }
 
             return sprintf(
-                '<section class="bso-survival-dashboard"><p>%s</p></section>',
+                '<section class="bso-survival-overview"><p>%s</p></section>',
                 esc_html($message)
             );
         }
 
         ob_start();
         $title = (string) $attributes['title'];
-        include __DIR__ . '/../../templates/frontend-dashboard.php';
+        $compact = strtolower((string) $attributes['compact']) === 'yes';
+        include __DIR__ . '/../../templates/frontend-event-overview.php';
 
         return (string) ob_get_clean();
     }

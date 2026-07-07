@@ -1,15 +1,18 @@
 # Extensibility Review – BSO Survival v2
 
+> Statusnotitie 7 juli 2026: delen van deze gap-analyse zijn inmiddels ingehaald door implementatie.
+
 ## Samenvatting
 
 BSO Survival v2 is goed voorbereidt voor toekomstige uitbreidingen op de volgende punten:
 - ✅ Modulaire architectuur met duidelijke lagen
 - ✅ Configureerbare operationele parameters
 - ✅ Datamodel ondersteunt multi-event en seizoensdata
+- ✅ Custom field/meta-data patroon is beschikbaar via MetaDataHelper
+- ✅ Frontend shortcode-extensibility is actief met meerdere read-only varianten
 - ⚠️ Scoremethode-plugin patroon moet expliciet worden gedefinieerd
 - ⚠️ Dashboard widget-architectuur moet worden vastgesteld
 - ⚠️ REST API endpoints moeten meer generiek worden gestructureerd
-- ⚠️ Custom field/meta-data patroon ontbreekt
 
 ---
 

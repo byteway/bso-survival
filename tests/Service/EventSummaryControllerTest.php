@@ -2,47 +2,46 @@
 
 namespace BSO\Survival\Tests\Service;
 
-use BSO\Survival\Frontend\DashboardController;
+use BSO\Survival\Frontend\EventSummaryController;
 use BSO\Survival\Service\DashboardOverviewService;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
-class DashboardControllerTest extends TestCase {
+class EventSummaryControllerTest extends TestCase {
     /**
      * @test
      */
-    public function it_renders_read_only_dashboard_overview(): void {
-        $controller = new DashboardController(new FakeDashboardOverviewService());
+    public function it_renders_compact_event_summary(): void {
+        $controller = new EventSummaryController(new FakeEventSummaryOverviewService());
 
         $output = $controller->render([
-            'title' => 'Dashboard titel',
-            'event_id' => 7,
+            'title' => 'Compact Overzicht',
+            'event_id' => 2,
         ]);
 
-        $this->assertStringContainsString('Dashboard titel', $output);
-        $this->assertStringContainsString('Event #7 - Dash Event', $output);
+        $this->assertStringContainsString('Compact Overzicht', $output);
+        $this->assertStringContainsString('Event #2 - Test event', $output);
+        $this->assertStringContainsString('Status: concept', $output);
         $this->assertStringContainsString('Onderdelen: 2', $output);
-        $this->assertStringContainsString('Teams: 3', $output);
+        $this->assertStringContainsString('Teams: 2', $output);
         $this->assertStringContainsString('Klaar voor planning: ja', $output);
-        $this->assertStringContainsString('Kanovaren', $output);
-        $this->assertStringContainsString('Team003', $output);
     }
 
     /**
      * @test
      */
     public function it_handles_missing_event_without_fatal_error(): void {
-        $controller = new DashboardController(new ThrowingDashboardOverviewService());
+        $controller = new EventSummaryController(new ThrowingEventSummaryOverviewService());
 
         $output = $controller->render([
-            'event_id' => 2,
+            'event_id' => 99,
         ]);
 
-        $this->assertStringContainsString('Dashboard niet beschikbaar voor event_id 2.', $output);
+        $this->assertStringContainsString('Compact overzicht niet beschikbaar voor event_id 99.', $output);
     }
 }
 
-class FakeDashboardOverviewService extends DashboardOverviewService {
+class FakeEventSummaryOverviewService extends DashboardOverviewService {
     public function __construct() {
     }
 
@@ -53,8 +52,8 @@ class FakeDashboardOverviewService extends DashboardOverviewService {
         return [
             'event' => (object) [
                 'id' => $eventId,
-                'name' => 'Dash Event',
-                'status' => 'gepland',
+                'name' => 'Test event',
+                'status' => 'concept',
             ],
             'parts' => [
                 (object) ['name' => 'Kanovaren'],
@@ -63,14 +62,13 @@ class FakeDashboardOverviewService extends DashboardOverviewService {
             'teams' => [
                 (object) ['name' => 'Team001'],
                 (object) ['name' => 'Team002'],
-                (object) ['name' => 'Team003'],
             ],
             'counts' => [
                 'parts' => 2,
-                'teams' => 3,
+                'teams' => 2,
             ],
             'status' => [
-                'event_status' => 'gepland',
+                'event_status' => 'concept',
                 'has_parts' => true,
                 'has_teams' => true,
                 'is_ready_for_planning' => true,
@@ -79,7 +77,7 @@ class FakeDashboardOverviewService extends DashboardOverviewService {
     }
 }
 
-class ThrowingDashboardOverviewService extends DashboardOverviewService {
+class ThrowingEventSummaryOverviewService extends DashboardOverviewService {
     public function __construct() {
     }
 

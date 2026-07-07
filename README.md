@@ -2,6 +2,8 @@
 
 BSO Survival v2 is de schone, uitbreidbare basis voor de volgende ontwikkelfase van de plugin.
 
+Laatste documentatie-update: 7 juli 2026.
+
 ## Status
 
 De codebase staat nu in een vroeg maar werkend v2-fundament:
@@ -10,6 +12,7 @@ De codebase staat nu in een vroeg maar werkend v2-fundament:
 - migratie draait bij activatie
 - golden dataset en unit tests zijn beschikbaar
 - repositories en services vormen de huidige leeslaag
+- read-only frontend shortcodes zijn beschikbaar (dashboard, onderdelen, teams, gecombineerde varianten)
 
 De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet later aansluiten op de bestaande services en repositories, zodat de eindstand, certificaten en read-only afsluiting vanuit een stabiele basis worden opgebouwd.
 
@@ -20,10 +23,31 @@ De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet lat
 - Datamodel: [src/Database/Schema.php](src/Database/Schema.php)
 - Repositories: [src/Database/Repository](src/Database/Repository)
 - Services: [src/Service](src/Service)
-- Read-only dashboard basis: [src/Frontend/DashboardController.php](src/Frontend/DashboardController.php) en [templates/frontend-dashboard.php](templates/frontend-dashboard.php)
+- Frontend controllers: [src/Frontend](src/Frontend)
+- Frontend templates: [templates](templates)
 - Golden dataset: [tests/Support/GoldenDataset.php](tests/Support/GoldenDataset.php)
 - Regressietests: [tests/Support](tests/Support) en [tests/Service](tests/Service)
 - Dagafsluitingsvoorbereiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluiting_Voorbereiding.md)
+- Hooks en shortcodes: [docs/hooks-and-filters.md](docs/hooks-and-filters.md)
+
+## Frontend shortcodes (actueel)
+
+- `[bso_survival_dashboard]`
+	- Attributen: `event_id`, `title`
+- `[bso_survival_parts]`
+	- Attributen: `event_id`, `title`
+- `[bso_survival_teams]`
+	- Attributen: `event_id`, `title`
+- `[bso_survival_event_overview]`
+	- Attributen: `event_id`, `title`, `compact` (`yes`/`no`, default `no`)
+- `[bso_survival_event_summary]`
+	- Attributen: `event_id`, `title`
+
+Voorbeeld:
+
+```text
+[bso_survival_event_overview title="Gecombineerd Overzicht Event 2" event_id="2" compact="yes"]
+```
 
 ## Wat nog niet is uitgewerkt
 
@@ -36,5 +60,8 @@ De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet lat
 ## Ontwikkelcommando's
 
 - composer install
-- ./vendor/bin/phpunit tests/Support/GoldenDatasetTest.php
-- ./vendor/bin/phpunit tests/Service/RepositoryTest.php tests/Service/ServiceLayerTest.php
+- ./vendor/bin/phpunit
+- ./vendor/bin/phpunit tests/Service/EventOverviewControllerTest.php
+- ./vendor/bin/phpunit tests/Service/EventSummaryControllerTest.php
+
+Huidige teststatus: 72/72 groen.

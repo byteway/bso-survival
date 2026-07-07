@@ -6,10 +6,18 @@ use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
 use BSO\Survival\Frontend\ShortcodeController;
 
 class Plugin {
+    private const DASHBOARD_NOTICE_TRANSIENT = 'bso_survival_dashboard_admin_notice';
+
     public function register(): void {
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('init', [$this, 'register_shortcodes']);
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
+        add_action('admin_notices', [$this, 'render_dashboard_admin_notice']);
+        add_action('bso_survival_dashboard_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
+        add_action('bso_survival_parts_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
+        add_action('bso_survival_teams_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
+        add_action('bso_survival_event_overview_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
+        add_action('bso_survival_event_summary_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
 
         $this->register_cli_commands();
     }
@@ -51,5 +59,33 @@ class Plugin {
         if (class_exists(SeedGoldenDatasetCommand::class)) {
             \WP_CLI::add_command('bso-survival seed-golden', SeedGoldenDatasetCommand::class);
         }
+    }
+
+    public function capture_dashboard_render_error(string $message, int $eventId): void {
+        if (!function_exists('is_admin') || !is_admin()) {
+            return;
+        }
+
+        if (function_exists('set_transient')) {
+            set_transient(
+                self::DASHBOARD_NOTICE_TRANSIENT,
+                sprintf('%s (event_id=%d)', $message, $eventId),
+                120
+            );
+        }
+    }
+
+    public function render_dashboard_admin_notice(): void {
+        if (!function_exists('get_transient') || !function_exists('delete_transient')) {
+            return;
+        }
+
+        $message = get_transient(self::DASHBOARD_NOTICE_TRANSIENT);
+        if (!is_string($message) || $message === '') {
+            return;
+        }
+
+        delete_transient(self::DASHBOARD_NOTICE_TRANSIENT);
+        echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html($message) . '</p></div>';
     }
 }
