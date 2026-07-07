@@ -4,10 +4,15 @@ namespace BSO\Survival\Tests\Service;
 
 use BSO\Survival\Frontend\DashboardController;
 use BSO\Survival\Service\DashboardOverviewService;
+use BSO\Survival\Service\DashboardWidgetRegistry;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 class DashboardControllerTest extends TestCase {
+    protected function tearDown(): void {
+        DashboardWidgetRegistry::reset();
+    }
+
     /**
      * @test
      */
@@ -26,6 +31,8 @@ class DashboardControllerTest extends TestCase {
         $this->assertStringContainsString('Klaar voor planning: ja', $output);
         $this->assertStringContainsString('Kanovaren', $output);
         $this->assertStringContainsString('Team003', $output);
+        $this->assertStringContainsString('Tijdslot voortgang', $output);
+        $this->assertStringContainsString('Meldingen', $output);
     }
 
     /**

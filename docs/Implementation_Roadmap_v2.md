@@ -16,6 +16,11 @@ Afgerond in de huidige codebase:
 - Fase 2 stap 2.6 geïmplementeerd: FO sectie berekeningen geactualiseerd naar registry-driven scoreflow
 - Fase 2 open punten uitgevoerd: minimale admin-configuratie voor PartRules + scoring_config-opslag + e2e scoringsflow tests
 - Productie-hardening doorgevoerd op admin-koppeling: nonce/CSRF-checks, strengere sanitization en mode-specifieke configuratievelden
+- Fase 3 gestart: DashboardWidgetInterface + DashboardWidgetRegistry + hook `bso_survival_dashboard_widgets_init`
+- Fase 3 basiswidgets toegevoegd (timeslot, ranking, rapportage, meldingen, contactzoeker, fallback-score)
+- Dashboard-rendering aangesloten op registry-sectie `main`
+- Fase 3.5 uitgevoerd: sectie-indeling `main` + `operations` met capability filtering en custom hook-registratie tests
+- Fase 3.5 uitgevoerd: widget-specifieke assets/dependencies toegevoegd en per sectie ge-enqueued
 
 Let op: deze roadmap blijft een gap-document. Niet alle voorgestelde fases zijn al geïmplementeerd.
 

@@ -14,6 +14,7 @@ De codebase staat nu in een vroeg maar werkend v2-fundament:
 - repositories en services vormen de huidige leeslaag
 - read-only frontend shortcodes zijn beschikbaar (dashboard, onderdelen, teams, gecombineerde varianten)
 - scoremethode-architectuur voor Fase 2 is opgezet (interface, registry, defaults)
+- dashboard widget-architectuur voor Fase 3 is gestart (interface, registry, sectioning, default widgets)
 
 De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet later aansluiten op de bestaande services en repositories, zodat de eindstand, certificaten en read-only afsluiting vanuit een stabiele basis worden opgebouwd.
 
@@ -27,6 +28,10 @@ De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet lat
 - Scoring contracts: [src/Contracts/ScoringMethodInterface.php](src/Contracts/ScoringMethodInterface.php)
 - Scoring registry: [src/Service/ScoringMethodRegistry.php](src/Service/ScoringMethodRegistry.php)
 - Scoring methods: [src/Service/ScoringMethods](src/Service/ScoringMethods)
+- Dashboard widget contract: [src/Contracts/DashboardWidgetInterface.php](src/Contracts/DashboardWidgetInterface.php)
+- Dashboard widget registry: [src/Service/DashboardWidgetRegistry.php](src/Service/DashboardWidgetRegistry.php)
+- Dashboard widgets: [src/Widgets](src/Widgets)
+- Dashboard widget assets: [assets/css/bso-survival-dashboard-widgets.css](assets/css/bso-survival-dashboard-widgets.css) en [assets/js/bso-survival-dashboard-widgets.js](assets/js/bso-survival-dashboard-widgets.js)
 - PartRule configuratie-service: [src/Service/PartRuleConfiguratorService.php](src/Service/PartRuleConfiguratorService.php)
 - Scoreberekening op PartRule: [src/Service/ScoreComputationService.php](src/Service/ScoreComputationService.php)
 - Admin configuratiepagina: [src/Admin/PartRuleAdminPage.php](src/Admin/PartRuleAdminPage.php)

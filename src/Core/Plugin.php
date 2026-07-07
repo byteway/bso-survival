@@ -7,6 +7,7 @@ use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
 use BSO\Survival\Database\Repository\EventRepository;
 use BSO\Survival\Database\Repository\PartRuleRepository;
 use BSO\Survival\Frontend\ShortcodeController;
+use BSO\Survival\Service\DashboardWidgetRegistry;
 use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
 use BSO\Survival\Service\ScoringMethodRegistry;
@@ -17,6 +18,7 @@ class Plugin {
     public function register(): void {
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('plugins_loaded', [$this, 'boot_scoring_methods'], 20);
+        add_action('plugins_loaded', [$this, 'boot_dashboard_widgets'], 25);
         add_action('init', [$this, 'register_shortcodes']);
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
         add_action('admin_menu', [$this, 'register_admin_pages']);
@@ -47,6 +49,10 @@ class Plugin {
         ScoringMethodRegistry::initDefaults();
     }
 
+    public function boot_dashboard_widgets(): void {
+        DashboardWidgetRegistry::initDefaults();
+    }
+
     public function register_admin_pages(): void {
         $this->buildPartRuleAdminPage()->registerMenu();
     }
@@ -67,6 +73,21 @@ class Plugin {
             'bso-survival-frontend',
             plugins_url('assets/js/bso-survival.js', __DIR__ . '/../../bso-survival.php'),
             [],
+            '2.0.0',
+            true
+        );
+
+        wp_register_style(
+            'bso-survival-dashboard-widgets',
+            plugins_url('assets/css/bso-survival-dashboard-widgets.css', __DIR__ . '/../../bso-survival.php'),
+            ['bso-survival-frontend'],
+            '2.0.0'
+        );
+
+        wp_register_script(
+            'bso-survival-dashboard-widgets',
+            plugins_url('assets/js/bso-survival-dashboard-widgets.js', __DIR__ . '/../../bso-survival.php'),
+            ['bso-survival-frontend'],
             '2.0.0',
             true
         );

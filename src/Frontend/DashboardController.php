@@ -3,6 +3,7 @@
 namespace BSO\Survival\Frontend;
 
 use BSO\Survival\Service\DashboardOverviewService;
+use BSO\Survival\Service\DashboardWidgetRegistry;
 use Throwable;
 
 class DashboardController {
@@ -44,10 +45,30 @@ class DashboardController {
             );
         }
 
+        if (DashboardWidgetRegistry::getSection('main') === []) {
+            DashboardWidgetRegistry::initDefaults();
+        }
+
+        $this->enqueueWidgetDependencies('main');
+        $this->enqueueWidgetDependencies('operations');
+
+        $widgetsHtml = DashboardWidgetRegistry::renderSection('main', $overview, ['event_id' => $eventId]);
+        $operationsWidgetsHtml = DashboardWidgetRegistry::renderSection('operations', $overview, ['event_id' => $eventId]);
+
         ob_start();
         $title = (string) $attributes['title'];
         include __DIR__ . '/../../templates/frontend-dashboard.php';
 
         return (string) ob_get_clean();
+    }
+
+    private function enqueueWidgetDependencies(string $section): void {
+        foreach (DashboardWidgetRegistry::getSectionStyleDependencies($section) as $styleHandle) {
+            wp_enqueue_style($styleHandle);
+        }
+
+        foreach (DashboardWidgetRegistry::getSectionScriptDependencies($section) as $scriptHandle) {
+            wp_enqueue_script($scriptHandle);
+        }
     }
 }

@@ -4,6 +4,8 @@
  *
  * @var string $title
  * @var array<string, mixed> $overview
+ * @var string $widgetsHtml
+ * @var string $operationsWidgetsHtml
  */
 ?>
 <section class="bso-survival-dashboard">
@@ -14,6 +16,18 @@
         </p>
     </header>
     <div class="bso-survival-dashboard__content">
+        <?php if ($widgetsHtml !== '') : ?>
+            <div class="bso-survival-dashboard__widgets">
+                <?php echo $widgetsHtml; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($operationsWidgetsHtml !== '') : ?>
+            <div class="bso-survival-dashboard__operations">
+                <?php echo $operationsWidgetsHtml; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            </div>
+        <?php endif; ?>
+
         <div class="bso-survival-dashboard__summary">
             <p><?php echo esc_html(sprintf('Status: %s', (string) ($overview['status']['event_status'] ?? 'onbekend'))); ?></p>
             <p><?php echo esc_html(sprintf('Onderdelen: %d', (int) $overview['counts']['parts'])); ?></p>

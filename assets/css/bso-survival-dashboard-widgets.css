@@ -1,0 +1,35 @@
+.bso-survival-dashboard__widgets,
+.bso-survival-dashboard__operations {
+    display: grid;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.bso-widget {
+    border: 1px solid #d8dee4;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 12px;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.bso-widget-ready {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.bso-widget h3 {
+    margin: 0 0 6px;
+    font-size: 1rem;
+}
+
+.bso-widget p,
+.bso-widget ul {
+    margin: 0;
+}
+
+.bso-widget ul {
+    padding-left: 18px;
+}

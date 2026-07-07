@@ -11,11 +11,21 @@ Laatste documentatie-update: 7 juli 2026.
   - Doel: custom scoremethodes registreren via ScoringMethodRegistry.
   - Parameters: registry_class
 
+- bso_survival_dashboard_widgets_init
+  - Fired na het initialiseren van de default dashboard widgets.
+  - Doel: custom dashboard widgets registreren via DashboardWidgetRegistry per sectie (`main`, `operations`).
+  - Parameters: registry_class
+
   Voorbeeld:
 
   ```php
   add_action('bso_survival_register_scoring_methods', function () {
       // ScoringMethodRegistry::register('custom_id', new CustomScoringMethod());
+  });
+
+  add_action('bso_survival_dashboard_widgets_init', function () {
+      // DashboardWidgetRegistry::register('main', new CustomMainWidget());
+      // DashboardWidgetRegistry::register('operations', new CustomOperationsWidget());
   });
   ```
 

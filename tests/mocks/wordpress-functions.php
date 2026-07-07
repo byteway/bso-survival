@@ -161,8 +161,38 @@ if (!function_exists('current_user_can')) {
      * Check user capabilities
      */
     function current_user_can($capability) {
-        // Mock: assume all capabilities during testing
+        global $test_current_user_caps;
+
+        if (isset($test_current_user_caps) && is_array($test_current_user_caps)) {
+            if (array_key_exists($capability, $test_current_user_caps)) {
+                return (bool) $test_current_user_caps[$capability];
+            }
+        }
+
+        // Default: assume capabilities are granted during testing.
         return true;
+    }
+}
+
+if (!function_exists('set_test_current_user_caps')) {
+    /**
+     * Set mocked capability map for current_user_can.
+     *
+     * @param array<string, bool> $caps
+     */
+    function set_test_current_user_caps(array $caps) {
+        global $test_current_user_caps;
+        $test_current_user_caps = $caps;
+    }
+}
+
+if (!function_exists('reset_test_current_user_caps')) {
+    /**
+     * Reset mocked capability map.
+     */
+    function reset_test_current_user_caps() {
+        global $test_current_user_caps;
+        $test_current_user_caps = [];
     }
 }
 
