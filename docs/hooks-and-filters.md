@@ -76,6 +76,16 @@ Laatste documentatie-update: 7 juli 2026.
 - `part_rules.scoring_config` bevat methode-specifieke parameters (JSON in LONGTEXT).
 - `part_rules.unit` bewaart de UI-eenheid (bijv. seconden, punten, meter).
 
+## REST API
+
+- `GET /wp-json/bso-survival/v1/dashboard-layout/{event_id}`
+  - Leest event-specifieke dashboard widget-layout (`main`, `operations`).
+  - Toegang: ingelogde gebruiker met `read`.
+- `POST /wp-json/bso-survival/v1/dashboard-layout/{event_id}`
+  - Slaat layout op voor event.
+  - Body: `{ "layout": { "main": ["team_ranking"], "operations": ["message_widget"] } }`
+  - Toegang: gebruiker met `manage_options`.
+
 ## Voorbeelden
 
 - [bso_survival_dashboard event_id="2"]

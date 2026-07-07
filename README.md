@@ -32,8 +32,10 @@ De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet lat
 - Dashboard widget registry: [src/Service/DashboardWidgetRegistry.php](src/Service/DashboardWidgetRegistry.php)
 - Dashboard widgets: [src/Widgets](src/Widgets)
 - Dashboard widget assets: [assets/css/bso-survival-dashboard-widgets.css](assets/css/bso-survival-dashboard-widgets.css) en [assets/js/bso-survival-dashboard-widgets.js](assets/js/bso-survival-dashboard-widgets.js)
+- Dashboard widget admin UX assets: [assets/css/bso-survival-admin-dashboard-widgets.css](assets/css/bso-survival-admin-dashboard-widgets.css) en [assets/js/bso-survival-admin-dashboard-widgets.js](assets/js/bso-survival-admin-dashboard-widgets.js)
 - Dashboard widget layout admin: [src/Admin/DashboardWidgetAdminPage.php](src/Admin/DashboardWidgetAdminPage.php)
 - Dashboard widget layout service: [src/Service/DashboardWidgetLayoutService.php](src/Service/DashboardWidgetLayoutService.php)
+- Dashboard widget layout REST controller: [src/Api/DashboardWidgetLayoutRestController.php](src/Api/DashboardWidgetLayoutRestController.php)
 - PartRule configuratie-service: [src/Service/PartRuleConfiguratorService.php](src/Service/PartRuleConfiguratorService.php)
 - Scoreberekening op PartRule: [src/Service/ScoreComputationService.php](src/Service/ScoreComputationService.php)
 - Admin configuratiepagina: [src/Admin/PartRuleAdminPage.php](src/Admin/PartRuleAdminPage.php)
@@ -70,6 +72,20 @@ Voorbeeld:
 - podium- en eindstandlogica als eindproces
 - publicatie- of afsluitstatus na de survivaldag
 - dagafsluiting wordt nu alleen voorbereid, niet definitief gemaakt
+
+## REST API (dashboard layout)
+
+- GET `/wp-json/bso-survival/v1/dashboard-layout/{event_id}`
+- POST `/wp-json/bso-survival/v1/dashboard-layout/{event_id}` met body:
+
+```json
+{
+	"layout": {
+		"main": ["team_ranking"],
+		"operations": ["message_widget"]
+	}
+}
+```
 
 ## Ontwikkelcommando's
 

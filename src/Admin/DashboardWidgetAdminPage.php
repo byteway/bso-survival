@@ -84,6 +84,9 @@ class DashboardWidgetAdminPage {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
 
+        wp_enqueue_style('bso-survival-admin-dashboard-widgets');
+        wp_enqueue_script('bso-survival-admin-dashboard-widgets');
+
         if (DashboardWidgetRegistry::getSectionIds() === []) {
             DashboardWidgetRegistry::initDefaults();
         }
@@ -123,7 +126,7 @@ class DashboardWidgetAdminPage {
             return;
         }
 
-        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" id="bso-dashboard-widget-layout-form">';
         echo '<input type="hidden" name="action" value="bso_survival_save_dashboard_widgets" />';
         echo '<input type="hidden" name="event_id" value="' . (int) $eventId . '" />';
         wp_nonce_field(self::SAVE_NONCE_ACTION, self::SAVE_NONCE_FIELD);
@@ -133,8 +136,12 @@ class DashboardWidgetAdminPage {
             $enabledIds = $layout[$section] ?? $widgetIds;
             $orderLookup = array_flip($enabledIds);
 
+            echo '<div class="bso-widget-admin-section" data-section="' . esc_attr($section) . '">';
             echo '<h2>' . esc_html(ucfirst($section)) . '</h2>';
-            echo '<table class="widefat striped" style="max-width:900px;">';
+            echo '<p class="description">' . esc_html__('Sleep rijen voor volgorde, vink widgets aan/uit en bekijk live preview.', 'bso-survival') . '</p>';
+            echo '<div class="notice notice-warning inline bso-widget-section-warning" style="display:none;"><p>' . esc_html__('Deze sectie heeft geen actieve widgets. Frontend toont deze sectie leeg.', 'bso-survival') . '</p></div>';
+
+            echo '<table class="widefat striped bso-widget-admin-table" style="max-width:900px;">';
             echo '<thead><tr><th>' . esc_html__('Actief', 'bso-survival') . '</th><th>' . esc_html__('Widget', 'bso-survival') . '</th><th>' . esc_html__('Volgorde', 'bso-survival') . '</th></tr></thead><tbody>';
 
             foreach ($widgetIds as $index => $widgetId) {
@@ -146,14 +153,19 @@ class DashboardWidgetAdminPage {
                 $isEnabled = in_array($widgetId, $enabledIds, true);
                 $position = isset($orderLookup[$widgetId]) ? (int) $orderLookup[$widgetId] + 1 : $index + 1;
 
-                echo '<tr>';
+                echo '<tr class="bso-widget-row" draggable="true" data-widget-id="' . esc_attr($widgetId) . '">';
                 echo '<td><label><input type="checkbox" name="layout[' . esc_attr($section) . '][]" value="' . esc_attr($widgetId) . '" ' . checked($isEnabled, true, false) . ' /> ' . esc_html__('Inschakelen', 'bso-survival') . '</label></td>';
-                echo '<td>' . esc_html($widget->getTitle()) . '<br /><small>' . esc_html($widgetId) . '</small></td>';
-                echo '<td><input type="number" min="1" step="1" name="order[' . esc_attr($section) . '][' . esc_attr($widgetId) . ']" value="' . esc_attr((string) $position) . '" /></td>';
+                echo '<td><button type="button" class="button-link bso-widget-drag-handle" aria-label="' . esc_attr__('Sleep om te verplaatsen', 'bso-survival') . '">&#x2630;</button> ' . esc_html($widget->getTitle()) . '<br /><small>' . esc_html($widgetId) . '</small></td>';
+                echo '<td><input class="bso-widget-order-input" type="number" min="1" step="1" name="order[' . esc_attr($section) . '][' . esc_attr($widgetId) . ']" value="' . esc_attr((string) $position) . '" /></td>';
                 echo '</tr>';
             }
 
             echo '</tbody></table>';
+            echo '<div class="bso-widget-preview-wrap">';
+            echo '<strong>' . esc_html__('Live preview', 'bso-survival') . '</strong>';
+            echo '<ul class="bso-widget-preview-list" data-preview-section="' . esc_attr($section) . '"></ul>';
+            echo '</div>';
+            echo '</div>';
         }
 
         echo '<p><button class="button button-primary">' . esc_html__('Layout opslaan', 'bso-survival') . '</button></p>';

@@ -4,6 +4,7 @@ namespace BSO\Survival\Core;
 
 use BSO\Survival\Admin\DashboardWidgetAdminPage;
 use BSO\Survival\Admin\PartRuleAdminPage;
+use BSO\Survival\Api\DashboardWidgetLayoutRestController;
 use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
 use BSO\Survival\Database\Repository\DashboardWidgetLayoutRepository;
 use BSO\Survival\Database\Repository\EventRepository;
@@ -23,10 +24,13 @@ class Plugin {
         add_action('plugins_loaded', [$this, 'boot_scoring_methods'], 20);
         add_action('plugins_loaded', [$this, 'boot_dashboard_widgets'], 25);
         add_action('init', [$this, 'register_shortcodes']);
+        add_action('init', [$this, 'register_assets']);
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
+        add_action('admin_enqueue_scripts', [$this, 'register_assets']);
         add_action('admin_menu', [$this, 'register_admin_pages']);
         add_action('admin_post_bso_survival_save_part_rule', [$this, 'handle_part_rule_save']);
         add_action('admin_post_bso_survival_save_dashboard_widgets', [$this, 'handle_dashboard_widget_save']);
+        add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('admin_notices', [$this, 'render_dashboard_admin_notice']);
         add_action('bso_survival_dashboard_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
         add_action('bso_survival_parts_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
@@ -100,6 +104,25 @@ class Plugin {
             '2.0.0',
             true
         );
+
+        wp_register_style(
+            'bso-survival-admin-dashboard-widgets',
+            plugins_url('assets/css/bso-survival-admin-dashboard-widgets.css', __DIR__ . '/../../bso-survival.php'),
+            [],
+            '2.0.0'
+        );
+
+        wp_register_script(
+            'bso-survival-admin-dashboard-widgets',
+            plugins_url('assets/js/bso-survival-admin-dashboard-widgets.js', __DIR__ . '/../../bso-survival.php'),
+            [],
+            '2.0.0',
+            true
+        );
+    }
+
+    public function register_rest_routes(): void {
+        $this->buildDashboardWidgetLayoutRestController()->registerRoutes();
     }
 
     private function register_cli_commands(): void {
@@ -153,5 +176,11 @@ class Plugin {
         $layoutService = new DashboardWidgetLayoutService(new DashboardWidgetLayoutRepository());
 
         return new DashboardWidgetAdminPage($eventService, $layoutService);
+    }
+
+    private function buildDashboardWidgetLayoutRestController(): DashboardWidgetLayoutRestController {
+        $layoutService = new DashboardWidgetLayoutService(new DashboardWidgetLayoutRepository());
+
+        return new DashboardWidgetLayoutRestController($layoutService);
     }
 }

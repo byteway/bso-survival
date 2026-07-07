@@ -1,0 +1,35 @@
+.bso-widget-admin-section {
+    margin-bottom: 24px;
+}
+
+.bso-widget-admin-table .bso-widget-row {
+    cursor: move;
+}
+
+.bso-widget-admin-table .bso-widget-row.bso-drag-over {
+    outline: 2px dashed #2271b1;
+}
+
+.bso-widget-drag-handle {
+    cursor: grab;
+    text-decoration: none;
+    margin-right: 6px;
+}
+
+.bso-widget-preview-wrap {
+    margin-top: 12px;
+    border: 1px solid #dcdcde;
+    background: #fff;
+    border-radius: 4px;
+    padding: 10px;
+    max-width: 900px;
+}
+
+.bso-widget-preview-list {
+    margin: 8px 0 0;
+    padding-left: 18px;
+}
+
+.bso-widget-preview-list li {
+    margin: 3px 0;
+}

@@ -23,6 +23,8 @@ Afgerond in de huidige codebase:
 - Fase 3.5 uitgevoerd: widget-specifieke assets/dependencies toegevoegd en per sectie ge-enqueued
 - Fase 3.6 gestart: event-specifieke widget-layoutopslag (enable/order per sectie) met adminpagina
 - Fase 3.6 gestart: dashboard renderflow gebruikt opgeslagen layout voor zichtbaarheid/volgorde
+- Fase 3.6 afgerond: admin UX verfijnd met drag-and-drop volgorde, live preview en sectie-validatiefeedback
+- Fase 3.6 afgerond: REST endpoint toegevoegd voor dashboard layout (GET/POST per event)
 
 Let op: deze roadmap blijft een gap-document. Niet alle voorgestelde fases zijn al geïmplementeerd.
 
