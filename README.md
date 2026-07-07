@@ -13,6 +13,7 @@ De codebase staat nu in een vroeg maar werkend v2-fundament:
 - golden dataset en unit tests zijn beschikbaar
 - repositories en services vormen de huidige leeslaag
 - read-only frontend shortcodes zijn beschikbaar (dashboard, onderdelen, teams, gecombineerde varianten)
+- scoremethode-architectuur voor Fase 2 is opgezet (interface, registry, defaults)
 
 De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet later aansluiten op de bestaande services en repositories, zodat de eindstand, certificaten en read-only afsluiting vanuit een stabiele basis worden opgebouwd.
 
@@ -23,6 +24,9 @@ De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet lat
 - Datamodel: [src/Database/Schema.php](src/Database/Schema.php)
 - Repositories: [src/Database/Repository](src/Database/Repository)
 - Services: [src/Service](src/Service)
+- Scoring contracts: [src/Contracts/ScoringMethodInterface.php](src/Contracts/ScoringMethodInterface.php)
+- Scoring registry: [src/Service/ScoringMethodRegistry.php](src/Service/ScoringMethodRegistry.php)
+- Scoring methods: [src/Service/ScoringMethods](src/Service/ScoringMethods)
 - Frontend controllers: [src/Frontend](src/Frontend)
 - Frontend templates: [templates](templates)
 - Golden dataset: [tests/Support/GoldenDataset.php](tests/Support/GoldenDataset.php)
@@ -63,5 +67,7 @@ Voorbeeld:
 - ./vendor/bin/phpunit
 - ./vendor/bin/phpunit tests/Service/EventOverviewControllerTest.php
 - ./vendor/bin/phpunit tests/Service/EventSummaryControllerTest.php
+- ./vendor/bin/phpunit tests/Service/ScoringMethodRegistryTest.php
+- ./vendor/bin/phpunit tests/Service/ScoringMethodsTest.php
 
 Huidige teststatus: 72/72 groen.

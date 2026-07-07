@@ -415,6 +415,7 @@ erDiagram
       int id PK
       int part_id FK
       string scoring_mode
+      json scoring_config
       string unit
       string tiebreaker_mode
     }
@@ -913,6 +914,16 @@ sequenceDiagram
 
 ### Scoreconversie per scoremethode
 
+Per onderdeel is een scoremethode geconfigureerd (`time`, `points`, `distance` of later custom).
+De plugin gebruikt een registreerbare architectuur via `ScoringMethodRegistry` en `ScoringMethodInterface`.
+
+Verwerkingsstappen per score-entry:
+1. Valideer ruwe invoer met `validateRawValue`.
+2. Normaliseer naar schaal 0-100 met `normalizeToPoints`.
+3. Genereer plaatsingsvoorstel met `generatePositionProposal`.
+4. Laat scheidsrechtervolgorde bevestigen/corrigeren.
+5. Zet definitieve positie om naar rankpunten.
+
 Voor ieder onderdeel wordt een ruwe score ingevoerd en vertaald naar genormaliseerde punten.
 
 $$
@@ -934,6 +945,14 @@ $$
 $$
 score_{team\_eind} = \sum score_{totaal\_entry\_met\_joker}
 $$
+
+Custom scoremethodes kunnen extensiegewijs worden toegevoegd via:
+
+```php
+add_action('bso_survival_register_scoring_methods', function () {
+  // ScoringMethodRegistry::register('custom_id', new CustomScoringMethod());
+});
+```
 
 ### Jokerregels
 

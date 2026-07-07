@@ -10,8 +10,13 @@ Afgerond in de huidige codebase:
 - compacte gecombineerde shortcode `bso_survival_event_summary`
 - admin notice flow voor renderfouten op ongeldige `event_id`
 - testsuite groen (72/72)
+- Fase 2 stap 2.1-2.3 geïmplementeerd: ScoringMethodInterface, ScoringMethodRegistry en defaults (time/points/distance)
+- Fase 2 stap 2.4 geïmplementeerd: bootstrap + action hook voor custom scoremethodes
+- Fase 2 stap 2.5 geïmplementeerd: PartRule datamodel bevat scoring_mode, scoring_config, unit, tiebreaker_mode
+- Fase 2 stap 2.6 geïmplementeerd: FO sectie berekeningen geactualiseerd naar registry-driven scoreflow
 
 Let op: deze roadmap blijft een gap-document. Niet alle voorgestelde fases zijn al geïmplementeerd.
+Aanvullende noot: admin dropdown-koppeling op registry volgt zodra de v2-adminmodule is toegevoegd aan `src/Admin`.
 
 ## Overzicht
 

@@ -4,12 +4,14 @@ namespace BSO\Survival\Core;
 
 use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
 use BSO\Survival\Frontend\ShortcodeController;
+use BSO\Survival\Service\ScoringMethodRegistry;
 
 class Plugin {
     private const DASHBOARD_NOTICE_TRANSIENT = 'bso_survival_dashboard_admin_notice';
 
     public function register(): void {
         add_action('plugins_loaded', [$this, 'load_textdomain']);
+        add_action('plugins_loaded', [$this, 'boot_scoring_methods'], 20);
         add_action('init', [$this, 'register_shortcodes']);
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
         add_action('admin_notices', [$this, 'render_dashboard_admin_notice']);
@@ -32,6 +34,10 @@ class Plugin {
 
     public function register_shortcodes(): void {
         (new ShortcodeController())->register();
+    }
+
+    public function boot_scoring_methods(): void {
+        ScoringMethodRegistry::initDefaults();
     }
 
     public function register_assets(): void {

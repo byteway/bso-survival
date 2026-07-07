@@ -6,6 +6,18 @@ Laatste documentatie-update: 7 juli 2026.
 - bso_survival_metadata_error
   - Wanneer MetaDataHelper een decode/encode-gerelateerde fout tegenkomt.
   - Parameters: operation, entity, key, throwable
+- bso_survival_register_scoring_methods
+  - Fired na het initialiseren van de default scoremethodes (time, points, distance).
+  - Doel: custom scoremethodes registreren via ScoringMethodRegistry.
+  - Parameters: registry_class
+
+  Voorbeeld:
+
+  ```php
+  add_action('bso_survival_register_scoring_methods', function () {
+      // ScoringMethodRegistry::register('custom_id', new CustomScoringMethod());
+  });
+  ```
 - bso_survival_dashboard_render_error
   - Wanneer dashboard rendering faalt (bijvoorbeeld ongeldig event_id).
   - Parameters: message, event_id
@@ -38,6 +50,12 @@ Laatste documentatie-update: 7 juli 2026.
 - bso_survival_event_summary
   - Rendert een compacte read-only samenvatting met eventstatus, onderdelen en teams tellers.
   - Attributen: event_id, title
+
+## Datamodelnotitie PartRule
+
+- `part_rules.scoring_mode` verwijst naar een geregistrede scoremethode-id.
+- `part_rules.scoring_config` bevat methode-specifieke parameters (JSON in LONGTEXT).
+- `part_rules.unit` bewaart de UI-eenheid (bijv. seconden, punten, meter).
 
 ## Voorbeelden
 
