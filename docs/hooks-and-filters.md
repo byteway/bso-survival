@@ -33,6 +33,10 @@ Laatste documentatie-update: 7 juli 2026.
   - WordPress admin endpoint voor opslaan van `part_rules` configuratie.
   - Gebruikt registry-validatie via `PartRuleConfiguratorService`.
   - Productie-hardening: nonce-check, capability-check (`manage_options`), whitelist-validatie voor `tiebreaker_mode` en `normalization_curve`.
+- admin_post_bso_survival_save_dashboard_widgets
+  - WordPress admin endpoint voor opslaan van dashboard widget-layout per event.
+  - Opslag gebeurt via `DashboardWidgetLayoutService` met sanitization op section/widget-id's.
+  - Productie-hardening: nonce-check en capability-check (`manage_options`).
 - bso_survival_dashboard_render_error
   - Wanneer dashboard rendering faalt (bijvoorbeeld ongeldig event_id).
   - Parameters: message, event_id

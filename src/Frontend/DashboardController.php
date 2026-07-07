@@ -2,7 +2,9 @@
 
 namespace BSO\Survival\Frontend;
 
+use BSO\Survival\Database\Repository\DashboardWidgetLayoutRepository;
 use BSO\Survival\Service\DashboardOverviewService;
+use BSO\Survival\Service\DashboardWidgetLayoutService;
 use BSO\Survival\Service\DashboardWidgetRegistry;
 use Throwable;
 
@@ -12,8 +14,12 @@ class DashboardController {
     /** @var DashboardOverviewService */
     private $overviewService;
 
-    public function __construct(DashboardOverviewService $overviewService) {
+    /** @var DashboardWidgetLayoutService */
+    private $layoutService;
+
+    public function __construct(DashboardOverviewService $overviewService, DashboardWidgetLayoutService $layoutService = null) {
         $this->overviewService = $overviewService;
+        $this->layoutService = $layoutService ?? new DashboardWidgetLayoutService(new DashboardWidgetLayoutRepository());
     }
 
     /**
@@ -49,11 +55,18 @@ class DashboardController {
             DashboardWidgetRegistry::initDefaults();
         }
 
-        $this->enqueueWidgetDependencies('main');
-        $this->enqueueWidgetDependencies('operations');
+        $layout = $this->layoutService->getLayoutForEvent($eventId);
+        $mainWidgetIds = $layout['main'] ?? DashboardWidgetRegistry::getSectionWidgetIds('main');
+        $operationsWidgetIds = $layout['operations'] ?? DashboardWidgetRegistry::getSectionWidgetIds('operations');
 
-        $widgetsHtml = DashboardWidgetRegistry::renderSection('main', $overview, ['event_id' => $eventId]);
-        $operationsWidgetsHtml = DashboardWidgetRegistry::renderSection('operations', $overview, ['event_id' => $eventId]);
+        $mainFilters = ['event_id' => $eventId, 'widget_ids' => $mainWidgetIds];
+        $operationsFilters = ['event_id' => $eventId, 'widget_ids' => $operationsWidgetIds];
+
+        $this->enqueueWidgetDependencies('main', $mainFilters);
+        $this->enqueueWidgetDependencies('operations', $operationsFilters);
+
+        $widgetsHtml = DashboardWidgetRegistry::renderSection('main', $overview, $mainFilters);
+        $operationsWidgetsHtml = DashboardWidgetRegistry::renderSection('operations', $overview, $operationsFilters);
 
         ob_start();
         $title = (string) $attributes['title'];
@@ -62,12 +75,15 @@ class DashboardController {
         return (string) ob_get_clean();
     }
 
-    private function enqueueWidgetDependencies(string $section): void {
-        foreach (DashboardWidgetRegistry::getSectionStyleDependencies($section) as $styleHandle) {
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function enqueueWidgetDependencies(string $section, array $filters = []): void {
+        foreach (DashboardWidgetRegistry::getSectionStyleDependencies($section, $filters) as $styleHandle) {
             wp_enqueue_style($styleHandle);
         }
 
-        foreach (DashboardWidgetRegistry::getSectionScriptDependencies($section) as $scriptHandle) {
+        foreach (DashboardWidgetRegistry::getSectionScriptDependencies($section, $filters) as $scriptHandle) {
             wp_enqueue_script($scriptHandle);
         }
     }

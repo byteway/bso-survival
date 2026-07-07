@@ -34,14 +34,30 @@ class DashboardWidgetRegistry {
     }
 
     /**
+     * @return array<int, string>
+     */
+    public static function getSectionIds(): array {
+        return array_keys(self::$widgets);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function getSectionWidgetIds(string $section): array {
+        $ids = [];
+        foreach (self::getWidgetsForSection($section) as $widget) {
+            $ids[] = $widget->getId();
+        }
+
+        return $ids;
+    }
+
+    /**
      * @param array<string, mixed> $overview
      * @param array<string, mixed> $filters
      */
     public static function renderSection(string $section, array $overview, array $filters = []): string {
-        $widgets = array_values(self::getSection($section));
-        usort($widgets, static function (DashboardWidgetInterface $a, DashboardWidgetInterface $b): int {
-            return $a->getPriority() <=> $b->getPriority();
-        });
+        $widgets = self::getWidgetsForSection($section, $filters);
 
         $safeSection = function_exists('esc_attr')
             ? esc_attr($section)
@@ -68,15 +84,15 @@ class DashboardWidgetRegistry {
     /**
      * @return array<int, string>
      */
-    public static function getSectionScriptDependencies(string $section): array {
-        return self::getSectionDependencies($section, 'script');
+    public static function getSectionScriptDependencies(string $section, array $filters = []): array {
+        return self::getSectionDependencies($section, 'script', $filters);
     }
 
     /**
      * @return array<int, string>
      */
-    public static function getSectionStyleDependencies(string $section): array {
-        return self::getSectionDependencies($section, 'style');
+    public static function getSectionStyleDependencies(string $section, array $filters = []): array {
+        return self::getSectionDependencies($section, 'style', $filters);
     }
 
     public static function initDefaults(): void {
@@ -118,10 +134,10 @@ class DashboardWidgetRegistry {
     /**
      * @return array<int, string>
      */
-    private static function getSectionDependencies(string $section, string $type): array {
+    private static function getSectionDependencies(string $section, string $type, array $filters = []): array {
         $dependencies = [];
 
-        foreach (self::getSection($section) as $widget) {
+        foreach (self::getWidgetsForSection($section, $filters) as $widget) {
             if (!self::canViewWidget($widget)) {
                 continue;
             }
@@ -138,5 +154,38 @@ class DashboardWidgetRegistry {
         }
 
         return array_values($dependencies);
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return array<int, DashboardWidgetInterface>
+     */
+    private static function getWidgetsForSection(string $section, array $filters = []): array {
+        $widgets = array_values(self::getSection($section));
+        usort($widgets, static function (DashboardWidgetInterface $a, DashboardWidgetInterface $b): int {
+            return $a->getPriority() <=> $b->getPriority();
+        });
+
+        if (!isset($filters['widget_ids']) || !is_array($filters['widget_ids'])) {
+            return $widgets;
+        }
+
+        $byId = [];
+        foreach ($widgets as $widget) {
+            $byId[$widget->getId()] = $widget;
+        }
+
+        $selected = [];
+        foreach ($filters['widget_ids'] as $widgetId) {
+            if (!is_string($widgetId)) {
+                continue;
+            }
+
+            if (isset($byId[$widgetId])) {
+                $selected[$widgetId] = $byId[$widgetId];
+            }
+        }
+
+        return array_values($selected);
     }
 }

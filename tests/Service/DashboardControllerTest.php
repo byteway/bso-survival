@@ -3,6 +3,7 @@
 namespace BSO\Survival\Tests\Service;
 
 use BSO\Survival\Frontend\DashboardController;
+use BSO\Survival\Service\DashboardWidgetLayoutService;
 use BSO\Survival\Service\DashboardOverviewService;
 use BSO\Survival\Service\DashboardWidgetRegistry;
 use InvalidArgumentException;
@@ -46,6 +47,31 @@ class DashboardControllerTest extends TestCase {
         ]);
 
         $this->assertStringContainsString('Dashboard niet beschikbaar voor event_id 2.', $output);
+    }
+
+    /**
+     * @test
+     */
+    public function it_applies_saved_layout_per_event_for_widget_visibility_and_order(): void {
+        $layoutService = new DashboardWidgetLayoutService(
+            new FakeDashboardWidgetLayoutRepository([
+                7 => [
+                    'main' => ['team_ranking'],
+                    'operations' => ['message_widget'],
+                ],
+            ])
+        );
+
+        $controller = new DashboardController(new FakeDashboardOverviewService(), $layoutService);
+
+        $output = $controller->render([
+            'title' => 'Dashboard layout test',
+            'event_id' => 7,
+        ]);
+
+        $this->assertStringContainsString('Teampositieoverzicht', $output);
+        $this->assertStringContainsString('Meldingen', $output);
+        $this->assertStringNotContainsString('Tijdslot voortgang', $output);
     }
 }
 
@@ -95,5 +121,25 @@ class ThrowingDashboardOverviewService extends DashboardOverviewService {
      */
     public function getOverviewForEvent(int $eventId): array {
         throw new InvalidArgumentException(sprintf('Event %d not found.', $eventId));
+    }
+}
+
+class FakeDashboardWidgetLayoutRepository implements \BSO\Survival\Database\Repository\DashboardWidgetLayoutRepositoryInterface {
+    /** @var array<int, array<string, array<int, string>>> */
+    private $layouts;
+
+    /**
+     * @param array<int, array<string, array<int, string>>> $layouts
+     */
+    public function __construct(array $layouts = []) {
+        $this->layouts = $layouts;
+    }
+
+    public function getByEventId(int $eventId): array {
+        return $this->layouts[$eventId] ?? [];
+    }
+
+    public function saveByEventId(int $eventId, array $layout): void {
+        $this->layouts[$eventId] = $layout;
     }
 }

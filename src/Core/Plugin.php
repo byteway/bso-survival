@@ -2,11 +2,14 @@
 
 namespace BSO\Survival\Core;
 
+use BSO\Survival\Admin\DashboardWidgetAdminPage;
 use BSO\Survival\Admin\PartRuleAdminPage;
 use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
+use BSO\Survival\Database\Repository\DashboardWidgetLayoutRepository;
 use BSO\Survival\Database\Repository\EventRepository;
 use BSO\Survival\Database\Repository\PartRuleRepository;
 use BSO\Survival\Frontend\ShortcodeController;
+use BSO\Survival\Service\DashboardWidgetLayoutService;
 use BSO\Survival\Service\DashboardWidgetRegistry;
 use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
@@ -23,6 +26,7 @@ class Plugin {
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
         add_action('admin_menu', [$this, 'register_admin_pages']);
         add_action('admin_post_bso_survival_save_part_rule', [$this, 'handle_part_rule_save']);
+        add_action('admin_post_bso_survival_save_dashboard_widgets', [$this, 'handle_dashboard_widget_save']);
         add_action('admin_notices', [$this, 'render_dashboard_admin_notice']);
         add_action('bso_survival_dashboard_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
         add_action('bso_survival_parts_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
@@ -55,10 +59,15 @@ class Plugin {
 
     public function register_admin_pages(): void {
         $this->buildPartRuleAdminPage()->registerMenu();
+        $this->buildDashboardWidgetAdminPage()->registerMenu();
     }
 
     public function handle_part_rule_save(): void {
         $this->buildPartRuleAdminPage()->handleSave();
+    }
+
+    public function handle_dashboard_widget_save(): void {
+        $this->buildDashboardWidgetAdminPage()->handleSave();
     }
 
     public function register_assets(): void {
@@ -137,5 +146,12 @@ class Plugin {
         $configurator = new PartRuleConfiguratorService($rules);
 
         return new PartRuleAdminPage($eventService, $configurator, $rules);
+    }
+
+    private function buildDashboardWidgetAdminPage(): DashboardWidgetAdminPage {
+        $eventService = new EventService(new EventRepository());
+        $layoutService = new DashboardWidgetLayoutService(new DashboardWidgetLayoutRepository());
+
+        return new DashboardWidgetAdminPage($eventService, $layoutService);
     }
 }

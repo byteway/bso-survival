@@ -21,6 +21,8 @@ Afgerond in de huidige codebase:
 - Dashboard-rendering aangesloten op registry-sectie `main`
 - Fase 3.5 uitgevoerd: sectie-indeling `main` + `operations` met capability filtering en custom hook-registratie tests
 - Fase 3.5 uitgevoerd: widget-specifieke assets/dependencies toegevoegd en per sectie ge-enqueued
+- Fase 3.6 gestart: event-specifieke widget-layoutopslag (enable/order per sectie) met adminpagina
+- Fase 3.6 gestart: dashboard renderflow gebruikt opgeslagen layout voor zichtbaarheid/volgorde
 
 Let op: deze roadmap blijft een gap-document. Niet alle voorgestelde fases zijn al geïmplementeerd.
 
