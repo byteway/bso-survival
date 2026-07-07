@@ -16,6 +16,8 @@ class DashboardWidgetLayoutRestControllerTest extends TestCase {
 
     protected function tearDown(): void {
         DashboardWidgetRegistry::reset();
+        reset_test_current_user_caps();
+        set_test_nonce_verification_result(1);
     }
 
     /**
@@ -56,17 +58,63 @@ class DashboardWidgetLayoutRestControllerTest extends TestCase {
         $this->assertSame(['reporting_status', 'team_ranking'], $response['layout']['main']);
         $this->assertSame(['contact_finder'], $response['layout']['operations']);
     }
+
+    /**
+     * @test
+     */
+    public function it_denies_manage_without_rest_nonce(): void {
+        set_test_current_user_caps([
+            'manage_options' => true,
+        ]);
+        set_test_nonce_verification_result(false);
+
+        $service = new DashboardWidgetLayoutService(new InMemoryRestDashboardWidgetLayoutRepository());
+        $controller = new DashboardWidgetLayoutRestController($service);
+
+        $request = new FakeRestRequest([
+            'event_id' => 9,
+        ], [
+            'X-WP-Nonce' => '',
+        ]);
+
+        $this->assertFalse($controller->canManage($request));
+    }
+
+    /**
+     * @test
+     */
+    public function it_allows_manage_with_valid_rest_nonce(): void {
+        set_test_current_user_caps([
+            'manage_options' => true,
+        ]);
+        set_test_nonce_verification_result(1);
+
+        $service = new DashboardWidgetLayoutService(new InMemoryRestDashboardWidgetLayoutRepository());
+        $controller = new DashboardWidgetLayoutRestController($service);
+
+        $request = new FakeRestRequest([
+            'event_id' => 9,
+        ], [
+            'X-WP-Nonce' => 'valid-nonce',
+        ]);
+
+        $this->assertTrue($controller->canManage($request));
+    }
 }
 
 class FakeRestRequest {
     /** @var array<string, mixed> */
     private $params;
 
+    /** @var array<string, string> */
+    private $headers;
+
     /**
      * @param array<string, mixed> $params
      */
-    public function __construct(array $params) {
+    public function __construct(array $params, array $headers = []) {
         $this->params = $params;
+        $this->headers = $headers;
     }
 
     /**
@@ -74,6 +122,10 @@ class FakeRestRequest {
      */
     public function get_param(string $key) {
         return $this->params[$key] ?? null;
+    }
+
+    public function get_header(string $key): string {
+        return (string) ($this->headers[$key] ?? '');
     }
 }
 

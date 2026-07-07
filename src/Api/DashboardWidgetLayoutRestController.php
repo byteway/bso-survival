@@ -38,8 +38,29 @@ class DashboardWidgetLayoutRestController {
         return function_exists('current_user_can') && current_user_can('read');
     }
 
-    public function canManage(): bool {
-        return function_exists('current_user_can') && current_user_can('manage_options');
+    /**
+     * @param mixed $request
+     */
+    public function canManage($request = null): bool {
+        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+            return false;
+        }
+
+        if (!function_exists('wp_verify_nonce') || !is_object($request) || !method_exists($request, 'get_header')) {
+            return true;
+        }
+
+        $nonce = (string) $request->get_header('X-WP-Nonce');
+        if ($nonce === '') {
+            $nonce = (string) $request->get_header('x-wp-nonce');
+        }
+
+        if ($nonce === '') {
+            return false;
+        }
+
+        $valid = wp_verify_nonce($nonce, 'wp_rest');
+        return $valid === 1 || $valid === 2;
     }
 
     /**

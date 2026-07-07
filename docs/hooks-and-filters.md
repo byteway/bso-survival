@@ -85,6 +85,7 @@ Laatste documentatie-update: 7 juli 2026.
   - Slaat layout op voor event.
   - Body: `{ "layout": { "main": ["team_ranking"], "operations": ["message_widget"] } }`
   - Toegang: gebruiker met `manage_options`.
+  - Wordt door adminpagina gebruikt voor realtime opslaan zonder volledige page reload.
 
 ## Voorbeelden
 

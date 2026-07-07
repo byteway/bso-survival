@@ -230,3 +230,31 @@ if (!function_exists('clear_test_error_log')) {
         $test_error_log = [];
     }
 }
+
+if (!function_exists('wp_verify_nonce')) {
+    /**
+     * Verify nonce
+     *
+     * @return int|false
+     */
+    function wp_verify_nonce($nonce, $action = -1) {
+        global $test_nonce_verification_result;
+        if (isset($test_nonce_verification_result)) {
+            return $test_nonce_verification_result;
+        }
+
+        return 1;
+    }
+}
+
+if (!function_exists('set_test_nonce_verification_result')) {
+    /**
+     * Set mocked wp_verify_nonce return value.
+     *
+     * @param int|false $value
+     */
+    function set_test_nonce_verification_result($value) {
+        global $test_nonce_verification_result;
+        $test_nonce_verification_result = $value;
+    }
+}

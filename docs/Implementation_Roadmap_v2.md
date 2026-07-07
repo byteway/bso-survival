@@ -25,6 +25,7 @@ Afgerond in de huidige codebase:
 - Fase 3.6 gestart: dashboard renderflow gebruikt opgeslagen layout voor zichtbaarheid/volgorde
 - Fase 3.6 afgerond: admin UX verfijnd met drag-and-drop volgorde, live preview en sectie-validatiefeedback
 - Fase 3.6 afgerond: REST endpoint toegevoegd voor dashboard layout (GET/POST per event)
+- Fase 3.6 verfijning: admin gebruikt realtime REST-save zonder reload met inline succes/foutfeedback
 
 Let op: deze roadmap blijft een gap-document. Niet alle voorgestelde fases zijn al geïmplementeerd.
 

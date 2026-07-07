@@ -87,6 +87,8 @@ Voorbeeld:
 }
 ```
 
+Adminpagina gebruikt dezelfde endpoint voor realtime opslaan zonder page reload en toont inline succes/foutmeldingen.
+
 ## Ontwikkelcommando's
 
 - composer install

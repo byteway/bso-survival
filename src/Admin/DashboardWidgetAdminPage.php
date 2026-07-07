@@ -126,10 +126,18 @@ class DashboardWidgetAdminPage {
             return;
         }
 
-        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" id="bso-dashboard-widget-layout-form">';
+        $restBaseUrl = function_exists('rest_url')
+            ? (string) rest_url('bso-survival/v1/dashboard-layout')
+            : '';
+        $restNonce = function_exists('wp_create_nonce')
+            ? (string) wp_create_nonce('wp_rest')
+            : '';
+
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" id="bso-dashboard-widget-layout-form" data-rest-base="' . esc_attr($restBaseUrl) . '" data-rest-nonce="' . esc_attr($restNonce) . '">';
         echo '<input type="hidden" name="action" value="bso_survival_save_dashboard_widgets" />';
         echo '<input type="hidden" name="event_id" value="' . (int) $eventId . '" />';
         wp_nonce_field(self::SAVE_NONCE_ACTION, self::SAVE_NONCE_FIELD);
+        echo '<div class="notice inline bso-widget-save-status" style="display:none;"><p></p></div>';
 
         foreach (DashboardWidgetRegistry::getSectionIds() as $section) {
             $widgetIds = DashboardWidgetRegistry::getSectionWidgetIds($section);

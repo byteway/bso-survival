@@ -33,3 +33,16 @@
 .bso-widget-preview-list li {
     margin: 3px 0;
 }
+
+.bso-widget-save-status {
+    max-width: 900px;
+    margin: 0 0 14px;
+}
+
+.bso-widget-save-status.is-success {
+    border-left-color: #00a32a;
+}
+
+.bso-widget-save-status.is-error {
+    border-left-color: #d63638;
+}

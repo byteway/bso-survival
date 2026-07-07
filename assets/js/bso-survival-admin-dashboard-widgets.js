@@ -1,6 +1,90 @@
 (function () {
     'use strict';
 
+    function showStatus(form, isSuccess, message) {
+        var status = form.querySelector('.bso-widget-save-status');
+        if (!status) {
+            return;
+        }
+
+        status.style.display = 'block';
+        status.classList.remove('notice-success', 'notice-error', 'is-success', 'is-error');
+        status.classList.add(isSuccess ? 'notice-success' : 'notice-error');
+        status.classList.add(isSuccess ? 'is-success' : 'is-error');
+        status.querySelector('p').textContent = message;
+    }
+
+    function collectLayout(form) {
+        var layout = {};
+
+        Array.prototype.forEach.call(form.querySelectorAll('.bso-widget-admin-section'), function (sectionEl) {
+            var section = sectionEl.getAttribute('data-section');
+            var rows = sectionEl.querySelectorAll('.bso-widget-row');
+            layout[section] = [];
+
+            Array.prototype.forEach.call(rows, function (row) {
+                var checkbox = row.querySelector('input[type="checkbox"]');
+                if (checkbox && checkbox.checked) {
+                    layout[section].push(row.getAttribute('data-widget-id'));
+                }
+            });
+        });
+
+        return layout;
+    }
+
+    function saveViaRest(form) {
+        var eventIdInput = form.querySelector('input[name="event_id"]');
+        var restBase = form.getAttribute('data-rest-base') || '';
+        var restNonce = form.getAttribute('data-rest-nonce') || '';
+        var submitButton = form.querySelector('button[type="submit"]');
+
+        if (!eventIdInput || !restBase || !restNonce || typeof window.fetch !== 'function') {
+            return false;
+        }
+
+        var eventId = String(eventIdInput.value || '').trim();
+        if (eventId === '') {
+            showStatus(form, false, 'Opslaan mislukt: event_id ontbreekt.');
+            return true;
+        }
+
+        var layout = collectLayout(form);
+        var endpoint = restBase.replace(/\/$/, '') + '/' + encodeURIComponent(eventId);
+
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        window.fetch(endpoint, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': restNonce
+            },
+            body: JSON.stringify({
+                layout: layout
+            })
+        }).then(function (response) {
+            if (!response.ok) {
+                throw new Error('HTTP ' + response.status);
+            }
+            return response.json();
+        }).then(function () {
+            showStatus(form, true, 'Dashboardlayout realtime opgeslagen.');
+        }).catch(function (error) {
+            var details = error && error.message ? ' (' + error.message + ')' : '';
+            showStatus(form, false, 'Realtime opslaan mislukt' + details + '.');
+        }).finally(function () {
+            if (submitButton) {
+                submitButton.disabled = false;
+            }
+        });
+
+        return true;
+    }
+
     function updateSection(sectionEl) {
         var rows = Array.prototype.slice.call(sectionEl.querySelectorAll('.bso-widget-row'));
         var preview = sectionEl.querySelector('.bso-widget-preview-list');
@@ -96,6 +180,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('bso-dashboard-widget-layout-form');
         var sections = document.querySelectorAll('.bso-widget-admin-section');
         Array.prototype.forEach.call(sections, function (sectionEl) {
             setupDragDrop(sectionEl);
@@ -106,5 +191,13 @@
             });
             updateSection(sectionEl);
         });
+
+        if (form) {
+            form.addEventListener('submit', function (event) {
+                if (saveViaRest(form)) {
+                    event.preventDefault();
+                }
+            });
+        }
     });
 })();
