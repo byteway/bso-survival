@@ -2,6 +2,7 @@
 
 namespace BSO\Survival\Core;
 
+use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
 use BSO\Survival\Frontend\ShortcodeController;
 
 class Plugin {
@@ -9,6 +10,8 @@ class Plugin {
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('init', [$this, 'register_shortcodes']);
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
+
+        $this->register_cli_commands();
     }
 
     public function load_textdomain(): void {
@@ -38,5 +41,15 @@ class Plugin {
             '2.0.0',
             true
         );
+    }
+
+    private function register_cli_commands(): void {
+        if (!defined('WP_CLI') || WP_CLI !== true || !class_exists('WP_CLI')) {
+            return;
+        }
+
+        if (class_exists(SeedGoldenDatasetCommand::class)) {
+            \WP_CLI::add_command('bso-survival seed-golden', SeedGoldenDatasetCommand::class);
+        }
     }
 }
