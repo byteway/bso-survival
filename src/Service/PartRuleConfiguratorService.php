@@ -7,6 +7,16 @@ use InvalidArgumentException;
 use RuntimeException;
 
 class PartRuleConfiguratorService {
+    private const ALLOWED_TIEBREAKERS = [
+        'manual_referee',
+        'lower_raw_wins',
+        'higher_raw_wins',
+    ];
+
+    private const ALLOWED_CURVES = [
+        'linear',
+    ];
+
     /** @var PartRuleRepositoryInterface */
     private $rules;
 
@@ -32,6 +42,7 @@ class PartRuleConfiguratorService {
             throw new RuntimeException(sprintf('Scoring method %s is not available.', $mode));
         }
 
+        $validatedTiebreaker = $this->sanitizeTiebreakerMode($tiebreakerMode);
         $validatedConfig = $this->sanitizeConfigByMode($mode, $config);
         $configJson = function_exists('wp_json_encode')
             ? wp_json_encode($validatedConfig)
@@ -44,9 +55,19 @@ class PartRuleConfiguratorService {
             $partId,
             $mode,
             $method->getFieldUnit(),
-            $tiebreakerMode,
+            $validatedTiebreaker,
             $configJson
         );
+    }
+
+    private function sanitizeTiebreakerMode(string $tiebreakerMode): string {
+        $value = trim($tiebreakerMode);
+
+        if (!in_array($value, self::ALLOWED_TIEBREAKERS, true)) {
+            return 'manual_referee';
+        }
+
+        return $value;
     }
 
     /**
@@ -54,22 +75,28 @@ class PartRuleConfiguratorService {
      * @return array<string, mixed>
      */
     private function sanitizeConfigByMode(string $mode, array $config): array {
+        $curve = isset($config['normalization_curve'])
+            ? trim((string) $config['normalization_curve'])
+            : 'linear';
+
+        if (!in_array($curve, self::ALLOWED_CURVES, true)) {
+            $curve = 'linear';
+        }
+
         $safe = [
-            'normalization_curve' => isset($config['normalization_curve'])
-                ? (string) $config['normalization_curve']
-                : 'linear',
+            'normalization_curve' => $curve,
         ];
 
         if ($mode === 'time') {
-            $safe['max_time'] = isset($config['max_time']) ? max(0, (int) $config['max_time']) : 1200;
+            $safe['max_time'] = isset($config['max_time']) ? max(1, (int) $config['max_time']) : 1200;
         }
 
         if ($mode === 'points') {
-            $safe['max_points'] = isset($config['max_points']) ? max(0, (int) $config['max_points']) : 100;
+            $safe['max_points'] = isset($config['max_points']) ? max(1, (int) $config['max_points']) : 100;
         }
 
         if ($mode === 'distance') {
-            $safe['max_distance'] = isset($config['max_distance']) ? max(0, (int) $config['max_distance']) : 500;
+            $safe['max_distance'] = isset($config['max_distance']) ? max(1, (int) $config['max_distance']) : 500;
         }
 
         return $safe;

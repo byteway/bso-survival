@@ -22,6 +22,7 @@ Laatste documentatie-update: 7 juli 2026.
 - admin_post_bso_survival_save_part_rule
   - WordPress admin endpoint voor opslaan van `part_rules` configuratie.
   - Gebruikt registry-validatie via `PartRuleConfiguratorService`.
+  - Productie-hardening: nonce-check, capability-check (`manage_options`), whitelist-validatie voor `tiebreaker_mode` en `normalization_curve`.
 - bso_survival_dashboard_render_error
   - Wanneer dashboard rendering faalt (bijvoorbeeld ongeldig event_id).
   - Parameters: message, event_id

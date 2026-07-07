@@ -49,6 +49,27 @@ class PartRuleConfiguratorServiceTest extends TestCase {
         $this->expectException(InvalidArgumentException::class);
         $service->configure(10, 'unknown_mode', []);
     }
+
+    /**
+     * @test
+     */
+    public function it_sanitizes_tiebreaker_curve_and_numeric_minimums(): void {
+        $repo = new InMemoryPartRuleRepository();
+        $service = new PartRuleConfiguratorService($repo);
+
+        $service->configure(11, 'points', [
+            'max_points' => 0,
+            'normalization_curve' => 'weird-curve',
+        ], 'unsupported_tiebreaker');
+
+        $rule = $repo->findByPartId(11);
+        $this->assertNotNull($rule);
+        $this->assertSame('manual_referee', $rule->tiebreaker_mode);
+
+        $config = json_decode((string) $rule->scoring_config, true);
+        $this->assertSame('linear', $config['normalization_curve']);
+        $this->assertSame(1, $config['max_points']);
+    }
 }
 
 class InMemoryPartRuleRepository implements PartRuleRepositoryInterface {

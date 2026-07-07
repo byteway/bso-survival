@@ -7,6 +7,9 @@ use BSO\Survival\Service\PartRuleConfiguratorService;
 use BSO\Survival\Service\ScoringMethodRegistry;
 
 class PartRuleAdminPage {
+    private const SAVE_NONCE_ACTION = 'bso_survival_save_part_rule';
+    private const SAVE_NONCE_FIELD = 'bso_survival_save_part_rule_nonce';
+
     /** @var EventService */
     private $events;
 
@@ -43,20 +46,25 @@ class PartRuleAdminPage {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
 
+        if (!isset($_POST[self::SAVE_NONCE_FIELD]) || !wp_verify_nonce((string) $_POST[self::SAVE_NONCE_FIELD], self::SAVE_NONCE_ACTION)) {
+            wp_die(__('Ongeldige aanvraag (nonce).', 'bso-survival'));
+        }
+
         $partId = isset($_POST['part_id']) ? (int) $_POST['part_id'] : 0;
         $eventId = isset($_POST['event_id']) ? (int) $_POST['event_id'] : 0;
-        $mode = isset($_POST['scoring_mode']) ? sanitize_text_field(wp_unslash((string) $_POST['scoring_mode'])) : '';
+        $mode = isset($_POST['scoring_mode']) ? sanitize_key(wp_unslash((string) $_POST['scoring_mode'])) : '';
+        $tiebreakerMode = isset($_POST['tiebreaker_mode']) ? sanitize_key(wp_unslash((string) $_POST['tiebreaker_mode'])) : 'manual_referee';
 
         $config = [
             'max_time' => isset($_POST['max_time']) ? (int) $_POST['max_time'] : null,
             'max_points' => isset($_POST['max_points']) ? (int) $_POST['max_points'] : null,
             'max_distance' => isset($_POST['max_distance']) ? (int) $_POST['max_distance'] : null,
             'normalization_curve' => isset($_POST['normalization_curve'])
-                ? sanitize_text_field(wp_unslash((string) $_POST['normalization_curve']))
+                ? sanitize_key(wp_unslash((string) $_POST['normalization_curve']))
                 : 'linear',
         ];
 
-        $this->configurator->configure($partId, $mode, $config);
+        $this->configurator->configure($partId, $mode, $config, $tiebreakerMode);
 
         $redirect = add_query_arg(
             [
@@ -108,6 +116,9 @@ class PartRuleAdminPage {
 
         foreach ($rows as $row) {
             $mode = is_string($row->scoring_mode) && $row->scoring_mode !== '' ? $row->scoring_mode : 'points';
+            $tiebreakerMode = is_string($row->tiebreaker_mode) && $row->tiebreaker_mode !== ''
+                ? $row->tiebreaker_mode
+                : 'manual_referee';
             $config = json_decode((string) ($row->scoring_config ?? ''), true);
             if (!is_array($config)) {
                 $config = [];
@@ -117,6 +128,7 @@ class PartRuleAdminPage {
             echo '<input type="hidden" name="action" value="bso_survival_save_part_rule" />';
             echo '<input type="hidden" name="part_id" value="' . (int) $row->part_id . '" />';
             echo '<input type="hidden" name="event_id" value="' . (int) $eventId . '" />';
+            wp_nonce_field(self::SAVE_NONCE_ACTION, self::SAVE_NONCE_FIELD);
 
             echo '<h3 style="margin-top:0;">' . esc_html((string) $row->part_name) . '</h3>';
 
@@ -128,15 +140,42 @@ class PartRuleAdminPage {
             }
             echo '</select></label></p>';
 
-            echo '<p><label>max_time<br /><input type="number" name="max_time" value="' . esc_attr((string) ($config['max_time'] ?? 1200)) . '" /></label></p>';
-            echo '<p><label>max_points<br /><input type="number" name="max_points" value="' . esc_attr((string) ($config['max_points'] ?? 100)) . '" /></label></p>';
-            echo '<p><label>max_distance<br /><input type="number" name="max_distance" value="' . esc_attr((string) ($config['max_distance'] ?? 500)) . '" /></label></p>';
+            echo '<p><label><strong>' . esc_html__('Tiebreaker', 'bso-survival') . '</strong><br />';
+            echo '<select name="tiebreaker_mode">';
+            echo '<option value="manual_referee" ' . selected($tiebreakerMode, 'manual_referee', false) . '>manual_referee</option>';
+            echo '<option value="lower_raw_wins" ' . selected($tiebreakerMode, 'lower_raw_wins', false) . '>lower_raw_wins</option>';
+            echo '<option value="higher_raw_wins" ' . selected($tiebreakerMode, 'higher_raw_wins', false) . '>higher_raw_wins</option>';
+            echo '</select></label></p>';
 
-            echo '<p><label>normalization_curve<br /><input type="text" name="normalization_curve" value="' . esc_attr((string) ($config['normalization_curve'] ?? 'linear')) . '" /></label></p>';
+            echo '<div class="bso-config-field" data-mode="time" style="display:' . ($mode === 'time' ? 'block' : 'none') . ';">';
+            echo '<p><label>max_time<br /><input type="number" min="1" name="max_time" value="' . esc_attr((string) ($config['max_time'] ?? 1200)) . '" /></label></p>';
+            echo '</div>';
+
+            echo '<div class="bso-config-field" data-mode="points" style="display:' . ($mode === 'points' ? 'block' : 'none') . ';">';
+            echo '<p><label>max_points<br /><input type="number" min="1" name="max_points" value="' . esc_attr((string) ($config['max_points'] ?? 100)) . '" /></label></p>';
+            echo '</div>';
+
+            echo '<div class="bso-config-field" data-mode="distance" style="display:' . ($mode === 'distance' ? 'block' : 'none') . ';">';
+            echo '<p><label>max_distance<br /><input type="number" min="1" name="max_distance" value="' . esc_attr((string) ($config['max_distance'] ?? 500)) . '" /></label></p>';
+            echo '</div>';
+
+            echo '<p><label>normalization_curve<br />';
+            echo '<select name="normalization_curve">';
+            echo '<option value="linear" ' . selected((string) ($config['normalization_curve'] ?? 'linear'), 'linear', false) . '>linear</option>';
+            echo '</select></label></p>';
 
             echo '<button class="button button-primary">' . esc_html__('Opslaan', 'bso-survival') . '</button>';
             echo '</form>';
         }
+
+        echo '<script>';
+        echo 'document.querySelectorAll("form[action*=admin-post.php]").forEach(function(form){';
+        echo 'var modeSelect=form.querySelector("select[name=scoring_mode]");';
+        echo 'if(!modeSelect){return;}';
+        echo 'var sync=function(){var mode=modeSelect.value;form.querySelectorAll(".bso-config-field").forEach(function(el){el.style.display=(el.getAttribute("data-mode")===mode)?"block":"none";});};';
+        echo 'modeSelect.addEventListener("change",sync);sync();';
+        echo '});';
+        echo '</script>';
 
         echo '</div>';
     }
