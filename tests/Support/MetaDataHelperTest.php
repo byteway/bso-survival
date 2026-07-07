@@ -525,13 +525,12 @@ class MetaDataHelperTest extends TestCase {
      * @test
      */
     public function test_chaining_multiple_operations() {
-        MetaDataHelper::set($this->entity, 'key1', 'value1')
-            ->then(function($entity) {
-                MetaDataHelper::set($entity, 'key2', 'value2');
-            });
-        
-        // Since set returns the entity, this tests chaining capability
+        MetaDataHelper::set($this->entity, 'key1', 'value1');
+        MetaDataHelper::set($this->entity, 'key2', 'value2');
+
+        // Since set returns the entity, this validates consecutive operations on the same object
         $this->assertEquals('value1', MetaDataHelper::get($this->entity, 'key1'));
+        $this->assertEquals('value2', MetaDataHelper::get($this->entity, 'key2'));
     }
 
     /**
