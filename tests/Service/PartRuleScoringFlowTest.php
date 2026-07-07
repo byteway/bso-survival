@@ -12,6 +12,14 @@ class PartRuleScoringFlowTest extends TestCase {
     protected function setUp(): void {
         ScoringMethodRegistry::reset();
         ScoringMethodRegistry::initDefaults();
+
+        global $wp_filters;
+        $wp_filters = [];
+    }
+
+    protected function tearDown(): void {
+        global $wp_filters;
+        $wp_filters = [];
     }
 
     /**
@@ -37,6 +45,43 @@ class PartRuleScoringFlowTest extends TestCase {
         ]);
 
         $this->assertSame([102 => 1, 101 => 2, 103 => 3], $positions);
+    }
+
+    /**
+     * @test
+     */
+    public function it_applies_normalization_and_position_filters(): void {
+        add_filter('bso_survival_score_normalized_points', function ($normalized, $rawValue, $partId) {
+            return $normalized + 5;
+        }, 10, 3);
+
+        add_filter('bso_survival_position_proposal', function ($positions, $partId) {
+            return [
+                103 => 1,
+                101 => 2,
+                102 => 3,
+            ];
+        }, 10, 3);
+
+        $repo = new FlowInMemoryPartRuleRepository();
+        $configurator = new PartRuleConfiguratorService($repo);
+        $scoring = new ScoreComputationService($repo);
+
+        $configurator->configure(21, 'points', [
+            'max_points' => 100,
+            'normalization_curve' => 'linear',
+        ]);
+
+        $normalized = $scoring->normalizeRawValueForPart(21, 40);
+        $this->assertSame(45.0, $normalized);
+
+        $positions = $scoring->positionProposalForPart(21, [
+            101 => 30,
+            102 => 60,
+            103 => 10,
+        ]);
+
+        $this->assertSame([103 => 1, 101 => 2, 102 => 3], $positions);
     }
 }
 

@@ -11,7 +11,7 @@ Sinds de oorspronkelijke Fase 1 onboarding is extra functionaliteit opgeleverd:
 - read-only frontend shortcodes voor dashboard, onderdelen en teams
 - gecombineerde shortcodes voor volledig en compact eventoverzicht
 - robuuste foutafhandeling met admin notice bij ongeldig event_id
-- testsuite groen: 72/72
+- testsuite groen: 104/104
 
 Belangrijke referenties:
 - [src/Frontend/ShortcodeController.php](../src/Frontend/ShortcodeController.php)

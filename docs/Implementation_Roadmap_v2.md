@@ -9,7 +9,7 @@ Afgerond in de huidige codebase:
 - gecombineerde shortcode `bso_survival_event_overview` met `compact=yes/no`
 - compacte gecombineerde shortcode `bso_survival_event_summary`
 - admin notice flow voor renderfouten op ongeldige `event_id`
-- testsuite groen (72/72)
+- testsuite groen (104/104)
 - Fase 2 stap 2.1-2.3 geïmplementeerd: ScoringMethodInterface, ScoringMethodRegistry en defaults (time/points/distance)
 - Fase 2 stap 2.4 geïmplementeerd: bootstrap + action hook voor custom scoremethodes
 - Fase 2 stap 2.5 geïmplementeerd: PartRule datamodel bevat scoring_mode, scoring_config, unit, tiebreaker_mode
@@ -26,6 +26,11 @@ Afgerond in de huidige codebase:
 - Fase 3.6 afgerond: admin UX verfijnd met drag-and-drop volgorde, live preview en sectie-validatiefeedback
 - Fase 3.6 afgerond: REST endpoint toegevoegd voor dashboard layout (GET/POST per event)
 - Fase 3.6 verfijning: admin gebruikt realtime REST-save zonder reload met inline succes/foutfeedback
+- Fase 4 afgerond: scoreflow gebruikt filterhooks voor normalized points en position proposal
+- Fase 4 afgerond: score entry service voegt before_score_validation en score_recorded hooks toe
+- Fase 4 afgerond: event status service voegt before_event_status_change en event_status_changed hooks toe
+- Fase 4 afgerond: ranking refresh en certificate generation voegen ranking_updated en certificate_generated hooks toe
+- Fase 4 afgerond: audit logging service voegt before_audit_log_write, audit_log_written en audit_log_failed hooks toe
 
 Let op: deze roadmap blijft een gap-document. Niet alle voorgestelde fases zijn al geïmplementeerd.
 
@@ -686,12 +691,12 @@ Elke widget implementeert DashboardWidgetInterface met:
 ```
 
 ### Validatiechecklist:
-- [ ] Interface gedefinieerd
-- [ ] Registry-klasse geschreven
-- [ ] Zes standaard-widgets geïmplementeerd
-- [ ] Unit tests voor widgets
-- [ ] Bootstrap ingesteld
-- [ ] FO bijgewerkt
+- [x] Interface gedefinieerd
+- [x] Registry-klasse geschreven
+- [x] Zes standaard-widgets geïmplementeerd
+- [x] Unit tests voor widgets
+- [x] Bootstrap ingesteld
+- [x] FO bijgewerkt
 
 ---
 

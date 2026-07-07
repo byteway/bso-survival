@@ -119,6 +119,13 @@ class Plugin {
             '2.0.0',
             true
         );
+
+        wp_register_style(
+            'bso-survival-part-rules-admin',
+            plugins_url('assets/css/bso-survival-part-rules-admin.css', __DIR__ . '/../../bso-survival.php'),
+            [],
+            '2.0.0'
+        );
     }
 
     public function register_rest_routes(): void {

@@ -65,6 +65,22 @@ Voorbeeld:
 [bso_survival_event_overview title="Gecombineerd Overzicht Event 2" event_id="2" compact="yes"]
 ```
 
+## Hook index
+
+Een compacte index van de belangrijkste actions en filters staat ook in [docs/hooks-and-filters.md](docs/hooks-and-filters.md).
+
+| Domein | Hooks |
+|---|---|
+| Metadata | `bso_survival_metadata_error` |
+| Registratie | `bso_survival_register_scoring_methods`, `bso_survival_dashboard_widgets_init` |
+| Renderfouten | `bso_survival_dashboard_render_error`, `bso_survival_parts_render_error`, `bso_survival_teams_render_error`, `bso_survival_event_overview_render_error`, `bso_survival_event_summary_render_error` |
+| Scoring | `bso_survival_score_normalized_points`, `bso_survival_position_proposal` |
+| Score-invoer | `bso_survival_before_score_validation`, `bso_survival_score_recorded` |
+| Eventstatus | `bso_survival_before_event_status_change`, `bso_survival_event_status_changed` |
+| Ranking | `bso_survival_before_ranking_refresh`, `bso_survival_ranking_updated` |
+| Certificaten | `bso_survival_before_certificate_generated`, `bso_survival_certificate_generated` |
+| Auditlog | `bso_survival_before_audit_log_write`, `bso_survival_audit_log_written`, `bso_survival_audit_log_failed` |
+
 ## Wat nog niet is uitgewerkt
 
 - dagafsluiting-workflow
@@ -100,4 +116,4 @@ Adminpagina gebruikt dezelfde endpoint voor realtime opslaan zonder page reload 
 - ./vendor/bin/phpunit tests/Service/PartRuleConfiguratorServiceTest.php
 - ./vendor/bin/phpunit tests/Service/PartRuleScoringFlowTest.php
 
-Huidige teststatus: 72/72 groen.
+Huidige teststatus: 104/104 groen.

@@ -2,6 +2,21 @@
 
 Laatste documentatie-update: 7 juli 2026.
 
+## Compact Hook Index
+
+| Domein | Hook(s) | Type | Bron |
+|---|---|---|---|
+| Metadata | `bso_survival_metadata_error` | action | [src/Support/MetaDataHelper.php](../src/Support/MetaDataHelper.php) |
+| Registratie | `bso_survival_register_scoring_methods`, `bso_survival_dashboard_widgets_init` | action | [src/Service/ScoringMethodRegistry.php](../src/Service/ScoringMethodRegistry.php), [src/Service/DashboardWidgetRegistry.php](../src/Service/DashboardWidgetRegistry.php) |
+| Renderfouten | `bso_survival_dashboard_render_error`, `bso_survival_parts_render_error`, `bso_survival_teams_render_error`, `bso_survival_event_overview_render_error`, `bso_survival_event_summary_render_error` | action | [src/Frontend/*.php](../src/Frontend) |
+| Scoring filters | `bso_survival_score_normalized_points`, `bso_survival_position_proposal` | filter | [src/Service/ScoreComputationService.php](../src/Service/ScoreComputationService.php) |
+| Score entry | `bso_survival_before_score_validation`, `bso_survival_score_recorded` | action | [src/Service/ScoreEntryService.php](../src/Service/ScoreEntryService.php) |
+| Event status | `bso_survival_before_event_status_change`, `bso_survival_event_status_changed` | action | [src/Service/EventService.php](../src/Service/EventService.php) |
+| Ranking | `bso_survival_before_ranking_refresh`, `bso_survival_ranking_updated` | action | [src/Service/RankingService.php](../src/Service/RankingService.php) |
+| Certificates | `bso_survival_before_certificate_generated`, `bso_survival_certificate_generated` | action | [src/Service/CertificateService.php](../src/Service/CertificateService.php) |
+| Audit logging | `bso_survival_before_audit_log_write`, `bso_survival_audit_log_written`, `bso_survival_audit_log_failed` | action | [src/Service/AuditLogService.php](../src/Service/AuditLogService.php) |
+| Admin save endpoints | `admin_post_bso_survival_save_part_rule`, `admin_post_bso_survival_save_dashboard_widgets` | action | [src/Core/Plugin.php](../src/Core/Plugin.php) |
+
 ## Actions
 - bso_survival_metadata_error
   - Wanneer MetaDataHelper een decode/encode-gerelateerde fout tegenkomt.
@@ -75,6 +90,70 @@ Laatste documentatie-update: 7 juli 2026.
 - `part_rules.scoring_mode` verwijst naar een geregistrede scoremethode-id.
 - `part_rules.scoring_config` bevat methode-specifieke parameters (JSON in LONGTEXT).
 - `part_rules.unit` bewaart de UI-eenheid (bijv. seconden, punten, meter).
+
+## Scoring Flow Filters
+
+- `bso_survival_score_normalized_points`
+  - Filtert de genormaliseerde score voordat die wordt teruggegeven.
+  - Parameters: normalized, raw_value, part_id, scoring_rule, scoring_method, config
+- `bso_survival_position_proposal`
+  - Filtert de voorgestelde eindpositie-indeling voordat die wordt teruggegeven.
+  - Parameters: positions, part_id, team_raw_values, scoring_rule, scoring_method, config
+
+## Score Entry Actions
+
+- `bso_survival_before_score_validation`
+  - Fired direct before score validation starts.
+  - Parameters: score_entry
+- `bso_survival_score_recorded`
+  - Fired after a score entry is persisted successfully.
+  - Parameters: score_entry_id, assignment_id, raw_value, score_entry
+
+## Event Status Actions
+
+- `bso_survival_before_event_status_change`
+  - Fired before an event status is updated.
+  - Parameters: event_id, previous_status, new_status, event
+- `bso_survival_event_status_changed`
+  - Fired after an event status is updated successfully.
+  - Parameters: event_id, previous_status, new_status, event
+
+## Ranking Actions
+
+- `bso_survival_before_ranking_refresh`
+  - Fired before ranking positions are recalculated for a part.
+  - Parameters: part_id, team_raw_values
+- `bso_survival_ranking_updated`
+  - Fired after ranking positions are recalculated for a part.
+  - Parameters: part_id, positions, team_raw_values
+
+## Certificate Actions
+
+- `bso_survival_before_certificate_generated`
+  - Fired before a certificate record is stored.
+  - Parameters: payload, meta
+- `bso_survival_certificate_generated`
+  - Fired after a certificate record is stored successfully.
+  - Parameters: certificate_id, event_id, team_id, certificate, meta
+
+## Audit Logging Actions
+
+- `bso_survival_before_audit_log_write`
+  - Fired before an audit log row is written.
+  - Parameters: payload, context
+- `bso_survival_audit_log_written`
+  - Fired after an audit log row is written successfully.
+  - Parameters: audit_log_id, payload, audit_log, context
+- `bso_survival_audit_log_failed`
+  - Fired when writing an audit log row fails.
+  - Parameters: payload, context, exception
+
+## Fase 4 status
+
+- Hook-documentatie is aanwezig
+- Scoreflow gebruikt nu de filterhooks voor normalized points en position proposal
+- Score entry, event status, ranking, certificate en audit logging hooks zijn toegevoegd
+- Testsuite staat op 104/104 groen
 
 ## REST API
 

@@ -84,6 +84,8 @@ class PartRuleAdminPage {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
 
+        wp_enqueue_style('bso-survival-part-rules-admin');
+
         $events = $this->events->listEvents();
         $eventId = isset($_GET['event_id']) ? (int) $_GET['event_id'] : 0;
         if ($eventId <= 0 && !empty($events)) {
@@ -100,7 +102,7 @@ class PartRuleAdminPage {
             echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Regel opgeslagen.', 'bso-survival') . '</p></div>';
         }
 
-        echo '<form method="get" action="' . esc_url(admin_url('admin.php')) . '">';
+        echo '<form method="get" action="' . esc_url(admin_url('admin.php')) . '" class="bso-part-rule-event-filter">';
         echo '<input type="hidden" name="page" value="bso-survival-rules" />';
         echo '<label for="bso-event-id"><strong>' . esc_html__('Event', 'bso-survival') . ':</strong></label> ';
         echo '<select id="bso-event-id" name="event_id">';
@@ -109,7 +111,7 @@ class PartRuleAdminPage {
             echo '<option value="' . (int) $event->id . '" ' . $selected . '>' . esc_html($event->name) . '</option>';
         }
         echo '</select> ';
-        echo '<button class="button">' . esc_html__('Laden', 'bso-survival') . '</button>';
+        echo '<button class="button button-secondary">' . esc_html__('Laden', 'bso-survival') . '</button>';
         echo '</form>';
 
         echo '<hr />';
@@ -124,47 +126,60 @@ class PartRuleAdminPage {
                 $config = [];
             }
 
-            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="border:1px solid #dcdcde;padding:12px;margin-bottom:12px;">';
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" class="bso-part-rule-card">';
             echo '<input type="hidden" name="action" value="bso_survival_save_part_rule" />';
             echo '<input type="hidden" name="part_id" value="' . (int) $row->part_id . '" />';
             echo '<input type="hidden" name="event_id" value="' . (int) $eventId . '" />';
             wp_nonce_field(self::SAVE_NONCE_ACTION, self::SAVE_NONCE_FIELD);
 
-            echo '<h3 style="margin-top:0;">' . esc_html((string) $row->part_name) . '</h3>';
+            echo '<div class="bso-part-rule-header">';
+            echo '<h3 class="bso-part-rule-title">' . esc_html((string) $row->part_name) . '</h3>';
+            echo '<span class="bso-part-rule-meta">' . esc_html(sprintf('%s · part_id #%d', strtoupper($mode), (int) $row->part_id)) . '</span>';
+            echo '</div>';
+            echo '<div class="bso-part-rule-grid">';
 
-            echo '<p><label><strong>' . esc_html__('Scoring mode', 'bso-survival') . '</strong><br />';
-            echo '<select name="scoring_mode">';
+            echo '<div class="bso-part-rule-label"><strong>' . esc_html__('Scoring mode', 'bso-survival') . '</strong></div>';
+            echo '<div class="bso-part-rule-control"><select name="scoring_mode">';
             foreach ($methods as $id => $method) {
                 $selected = selected($mode, $id, false);
                 echo '<option value="' . esc_attr($id) . '" ' . $selected . '>' . esc_html($method->getName()) . '</option>';
             }
-            echo '</select></label></p>';
+            echo '</select></div>';
 
-            echo '<p><label><strong>' . esc_html__('Tiebreaker', 'bso-survival') . '</strong><br />';
-            echo '<select name="tiebreaker_mode">';
+            echo '<div class="bso-part-rule-label"><strong>' . esc_html__('Tiebreaker', 'bso-survival') . '</strong></div>';
+            echo '<div class="bso-part-rule-control"><select name="tiebreaker_mode">';
             echo '<option value="manual_referee" ' . selected($tiebreakerMode, 'manual_referee', false) . '>manual_referee</option>';
             echo '<option value="lower_raw_wins" ' . selected($tiebreakerMode, 'lower_raw_wins', false) . '>lower_raw_wins</option>';
             echo '<option value="higher_raw_wins" ' . selected($tiebreakerMode, 'higher_raw_wins', false) . '>higher_raw_wins</option>';
-            echo '</select></label></p>';
+            echo '</select></div>';
 
-            echo '<div class="bso-config-field" data-mode="time" style="display:' . ($mode === 'time' ? 'block' : 'none') . ';">';
-            echo '<p><label>max_time<br /><input type="number" min="1" name="max_time" value="' . esc_attr((string) ($config['max_time'] ?? 1200)) . '" /></label></p>';
+            echo '<div class="bso-part-rule-label" data-mode-label="time" style="display:' . ($mode === 'time' ? 'block' : 'none') . ';"><strong>max_time</strong></div>';
+            echo '<div class="bso-config-field bso-part-rule-control" data-mode="time" style="display:' . ($mode === 'time' ? 'block' : 'none') . ';">';
+            echo '<input type="number" min="1" name="max_time" value="' . esc_attr((string) ($config['max_time'] ?? 1200)) . '" />';
             echo '</div>';
 
-            echo '<div class="bso-config-field" data-mode="points" style="display:' . ($mode === 'points' ? 'block' : 'none') . ';">';
-            echo '<p><label>max_points<br /><input type="number" min="1" name="max_points" value="' . esc_attr((string) ($config['max_points'] ?? 100)) . '" /></label></p>';
+            echo '<div class="bso-part-rule-label" data-mode-label="points" style="display:' . ($mode === 'points' ? 'block' : 'none') . ';"><strong>max_points</strong></div>';
+            echo '<div class="bso-config-field bso-part-rule-control" data-mode="points" style="display:' . ($mode === 'points' ? 'block' : 'none') . ';">';
+            echo '<input type="number" min="1" name="max_points" value="' . esc_attr((string) ($config['max_points'] ?? 100)) . '" />';
             echo '</div>';
 
-            echo '<div class="bso-config-field" data-mode="distance" style="display:' . ($mode === 'distance' ? 'block' : 'none') . ';">';
-            echo '<p><label>max_distance<br /><input type="number" min="1" name="max_distance" value="' . esc_attr((string) ($config['max_distance'] ?? 500)) . '" /></label></p>';
+            echo '<div class="bso-part-rule-label" data-mode-label="distance" style="display:' . ($mode === 'distance' ? 'block' : 'none') . ';"><strong>max_distance</strong></div>';
+            echo '<div class="bso-config-field bso-part-rule-control" data-mode="distance" style="display:' . ($mode === 'distance' ? 'block' : 'none') . ';">';
+            echo '<input type="number" min="1" name="max_distance" value="' . esc_attr((string) ($config['max_distance'] ?? 500)) . '" />';
             echo '</div>';
 
-            echo '<p><label>normalization_curve<br />';
+            echo '<div class="bso-part-rule-label"><strong>normalization_curve</strong></div>';
+            echo '<div class="bso-part-rule-control">';
             echo '<select name="normalization_curve">';
             echo '<option value="linear" ' . selected((string) ($config['normalization_curve'] ?? 'linear'), 'linear', false) . '>linear</option>';
-            echo '</select></label></p>';
+            echo '</select>';
+            echo '</div>';
 
-            echo '<button class="button button-primary">' . esc_html__('Opslaan', 'bso-survival') . '</button>';
+            echo '</div>';
+
+            echo '<div class="bso-part-rule-actions">';
+            echo '<button class="button button-primary bso-part-rule-save-button">' . esc_html__('Opslaan', 'bso-survival') . '</button>';
+            echo '</div>';
             echo '</form>';
         }
 

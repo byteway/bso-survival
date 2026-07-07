@@ -50,6 +50,24 @@ class EventRepository implements EventRepositoryInterface {
         return $this->wpdb->get_results($sql) ?: [];
     }
 
+    public function updateStatus(int $id, string $status): bool {
+        $table = $this->tableName();
+        $now = gmdate('Y-m-d H:i:s');
+
+        $updated = $this->wpdb->update(
+            $table,
+            [
+                'status' => $status,
+                'updated_at' => $now,
+            ],
+            ['id' => $id],
+            ['%s', '%s'],
+            ['%d']
+        );
+
+        return $updated !== false;
+    }
+
     private function tableName(): string {
         return $this->wpdb->prefix . 'bso_survival_events';
     }

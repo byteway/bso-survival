@@ -80,6 +80,10 @@ class DashboardFakeEventRepository implements EventRepositoryInterface {
     public function findByStatus(string $status): array {
         return [];
     }
+
+    public function updateStatus(int $id, string $status): bool {
+        return true;
+    }
 }
 
 class MissingDashboardEventRepository implements EventRepositoryInterface {
@@ -96,6 +100,10 @@ class MissingDashboardEventRepository implements EventRepositoryInterface {
     /** @return array<int, object> */
     public function findByStatus(string $status): array {
         return [];
+    }
+
+    public function updateStatus(int $id, string $status): bool {
+        return false;
     }
 }
 

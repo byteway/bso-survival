@@ -5,7 +5,7 @@
 Deze quick start blijft bruikbaar voor de Fase 1 basis, maar de codebase is inmiddels verder:
 - frontend read-only shortcodes zijn geïmplementeerd
 - gecombineerde shortcodes zijn beschikbaar
-- volledige testsuite staat op 72/72 groen
+- volledige testsuite staat op 104/104 groen
 
 Directe smoke-test shortcodes:
 
@@ -100,7 +100,7 @@ PHPUnit 9.6.x
 
 Time: < 1 second
 
-OK (72 tests, 0 failures)
+OK (104 tests, 0 failures)
 ```
 
 **If any failures:**

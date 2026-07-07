@@ -1,0 +1,121 @@
+.bso-part-rule-event-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.bso-part-rule-event-filter select {
+    min-width: 220px;
+}
+
+.bso-part-rule-card {
+    border: 1px solid #dcdcde;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 14px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.bso-part-rule-card:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.bso-part-rule-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    margin: 0 0 12px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #f8fafc 0%, #f3f4f6 100%);
+    border: 1px solid #e5e7eb;
+}
+
+.bso-part-rule-title {
+    margin: 0;
+    font-size: 1.12rem;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+}
+
+.bso-part-rule-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #eaf2ff;
+    color: #0f3b82;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.bso-part-rule-grid {
+    display: grid;
+    grid-template-columns: minmax(170px, 240px) minmax(0, 1fr);
+    gap: 10px 16px;
+    align-items: start;
+}
+
+.bso-part-rule-label {
+    padding-top: 4px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.bso-part-rule-control input[type="number"],
+.bso-part-rule-control select {
+    width: 100%;
+    max-width: 320px;
+    min-height: 32px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.bso-part-rule-actions {
+    margin-top: 12px;
+}
+
+.bso-part-rule-save-button {
+    min-width: 120px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+
+.bso-part-rule-save-button:hover {
+    transform: translateY(-1px);
+}
+
+.bso-part-rule-save-button:focus {
+    box-shadow: 0 0 0 1px #fff, 0 0 0 3px rgba(0, 64, 128, 0.25);
+}
+
+@media (max-width: 782px) {
+    .bso-part-rule-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .bso-part-rule-label {
+        padding-top: 0;
+    }
+
+    .bso-part-rule-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .bso-part-rule-control input[type="number"],
+    .bso-part-rule-control select {
+        max-width: 100%;
+    }
+
+    .bso-part-rule-event-filter select {
+        min-width: 0;
+        width: 100%;
+    }
+}

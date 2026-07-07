@@ -35,6 +35,37 @@ class ServiceLayerTest extends TestCase {
     /**
      * @test
      */
+    public function event_service_emits_status_change_hooks_and_updates_status(): void {
+        $beforeCalls = [];
+        $afterCalls = [];
+
+        add_action('bso_survival_before_event_status_change', function ($eventId, $previousStatus, $newStatus, $event) use (&$beforeCalls): void {
+            $beforeCalls[] = [$eventId, $previousStatus, $newStatus, $event];
+        }, 10, 4);
+
+        add_action('bso_survival_event_status_changed', function ($eventId, $previousStatus, $newStatus, $event) use (&$afterCalls): void {
+            $afterCalls[] = [$eventId, $previousStatus, $newStatus, $event];
+        }, 10, 4);
+
+        $repository = new MutableEventRepository();
+        $service = new EventService($repository);
+
+        $result = $service->updateStatus(1, 'actief');
+
+        $this->assertTrue($result);
+        $this->assertSame(1, count($beforeCalls));
+        $this->assertSame(1, count($afterCalls));
+        $this->assertSame(1, $beforeCalls[0][0]);
+        $this->assertSame('concept', $beforeCalls[0][1]);
+        $this->assertSame('actief', $beforeCalls[0][2]);
+        $this->assertSame('concept', $afterCalls[0][1]);
+        $this->assertSame('actief', $afterCalls[0][2]);
+        $this->assertSame('actief', $repository->statusById[1]);
+    }
+
+    /**
+     * @test
+     */
     public function part_service_lists_and_counts_parts_for_event(): void {
         $repository = new FakePartRepository();
         $service = new PartService($repository);
@@ -94,6 +125,44 @@ class FakeEventRepository implements EventRepositoryInterface {
         }
 
         return null;
+    }
+
+    public function updateStatus(int $id, string $status): bool {
+        return true;
+    }
+}
+
+class MutableEventRepository implements EventRepositoryInterface {
+    /** @var array<int, string> */
+    public $statusById = [1 => 'concept'];
+
+    /** @return array<int, object> */
+    public function findAll(): array {
+        return [
+            (object) ['id' => 1, 'status' => $this->statusById[1]],
+        ];
+    }
+
+    /** @return object|null */
+    public function findById(int $id) {
+        return isset($this->statusById[$id]) ? (object) ['id' => $id, 'status' => $this->statusById[$id]] : null;
+    }
+
+    /** @return array<int, object> */
+    public function findByStatus(string $status): array {
+        return array_values(array_filter($this->findAll(), static function ($event) use ($status): bool {
+            return $event->status === $status;
+        }));
+    }
+
+    public function updateStatus(int $id, string $status): bool {
+        if (!isset($this->statusById[$id])) {
+            return false;
+        }
+
+        $this->statusById[$id] = $status;
+
+        return true;
     }
 }
 

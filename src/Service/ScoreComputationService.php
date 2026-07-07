@@ -22,7 +22,21 @@ class ScoreComputationService {
         $method = $this->requireMethod($rule->scoring_mode ?? '');
         $config = $this->decodeConfig($rule->scoring_config ?? null);
 
-        return $method->normalizeToPoints($rawValue, $config);
+        $normalized = $method->normalizeToPoints($rawValue, $config);
+
+        if (function_exists('apply_filters')) {
+            $normalized = apply_filters(
+                'bso_survival_score_normalized_points',
+                $normalized,
+                $rawValue,
+                $partId,
+                $rule,
+                $method,
+                $config
+            );
+        }
+
+        return (float) $normalized;
     }
 
     /**
@@ -39,7 +53,21 @@ class ScoreComputationService {
             $normalized[(int) $teamId] = $method->normalizeToPoints($rawValue, $config);
         }
 
-        return $method->generatePositionProposal($normalized);
+        $positions = $method->generatePositionProposal($normalized);
+
+        if (function_exists('apply_filters')) {
+            $positions = apply_filters(
+                'bso_survival_position_proposal',
+                $positions,
+                $partId,
+                $teamRawValues,
+                $rule,
+                $method,
+                $config
+            );
+        }
+
+        return is_array($positions) ? $positions : [];
     }
 
     /**

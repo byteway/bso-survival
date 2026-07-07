@@ -17,4 +17,6 @@ interface EventRepositoryInterface {
      * @return array<int, object>
      */
     public function findByStatus(string $status): array;
+
+    public function updateStatus(int $id, string $status): bool;
 }
