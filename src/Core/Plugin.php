@@ -2,8 +2,13 @@
 
 namespace BSO\Survival\Core;
 
+use BSO\Survival\Admin\PartRuleAdminPage;
 use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
+use BSO\Survival\Database\Repository\EventRepository;
+use BSO\Survival\Database\Repository\PartRuleRepository;
 use BSO\Survival\Frontend\ShortcodeController;
+use BSO\Survival\Service\EventService;
+use BSO\Survival\Service\PartRuleConfiguratorService;
 use BSO\Survival\Service\ScoringMethodRegistry;
 
 class Plugin {
@@ -14,6 +19,8 @@ class Plugin {
         add_action('plugins_loaded', [$this, 'boot_scoring_methods'], 20);
         add_action('init', [$this, 'register_shortcodes']);
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
+        add_action('admin_menu', [$this, 'register_admin_pages']);
+        add_action('admin_post_bso_survival_save_part_rule', [$this, 'handle_part_rule_save']);
         add_action('admin_notices', [$this, 'render_dashboard_admin_notice']);
         add_action('bso_survival_dashboard_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
         add_action('bso_survival_parts_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
@@ -38,6 +45,14 @@ class Plugin {
 
     public function boot_scoring_methods(): void {
         ScoringMethodRegistry::initDefaults();
+    }
+
+    public function register_admin_pages(): void {
+        $this->buildPartRuleAdminPage()->registerMenu();
+    }
+
+    public function handle_part_rule_save(): void {
+        $this->buildPartRuleAdminPage()->handleSave();
     }
 
     public function register_assets(): void {
@@ -93,5 +108,13 @@ class Plugin {
 
         delete_transient(self::DASHBOARD_NOTICE_TRANSIENT);
         echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html($message) . '</p></div>';
+    }
+
+    private function buildPartRuleAdminPage(): PartRuleAdminPage {
+        $eventService = new EventService(new EventRepository());
+        $rules = new PartRuleRepository();
+        $configurator = new PartRuleConfiguratorService($rules);
+
+        return new PartRuleAdminPage($eventService, $configurator, $rules);
     }
 }

@@ -27,6 +27,9 @@ De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet lat
 - Scoring contracts: [src/Contracts/ScoringMethodInterface.php](src/Contracts/ScoringMethodInterface.php)
 - Scoring registry: [src/Service/ScoringMethodRegistry.php](src/Service/ScoringMethodRegistry.php)
 - Scoring methods: [src/Service/ScoringMethods](src/Service/ScoringMethods)
+- PartRule configuratie-service: [src/Service/PartRuleConfiguratorService.php](src/Service/PartRuleConfiguratorService.php)
+- Scoreberekening op PartRule: [src/Service/ScoreComputationService.php](src/Service/ScoreComputationService.php)
+- Admin configuratiepagina: [src/Admin/PartRuleAdminPage.php](src/Admin/PartRuleAdminPage.php)
 - Frontend controllers: [src/Frontend](src/Frontend)
 - Frontend templates: [templates](templates)
 - Golden dataset: [tests/Support/GoldenDataset.php](tests/Support/GoldenDataset.php)
@@ -69,5 +72,7 @@ Voorbeeld:
 - ./vendor/bin/phpunit tests/Service/EventSummaryControllerTest.php
 - ./vendor/bin/phpunit tests/Service/ScoringMethodRegistryTest.php
 - ./vendor/bin/phpunit tests/Service/ScoringMethodsTest.php
+- ./vendor/bin/phpunit tests/Service/PartRuleConfiguratorServiceTest.php
+- ./vendor/bin/phpunit tests/Service/PartRuleScoringFlowTest.php
 
 Huidige teststatus: 72/72 groen.

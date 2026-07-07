@@ -14,9 +14,9 @@ Afgerond in de huidige codebase:
 - Fase 2 stap 2.4 geïmplementeerd: bootstrap + action hook voor custom scoremethodes
 - Fase 2 stap 2.5 geïmplementeerd: PartRule datamodel bevat scoring_mode, scoring_config, unit, tiebreaker_mode
 - Fase 2 stap 2.6 geïmplementeerd: FO sectie berekeningen geactualiseerd naar registry-driven scoreflow
+- Fase 2 open punten uitgevoerd: minimale admin-configuratie voor PartRules + scoring_config-opslag + e2e scoringsflow tests
 
 Let op: deze roadmap blijft een gap-document. Niet alle voorgestelde fases zijn al geïmplementeerd.
-Aanvullende noot: admin dropdown-koppeling op registry volgt zodra de v2-adminmodule is toegevoegd aan `src/Admin`.
 
 ## Overzicht
 
