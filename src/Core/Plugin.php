@@ -98,6 +98,7 @@ class Plugin {
         add_action('admin_post_bso_survival_event_create', [$this, 'handle_event_create']);
         add_action('admin_post_bso_survival_event_update', [$this, 'handle_event_update']);
         add_action('admin_post_bso_survival_event_link_parts', [$this, 'handle_event_link_parts']);
+        add_action('admin_post_bso_survival_event_part_rule_save', [$this, 'handle_event_part_rule_save']);
         add_action('admin_post_bso_survival_event_delete', [$this, 'handle_event_delete']);
         add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('init', [$this, 'schedule_email_outbox_processing']);
@@ -211,6 +212,10 @@ class Plugin {
 
     public function handle_event_delete(): void {
         $this->buildEventAdminPage()->handleDelete();
+    }
+
+    public function handle_event_part_rule_save(): void {
+        $this->buildEventAdminPage()->handlePartRuleSave();
     }
 
     public function register_assets(): void {
@@ -391,8 +396,10 @@ class Plugin {
             new PartAdminRepository(),
             new EventPublicationRepository()
         );
+        $partRules = new PartRuleRepository();
+        $partRuleConfigurator = new PartRuleConfiguratorService($partRules);
 
-        return new EventAdminPage($eventService, $adminService);
+        return new EventAdminPage($eventService, $adminService, $partRuleConfigurator, $partRules);
     }
 
     private function buildRegistrationAdminPage(): RegistrationAdminPage {

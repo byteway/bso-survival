@@ -143,10 +143,6 @@ class PartRuleAdminPage {
         if (isset($_GET['read_only']) && (int) $_GET['read_only'] === 1) {
             echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html__('Dit event is gesloten/gepubliceerd/verwijderd en staat in read-only modus. Regels kunnen niet worden aangepast.', 'bso-survival') . '</p></div>';
         }
-        if ($isReadOnly) {
-            echo '<div class="notice notice-warning"><p>' . esc_html__('Dit event is gesloten/gepubliceerd/verwijderd. Onderdelen en regels zijn alleen-lezen.', 'bso-survival') . '</p></div>';
-            $this->renderPublicationSummary($publication);
-        }
 
         echo '<form method="get" action="' . esc_url(admin_url('admin.php')) . '" class="bso-part-rule-event-filter">';
         echo '<input type="hidden" name="page" value="bso-survival-rules" />';
@@ -159,6 +155,11 @@ class PartRuleAdminPage {
         echo '</select> ';
         echo '<button class="button button-secondary">' . esc_html__('Laden', 'bso-survival') . '</button>';
         echo '</form>';
+
+        if ($isReadOnly) {
+            echo '<div class="notice notice-warning"><p>' . esc_html__('Dit event is gesloten/gepubliceerd/verwijderd. Onderdelen en regels zijn alleen-lezen.', 'bso-survival') . '</p></div>';
+            $this->renderPublicationSummary($publication);
+        }
 
         echo '<hr />';
 
