@@ -1205,19 +1205,19 @@ Volgorde (verplicht):
 3. Start pas daarna implementatie van 6.1.B en 6.1.C.
 
 Gate A - Operationele triggerlaag gereed (uit vorige fase):
-- [ ] Er is een echte admin-UI of CLI-actie boven de bestaande closeout/publication REST-routes.
-- [ ] Beheerder kan event afsluiten/publiceren zonder handmatige losse API-calls.
-- [ ] Positieve en negatieve paden zijn functioneel getest.
+- [x] Er is een echte admin-UI of CLI-actie boven de bestaande closeout/publication REST-routes.
+- [x] Beheerder kan event afsluiten/publiceren zonder handmatige losse API-calls.
+- [x] Positieve en negatieve paden zijn functioneel getest.
 
 Gate B - Publicatiepayload geconcretiseerd en stabiel:
-- [ ] Publicatie response bevat minimaal top-3 en volledige eindstandinformatie.
-- [ ] Veldnamen en datastructuur zijn gedocumenteerd als contract.
-- [ ] Contractwijzigingen zijn expliciet gelogd (changelog/roadmap).
+- [x] Publicatie response bevat minimaal top-3 en volledige eindstandinformatie.
+- [x] Veldnamen en datastructuur zijn gedocumenteerd als contract.
+- [x] Contractwijzigingen zijn expliciet gelogd (changelog/roadmap).
 
 Gate C - Kwaliteitsdrempel vóór communicatieflow:
-- [ ] PHPUnit suite groen op actuele branch.
-- [ ] Geen open blockers op eventstatus-overgangen (concept -> actief -> afgesloten -> gepubliceerd).
-- [ ] Audit logging op closeout/publicatie volledig actief.
+- [x] PHPUnit suite groen op actuele branch.
+- [x] Geen open blockers op eventstatus-overgangen (concept -> actief -> afgesloten -> gepubliceerd).
+- [x] Audit logging op closeout/publicatie volledig actief.
 
 Go/No-Go beslissing:
 - GO: alle Gate A, B en C checklist-items zijn afgerond.

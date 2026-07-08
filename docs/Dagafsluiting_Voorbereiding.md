@@ -11,6 +11,8 @@ Een event gecontroleerd afronden en publiceren via een reproduceerbare flow met:
 - certificaatregistratie
 - audit logging
 - frontend read-only/publicatiegedrag
+- persisted publicatiebron voor top-3/eindstand
+- template/outbox notificatieketen met retries
 
 ## Scope van de huidige implementatie
 
@@ -18,25 +20,29 @@ In scope (af):
 - closeout-orchestratie via service-laag
 - REST-trigger voor closeout
 - REST-trigger voor publicatie
+- REST-read endpoint voor persisted publicatieresultaat
 - admin lifecycle-UI voor closeout/publicatie
 - CLI lifecycle-actie voor closeout/publicatie
 - audit logging voor closeout en publicatie
 - geconcretiseerde publicatiepayload (top-3 + eindstand)
 - publicatienotificatieflow op basis van recipients
+- email templatebeheer + outbox + retry-processing
 - frontend weergave voor read-only en gepubliceerd
 - geautomatiseerde tests op service- en REST-niveau
 
 Nog niet in scope:
 - definitieve podium- en eindstandberekening
-- uitbouw naar template-gestuurde communicatie (admin templatebeheer, outbox/retry)
+- operationele rapportage op notificatiedelivery en foutpercentages
 
 ## Kerncomponenten
 
 - Orchestratie: `src/Service/EventCloseoutService.php`
+- Persisted publicatiebron: `src/Service/EventPublicationService.php`
 - Statusmutaties: `src/Service/EventService.php`
 - Certificaatregistratie: `src/Service/CertificateService.php`
 - Audit logging: `src/Service/AuditLogService.php`
 - REST-trigger: `src/Api/EventCloseoutRestController.php`
+- Notificatieketen: `src/Service/PublicationNotificationService.php`, `src/Service/EmailTemplateService.php`, `src/Service/EmailOutboxService.php`, `src/Service/OutboxProcessorService.php`
 - Plugin wiring: `src/Core/Plugin.php`
 
 ```mermaid
@@ -144,7 +150,19 @@ Body:
 
 Effect:
 - eventstatus naar `gepubliceerd`
+- publicatiepayload genormaliseerd (`headline`, `published_at`, `top_3`, `final_standings`, `recipients`)
+- persisted publicatieresultaat opgeslagen als bron van waarheid
+- notificatieketen uitgevoerd (template -> outbox -> processor)
 - auditlog met action `publication_completed`
+
+### 3. Persisted publicatieresultaat ophalen
+
+Endpoint:
+- `GET /wp-json/bso-survival/v1/event-closeout/{event_id}/publication`
+
+Effect:
+- levert actuele persisted publicatie (`headline`, `published_at`, `top_3`, `final_standings`) voor admincontrole
+- gebruikt door lifecycle admin voor handmatige refresh en auto-refresh na publish
 
 ```mermaid
 sequenceDiagram

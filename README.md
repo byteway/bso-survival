@@ -16,6 +16,8 @@ De codebase staat nu in een vroeg maar werkend v2-fundament:
 - scoremethode-architectuur voor Fase 2 is opgezet (interface, registry, defaults)
 - dashboard widget-architectuur voor Fase 3 is gestart (interface, registry, sectioning, default widgets)
 - dagafsluitingsflow is operationeel (closeout/publicatie via REST, admin en CLI)
+- persisted publicatiebron is beschikbaar voor top-3/eindstand (incl. admin refresh)
+- template/outbox notificatieketen met retries is operationeel
 
 De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en kan verder worden uitgebreid met geavanceerde ranking- en communicatielagen.
 
@@ -89,7 +91,6 @@ Een compacte index van de belangrijkste actions en filters staat ook in [docs/ho
 ## Wat nog niet is uitgewerkt
 
 - automatische eindstandberekening direct vanuit rankingservice (zonder handmatige standings-input)
-- template-gestuurde communicatieflow (admin templatebeheer, outbox/retry)
 - operationele rapportage op notificatiedelivery en foutpercentages
 
 ## REST API (dashboard layout)
@@ -112,8 +113,9 @@ Adminpagina gebruikt dezelfde endpoint voor realtime opslaan zonder page reload 
 
 - POST `/wp-json/bso-survival/v1/event-closeout/{event_id}`
 - POST `/wp-json/bso-survival/v1/event-closeout/{event_id}/publish`
+- GET `/wp-json/bso-survival/v1/event-closeout/{event_id}/publication`
 
-De closeout-route zet een event op `afgesloten`, registreert certificaatrecords en schrijft auditlog. De publish-route zet het event daarna op `gepubliceerd`, normaliseert publicatiepayload naar `top_3` en `final_standings`, en kan notificaties versturen op basis van recipients.
+De closeout-route zet een event op `afgesloten`, registreert certificaatrecords en schrijft auditlog. De publish-route zet het event daarna op `gepubliceerd`, normaliseert publicatiepayload naar `top_3` en `final_standings`, slaat het resultaat persisted op en verwerkt notificaties via template/outbox. De publication-route levert het persisted resultaat voor operationele controle in admin.
 
 ## Admin Quickstart (dagafsluiting)
 
@@ -156,6 +158,24 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 - Verzendsamenvatting (`sent_count`, `failed_count`, `sent_to`, `failed_to`) opgenomen in result payload.
 - Hooks voor notificatiefase toegevoegd voor verdere uitbouw (templates/outbox/retry).
 
+### 0.5.4 - Robuuste template/outbox keten
+
+- Email templatebeheer toegevoegd in admin.
+- Outbox/retry processor gekoppeld met retry-schema en foutafhandeling.
+- End-to-end notificatiepipeline-tests toegevoegd.
+
+### 0.5.5 - Persisted publicatiebron + widgetkoppeling
+
+- Persisted `event_publications` bron toegevoegd voor publicatieresultaten.
+- Team ranking widget leest nu primair uit persisted `final_standings`.
+- Dashboard-overview uitgebreid met publicatiestatus/count-velden.
+
+### 0.5.6 - Lifecycle admin ververstroom
+
+- Lifecycle admin toont persisted eindstand inclusief top-3 en raw payload.
+- Handmatige refresh en auto-refresh na publish toegevoegd.
+- UX verbeterd met busy-labels, spinner, en specifieke statusmeldingen.
+
 ## Ontwikkelcommando's
 
 - composer install
@@ -167,4 +187,4 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 - ./vendor/bin/phpunit tests/Service/PartRuleConfiguratorServiceTest.php
 - ./vendor/bin/phpunit tests/Service/PartRuleScoringFlowTest.php
 
-Huidige teststatus: 112/112 groen.
+Huidige teststatus: 118/118 groen.
