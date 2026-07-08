@@ -87,6 +87,8 @@ class EventAdminService {
             throw new InvalidArgumentException('Een of meer gekozen parts bestaan niet.');
         }
 
+        $this->guardUniquePartNamesForEvent($selectedParts);
+
         foreach ($selectedParts as $part) {
             $sourceEventId = isset($part->event_id) ? (int) $part->event_id : 0;
             if ($sourceEventId <= 0 || $sourceEventId === $eventId) {
@@ -131,6 +133,33 @@ class EventAdminService {
             'linked_ids' => $toLink,
             'unlinked_ids' => $toUnlink,
         ];
+    }
+
+    /**
+     * @param array<int, object> $parts
+     */
+    private function guardUniquePartNamesForEvent(array $parts): void {
+        $seen = [];
+        $duplicates = [];
+
+        foreach ($parts as $part) {
+            $name = trim((string) ($part->name ?? ''));
+            if ($name === '') {
+                continue;
+            }
+
+            $key = function_exists('mb_strtolower') ? mb_strtolower($name) : strtolower($name);
+            if (isset($seen[$key])) {
+                $duplicates[$key] = $name;
+                continue;
+            }
+
+            $seen[$key] = true;
+        }
+
+        if ($duplicates !== []) {
+            throw new RuntimeException('Een event mag geen dubbele partnamen bevatten. Conflicterende partnaam/namen: ' . implode(', ', array_values($duplicates)) . '.');
+        }
     }
 
     /**

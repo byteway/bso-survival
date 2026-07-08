@@ -78,6 +78,28 @@ class EventAdminServiceTest extends TestCase {
     }
 
     /** @test */
+    public function it_rejects_linking_duplicate_part_names_to_same_event(): void {
+        $events = new InMemoryEventReadRepository();
+        $events->seed((object) [
+            'id' => 14,
+            'name' => 'Event 14',
+            'status' => 'concept',
+        ]);
+
+        $eventAdmin = new InMemoryEventAdminRepository($events);
+        $parts = new InMemoryPartAdminRepository();
+        $parts->seed((object) ['id' => 401, 'name' => 'Kanovaren', 'event_id' => 14]);
+        $parts->seed((object) ['id' => 402, 'name' => 'Kanovaren', 'event_id' => null]);
+
+        $publications = new InMemoryEventPublicationRepository();
+
+        $service = new EventAdminService($events, $eventAdmin, $parts, $publications);
+
+        $this->expectException(\RuntimeException::class);
+        $service->linkPartsToEvent(14, [401, 402]);
+    }
+
+    /** @test */
     public function it_marks_closed_event_deleted_and_keeps_summary_while_detaching_parts(): void {
         $events = new InMemoryEventReadRepository();
         $events->seed((object) [

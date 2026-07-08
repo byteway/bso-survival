@@ -22,6 +22,7 @@ Functionaliteit:
 - Verwijderen van een event verwijdert geen part-definities.
 - Parts worden bij verwijderen losgekoppeld (`event_id` naar `NULL`) en blijven herbruikbaar.
 - Voor gesloten/gepubliceerde events is een samenvatting/publicatie vereist voordat verwijderen vanuit admin is toegestaan.
+- Binnen één event mogen gekoppelde parts geen dubbele naam hebben.
 
 ## Verwacht gedrag bij verwijderen
 
