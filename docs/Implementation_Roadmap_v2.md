@@ -1027,19 +1027,20 @@ Uitbreiding scope:
 - optionele geldigheid (`visible_from`, `visible_until`)
 - audit logging op create/update/delete
 
-Datamodel (nieuw):
-- tabel: `bso_dashboard_messages`
-- velden:
+Datamodel (besloten in F6-01):
+- canonical tabel: `bso_survival_messages` (zie `docs/adr/ADR-0001-message-storage-model.md`)
+- huidige velden:
     - `id` (PK)
-    - `event_id` (nullable; null = globale melding)
-    - `title`
-    - `body`
-    - `severity` (`info|warning|success|urgent`)
-    - `is_active` (bool)
-    - `priority` (int, hoger = eerder tonen)
+    - `event_id`
+    - `type`
+    - `text`
+    - `visibility`
+    - `status`
+    - `meta_data` (JSON-string)
+    - `created_at`, `updated_at`
+- geplande additieve uitbreiding (zonder tabelmigratie):
     - `visible_from` (datetime nullable)
     - `visible_until` (datetime nullable)
-    - `created_by`, `updated_by`, `created_at`, `updated_at`
 
 REST-contract (admin):
 - `GET /wp-json/bso-survival/v1/dashboard/messages`
