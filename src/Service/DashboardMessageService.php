@@ -21,23 +21,23 @@ class DashboardMessageService {
     /**
      * @return array<int, object>
      */
-    public function listForEvent(int $eventId, int $limit = 20): array {
+    public function listForEvent(int $eventId, int $limit = 20, string $scope = 'all'): array {
         if ($eventId <= 0) {
             throw new InvalidArgumentException('event_id must be a positive integer.');
         }
 
-        return $this->messages->findByEventId($eventId, $limit);
+        return $this->messages->findByScope($eventId, $scope, false, $limit);
     }
 
     /**
      * @return array<int, object>
      */
-    public function listActiveForEvent(int $eventId, int $limit = 5): array {
+    public function listActiveForEvent(int $eventId, int $limit = 5, string $scope = 'all'): array {
         if ($eventId <= 0) {
             throw new InvalidArgumentException('event_id must be a positive integer.');
         }
 
-        return $this->messages->findActiveByEventId($eventId, $limit);
+        return $this->messages->findByScope($eventId, $scope, true, $limit);
     }
 
     /**
@@ -49,6 +49,7 @@ class DashboardMessageService {
         $type = trim((string) ($payload['type'] ?? 'info'));
         $text = trim((string) ($payload['text'] ?? ''));
         $visibility = trim((string) ($payload['visibility'] ?? 'intern'));
+        $scope = trim((string) ($payload['scope'] ?? 'event'));
         $status = trim((string) ($payload['status'] ?? 'actief'));
         $changedBy = trim((string) ($payload['changed_by'] ?? 'admin'));
 
@@ -70,6 +71,14 @@ class DashboardMessageService {
 
         if ($visibility === '') {
             $visibility = 'intern';
+        }
+
+        if (!in_array($scope, ['event', 'global'], true)) {
+            throw new InvalidArgumentException('scope moet event of global zijn.');
+        }
+
+        if ($scope === 'global') {
+            $visibility = 'global';
         }
 
         $now = gmdate('Y-m-d H:i:s');
@@ -128,7 +137,12 @@ class DashboardMessageService {
             throw new InvalidArgumentException('message hoort niet bij dit event_id.');
         }
 
-        $updated = $this->messages->updateStatus($messageId, $status);
+        if ((string) ($existing->visibility ?? '') === 'global') {
+            $updated = $this->messages->updateStatusForEvent($messageId, 0, $status);
+        } else {
+            $updated = $this->messages->updateStatusForEvent($messageId, $eventId, $status);
+        }
+
         if ($updated === null) {
             throw new RuntimeException('Meldingstatus kon niet worden bijgewerkt.');
         }

@@ -1010,6 +1010,9 @@ Statusupdate 8 juli 2026:
 - DashboardMessageService en repository toegevoegd met create + statuswissel
 - MessageWidget leest nu actieve event-meldingen met fallback op statische tekst
 - datamodel gebruikt voorlopig bestaande tabel `bso_survival_messages` (verdere velduitbreiding blijft open)
+- prioriteitssortering geactiveerd via severity/type mapping (`urgent > warning > info > success`)
+- event + global filtering actief via scope (`event`, `global`, `all`) in admin, service, repository en REST
+- PHPUnit-dekking toegevoegd voor message service- en controllerpaden
 
 Doel:
 - Beheerders kunnen zelf meldingen plaatsen, plannen en intrekken voor het centrale dashboard.
@@ -1058,12 +1061,12 @@ Integratie met widgets:
 - Widget-output krijgt severity CSS classes voor visuele nadruk.
 
 Validatiechecklist 6.1.A:
-- [ ] Admin kan melding aanmaken met titel, body en severity
+- [x] Admin kan melding aanmaken met type/tekst/severity
 - [x] Admin kan melding aan/uit zetten zonder verwijderen
-- [ ] Event-specifieke en globale meldingen worden correct gefilterd
-- [ ] MessageWidget toont prioriteit-volgorde correct
+- [x] Event-specifieke en globale meldingen worden correct gefilterd
+- [x] MessageWidget toont prioriteit-volgorde correct
 - [x] Read-only eventstatus blokkeert score-invoer, maar niet message-beheer in admin
-- [ ] PHPUnit dekt repository/service/controller paden voor messages
+- [x] PHPUnit dekt repository/service/controller paden voor messages
 
 #### 6.1.B Vrijwilliger-aanmeldscherm + teaminschrijving
 

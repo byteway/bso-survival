@@ -53,6 +53,7 @@ class DashboardMessageAdminPage {
                 'text' => isset($_POST['text']) ? sanitize_textarea_field(wp_unslash((string) $_POST['text'])) : '',
                 'visibility' => isset($_POST['visibility']) ? sanitize_key(wp_unslash((string) $_POST['visibility'])) : 'intern',
                 'status' => isset($_POST['status']) ? sanitize_key(wp_unslash((string) $_POST['status'])) : 'actief',
+                'scope' => isset($_POST['scope']) ? sanitize_key(wp_unslash((string) $_POST['scope'])) : 'event',
                 'changed_by' => isset($_POST['changed_by']) ? sanitize_text_field(wp_unslash((string) $_POST['changed_by'])) : 'admin',
             ]);
 
@@ -92,11 +93,15 @@ class DashboardMessageAdminPage {
 
         $events = $this->events->listEvents();
         $eventId = isset($_GET['event_id']) ? (int) $_GET['event_id'] : 0;
+        $scope = isset($_GET['scope']) ? sanitize_key(wp_unslash((string) $_GET['scope'])) : 'all';
+        if (!in_array($scope, ['all', 'event', 'global'], true)) {
+            $scope = 'all';
+        }
         if ($eventId <= 0 && !empty($events)) {
             $eventId = (int) $events[0]->id;
         }
 
-        $messages = $eventId > 0 ? $this->messages->listForEvent($eventId, 50) : [];
+        $messages = $eventId > 0 ? $this->messages->listForEvent($eventId, 50, $scope) : [];
 
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Dashboard Meldingen', 'bso-survival') . '</h1>';
@@ -122,6 +127,12 @@ class DashboardMessageAdminPage {
             $selected = selected($eventId, (int) $event->id, false);
             echo '<option value="' . (int) $event->id . '" ' . $selected . '>' . esc_html((string) $event->name) . '</option>';
         }
+        echo '</select> ';
+        echo '<label for="bso-msg-scope-filter"><strong>' . esc_html__('Scope', 'bso-survival') . ':</strong></label> ';
+        echo '<select id="bso-msg-scope-filter" name="scope">';
+        echo '<option value="all" ' . selected($scope, 'all', false) . '>' . esc_html__('event + global', 'bso-survival') . '</option>';
+        echo '<option value="event" ' . selected($scope, 'event', false) . '>' . esc_html__('alleen event', 'bso-survival') . '</option>';
+        echo '<option value="global" ' . selected($scope, 'global', false) . '>' . esc_html__('alleen global', 'bso-survival') . '</option>';
         echo '</select> ';
         echo '<button class="button button-secondary">' . esc_html__('Laden', 'bso-survival') . '</button>';
         echo '</form>';
@@ -157,6 +168,12 @@ class DashboardMessageAdminPage {
         echo '<option value="inactief">inactief</option>';
         echo '</select></p>';
 
+        echo '<p><label for="bso-msg-scope"><strong>' . esc_html__('Scope', 'bso-survival') . '</strong></label><br />';
+        echo '<select id="bso-msg-scope" name="scope">';
+        echo '<option value="event">event-specifiek</option>';
+        echo '<option value="global">global</option>';
+        echo '</select></p>';
+
         echo '<p><label for="bso-msg-by"><strong>' . esc_html__('Gewijzigd door', 'bso-survival') . '</strong></label><br />';
         echo '<input id="bso-msg-by" type="text" name="changed_by" value="admin" /></p>';
 
@@ -176,6 +193,8 @@ class DashboardMessageAdminPage {
         echo '<thead><tr>';
         echo '<th>' . esc_html__('ID', 'bso-survival') . '</th>';
         echo '<th>' . esc_html__('Type', 'bso-survival') . '</th>';
+        echo '<th>' . esc_html__('Prioriteit', 'bso-survival') . '</th>';
+        echo '<th>' . esc_html__('Scope', 'bso-survival') . '</th>';
         echo '<th>' . esc_html__('Tekst', 'bso-survival') . '</th>';
         echo '<th>' . esc_html__('Status', 'bso-survival') . '</th>';
         echo '<th>' . esc_html__('Actie', 'bso-survival') . '</th>';
@@ -184,10 +203,15 @@ class DashboardMessageAdminPage {
         foreach ($messages as $row) {
             $currentStatus = (string) ($row->status ?? 'inactief');
             $nextStatus = $currentStatus === 'actief' ? 'inactief' : 'actief';
+            $type = (string) ($row->type ?? 'info');
+            $priority = $this->priorityForType($type);
+            $rowScope = (string) ($row->visibility ?? '') === 'global' ? 'global' : 'event';
 
             echo '<tr>';
             echo '<td>' . (int) ($row->id ?? 0) . '</td>';
-            echo '<td>' . esc_html((string) ($row->type ?? '')) . '</td>';
+            echo '<td>' . esc_html($type) . '</td>';
+            echo '<td>' . (int) $priority . '</td>';
+            echo '<td>' . esc_html($rowScope) . '</td>';
             echo '<td>' . esc_html((string) ($row->text ?? '')) . '</td>';
             echo '<td>' . esc_html($currentStatus) . '</td>';
             echo '<td>';
@@ -228,5 +252,20 @@ class DashboardMessageAdminPage {
         $redirect = add_query_arg($args, admin_url('admin.php'));
         wp_safe_redirect($redirect);
         exit;
+    }
+
+    private function priorityForType(string $type): int {
+        switch ($type) {
+            case 'urgent':
+                return 400;
+            case 'warning':
+                return 300;
+            case 'info':
+                return 200;
+            case 'success':
+                return 100;
+            default:
+                return 50;
+        }
     }
 }

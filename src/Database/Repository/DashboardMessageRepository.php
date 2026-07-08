@@ -18,26 +18,37 @@ class DashboardMessageRepository implements DashboardMessageRepositoryInterface 
     }
 
     public function findByEventId(int $eventId, int $limit = 20): array {
+        return $this->findByScope($eventId, 'all', false, $limit);
+    }
+
+    public function findByScope(int $eventId, string $scope = 'all', bool $activeOnly = false, int $limit = 20): array {
         $table = $this->tableName();
-        $sql = $this->wpdb->prepare(
-            "SELECT * FROM {$table} WHERE event_id = %d ORDER BY updated_at DESC, id DESC LIMIT %d",
-            $eventId,
-            $limit
-        );
+
+        $whereScope = $this->buildScopeWhereClause($scope);
+        $activeClause = $activeOnly ? " AND status = 'actief'" : '';
+        $orderClause = " ORDER BY
+            CASE type
+                WHEN 'urgent' THEN 400
+                WHEN 'warning' THEN 300
+                WHEN 'info' THEN 200
+                WHEN 'success' THEN 100
+                ELSE 50
+            END DESC,
+            updated_at DESC,
+            id DESC";
+
+        $template = "SELECT * FROM {$table} WHERE {$whereScope}{$activeClause}{$orderClause} LIMIT %d";
+        if ($scope === 'global') {
+            $sql = $this->wpdb->prepare($template, $limit);
+        } else {
+            $sql = $this->wpdb->prepare($template, $eventId, $limit);
+        }
 
         return $this->wpdb->get_results($sql) ?: [];
     }
 
     public function findActiveByEventId(int $eventId, int $limit = 5): array {
-        $table = $this->tableName();
-        $sql = $this->wpdb->prepare(
-            "SELECT * FROM {$table} WHERE event_id = %d AND status = %s ORDER BY updated_at DESC, id DESC LIMIT %d",
-            $eventId,
-            'actief',
-            $limit
-        );
-
-        return $this->wpdb->get_results($sql) ?: [];
+        return $this->findByScope($eventId, 'all', true, $limit);
     }
 
     public function findById(int $id) {
@@ -64,17 +75,39 @@ class DashboardMessageRepository implements DashboardMessageRepositoryInterface 
     }
 
     public function updateStatus(int $id, string $status) {
+        return $this->updateStatusForEvent($id, 0, $status);
+    }
+
+    public function updateStatusForEvent(int $id, int $eventId, string $status) {
         $table = $this->tableName();
+
+        $where = ['id' => $id];
+        if ($eventId > 0) {
+            $where['event_id'] = $eventId;
+        }
+
         $updated = $this->wpdb->update($table, [
             'status' => $status,
             'updated_at' => gmdate('Y-m-d H:i:s'),
-        ], ['id' => $id], ['%s', '%s'], ['%d']);
+        ], $where, ['%s', '%s'], array_fill(0, count($where), '%d'));
 
         if ($updated === false) {
             return null;
         }
 
         return $this->findById($id);
+    }
+
+    private function buildScopeWhereClause(string $scope): string {
+        switch ($scope) {
+            case 'event':
+                return 'event_id = %d';
+            case 'global':
+                return "visibility = 'global'";
+            case 'all':
+            default:
+                return "(event_id = %d OR visibility = 'global')";
+        }
     }
 
     private function tableName(): string {

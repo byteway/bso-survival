@@ -11,6 +11,11 @@ interface DashboardMessageRepositoryInterface {
     /**
      * @return array<int, object>
      */
+    public function findByScope(int $eventId, string $scope = 'all', bool $activeOnly = false, int $limit = 20): array;
+
+    /**
+     * @return array<int, object>
+     */
     public function findActiveByEventId(int $eventId, int $limit = 5): array;
 
     /**
@@ -28,4 +33,9 @@ interface DashboardMessageRepositoryInterface {
      * @return object|null
      */
     public function updateStatus(int $id, string $status);
+
+    /**
+     * @return object|null
+     */
+    public function updateStatusForEvent(int $id, int $eventId, string $status);
 }
