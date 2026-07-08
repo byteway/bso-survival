@@ -80,7 +80,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Epic: Fase 6 REST API Versioning Strategie
 - Type: Story
 - Priority: P0
-- Status: In Progress
+- Status: Done
 - Labels: fase-6, messages, datamodel, architecture
 - Components: Repository, Schema, Docs
 - Estimate: M
@@ -126,7 +126,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - [x] Beslissing vastleggen
 - [x] Schema/documentatie synchroniseren
 - [x] Migratiecheck uitvoeren
-- [ ] Review
+- [x] Review
 
 ---
 

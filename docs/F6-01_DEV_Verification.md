@@ -40,10 +40,15 @@
   - Uitkomst: `OK (6 tests, 21 assertions)`
 
 ### Pass 4 - Formele aftekening
-- Status: OPEN
+- Status: PASS
 - Te controleren:
   - ADR akkoord (technisch/functioneel)
   - Backlog F6-01 van In Progress naar Done
+- Resultaat:
+  - Formele aftekening F6-01: GO
+  - Akkoord op ADR-0001 message storage model
+  - DEV-validatie akkoord conform dit verificatielog
+  - F6-01 naar Done; F6-02 mag starten
 
 ## Notities
 - Frontend dashboard wordt getoond na plugin deactivate/update/activate (reeds bevestigd).
