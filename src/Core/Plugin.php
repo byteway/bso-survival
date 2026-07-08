@@ -5,13 +5,19 @@ namespace BSO\Survival\Core;
 use BSO\Survival\Admin\DashboardWidgetAdminPage;
 use BSO\Survival\Admin\PartRuleAdminPage;
 use BSO\Survival\Api\DashboardWidgetLayoutRestController;
+use BSO\Survival\Api\EventCloseoutRestController;
 use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
+use BSO\Survival\Database\Repository\AuditLogRepository;
+use BSO\Survival\Database\Repository\CertificateRepository;
 use BSO\Survival\Database\Repository\DashboardWidgetLayoutRepository;
 use BSO\Survival\Database\Repository\EventRepository;
 use BSO\Survival\Database\Repository\PartRuleRepository;
 use BSO\Survival\Frontend\ShortcodeController;
+use BSO\Survival\Service\AuditLogService;
+use BSO\Survival\Service\CertificateService;
 use BSO\Survival\Service\DashboardWidgetLayoutService;
 use BSO\Survival\Service\DashboardWidgetRegistry;
+use BSO\Survival\Service\EventCloseoutService;
 use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
 use BSO\Survival\Service\ScoringMethodRegistry;
@@ -130,6 +136,7 @@ class Plugin {
 
     public function register_rest_routes(): void {
         $this->buildDashboardWidgetLayoutRestController()->registerRoutes();
+        $this->buildEventCloseoutRestController()->registerRoutes();
     }
 
     private function register_cli_commands(): void {
@@ -189,5 +196,14 @@ class Plugin {
         $layoutService = new DashboardWidgetLayoutService(new DashboardWidgetLayoutRepository());
 
         return new DashboardWidgetLayoutRestController($layoutService);
+    }
+
+    private function buildEventCloseoutRestController(): EventCloseoutRestController {
+        $eventService = new EventService(new EventRepository());
+        $certificateService = new CertificateService(new CertificateRepository());
+        $auditLogService = new AuditLogService(new AuditLogRepository());
+        $closeoutService = new EventCloseoutService($eventService, $certificateService, $auditLogService);
+
+        return new EventCloseoutRestController($closeoutService);
     }
 }

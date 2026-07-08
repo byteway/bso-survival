@@ -14,6 +14,18 @@
         </p>
     </header>
 
+    <?php if (!empty($overview['status']['is_read_only'])) : ?>
+        <div class="bso-survival-status-notice bso-survival-status-notice--readonly">
+            <p><?php echo esc_html(__('Dit event is read-only afgesloten.', 'bso-survival')); ?></p>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($overview['status']['is_published'])) : ?>
+        <div class="bso-survival-status-notice bso-survival-status-notice--published">
+            <p><?php echo esc_html(__('De eindstand van dit event is gepubliceerd.', 'bso-survival')); ?></p>
+        </div>
+    <?php endif; ?>
+
     <div class="bso-survival-summary__stats">
         <p><?php echo esc_html(sprintf('Status: %s', (string) ($overview['status']['event_status'] ?? 'onbekend'))); ?></p>
         <p><?php echo esc_html(sprintf('Onderdelen: %d', (int) $overview['counts']['parts'])); ?></p>

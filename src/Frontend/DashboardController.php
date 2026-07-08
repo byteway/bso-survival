@@ -57,7 +57,9 @@ class DashboardController {
 
         $layout = $this->layoutService->getLayoutForEvent($eventId);
         $mainWidgetIds = $layout['main'] ?? DashboardWidgetRegistry::getSectionWidgetIds('main');
-        $operationsWidgetIds = $layout['operations'] ?? DashboardWidgetRegistry::getSectionWidgetIds('operations');
+        $operationsWidgetIds = !empty($overview['status']['is_read_only'])
+            ? []
+            : ($layout['operations'] ?? DashboardWidgetRegistry::getSectionWidgetIds('operations'));
 
         $mainFilters = ['event_id' => $eventId, 'widget_ids' => $mainWidgetIds];
         $operationsFilters = ['event_id' => $eventId, 'widget_ids' => $operationsWidgetIds];

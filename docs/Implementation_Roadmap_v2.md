@@ -31,6 +31,8 @@ Afgerond in de huidige codebase:
 - Fase 4 afgerond: event status service voegt before_event_status_change en event_status_changed hooks toe
 - Fase 4 afgerond: ranking refresh en certificate generation voegen ranking_updated en certificate_generated hooks toe
 - Fase 4 afgerond: audit logging service voegt before_audit_log_write, audit_log_written en audit_log_failed hooks toe
+- Volgende fase gestart: EventCloseoutService koppelt eventstatus, certificaatregistratie en audit logging in een eerste dagafsluitingsflow
+- Volgende fase uitgebreid: REST-trigger voor closeout/publicatie en frontend read-only/publicatieflow zijn toegevoegd
 
 Let op: deze roadmap blijft een gap-document. Niet alle voorgestelde fases zijn al geïmplementeerd.
 

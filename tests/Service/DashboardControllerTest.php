@@ -73,6 +73,21 @@ class DashboardControllerTest extends TestCase {
         $this->assertStringContainsString('Meldingen', $output);
         $this->assertStringNotContainsString('Tijdslot voortgang', $output);
     }
+
+    /**
+     * @test
+     */
+    public function it_hides_operational_widgets_for_read_only_events(): void {
+        $controller = new DashboardController(new ClosedDashboardOverviewService());
+
+        $output = $controller->render([
+            'title' => 'Gesloten dashboard',
+            'event_id' => 8,
+        ]);
+
+        $this->assertStringContainsString('Dit event is read-only afgesloten.', $output);
+        $this->assertStringNotContainsString('Meldingen', $output);
+    }
 }
 
 class FakeDashboardOverviewService extends DashboardOverviewService {
@@ -121,6 +136,28 @@ class ThrowingDashboardOverviewService extends DashboardOverviewService {
      */
     public function getOverviewForEvent(int $eventId): array {
         throw new InvalidArgumentException(sprintf('Event %d not found.', $eventId));
+    }
+}
+
+class ClosedDashboardOverviewService extends DashboardOverviewService {
+    public function __construct() {
+    }
+
+    public function getOverviewForEvent(int $eventId): array {
+        return [
+            'event' => (object) ['id' => $eventId, 'name' => 'Closed Event', 'status' => 'gepubliceerd'],
+            'parts' => [(object) ['name' => 'Kanovaren']],
+            'teams' => [(object) ['name' => 'Team001']],
+            'counts' => ['parts' => 1, 'teams' => 1],
+            'status' => [
+                'event_status' => 'gepubliceerd',
+                'has_parts' => true,
+                'has_teams' => true,
+                'is_ready_for_planning' => true,
+                'is_read_only' => true,
+                'is_published' => true,
+            ],
+        ];
     }
 }
 

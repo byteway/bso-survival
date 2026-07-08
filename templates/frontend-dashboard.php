@@ -15,6 +15,16 @@
             <?php echo esc_html(sprintf('Event #%d - %s', (int) $overview['event']->id, (string) $overview['event']->name)); ?>
         </p>
     </header>
+    <?php if (!empty($overview['status']['is_read_only'])) : ?>
+        <div class="bso-survival-status-notice bso-survival-status-notice--readonly">
+            <p><?php echo esc_html(__('Dit event is read-only afgesloten. Operationele widgets zijn verborgen.', 'bso-survival')); ?></p>
+        </div>
+    <?php endif; ?>
+    <?php if (!empty($overview['status']['is_published'])) : ?>
+        <div class="bso-survival-status-notice bso-survival-status-notice--published">
+            <p><?php echo esc_html(__('De eindstand van dit event is gepubliceerd.', 'bso-survival')); ?></p>
+        </div>
+    <?php endif; ?>
     <div class="bso-survival-dashboard__content">
         <?php if ($widgetsHtml !== '') : ?>
             <div class="bso-survival-dashboard__widgets">

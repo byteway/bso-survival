@@ -14,6 +14,7 @@ Laatste documentatie-update: 7 juli 2026.
 | Event status | `bso_survival_before_event_status_change`, `bso_survival_event_status_changed` | action | [src/Service/EventService.php](../src/Service/EventService.php) |
 | Ranking | `bso_survival_before_ranking_refresh`, `bso_survival_ranking_updated` | action | [src/Service/RankingService.php](../src/Service/RankingService.php) |
 | Certificates | `bso_survival_before_certificate_generated`, `bso_survival_certificate_generated` | action | [src/Service/CertificateService.php](../src/Service/CertificateService.php) |
+| Dagafsluiting | `bso_survival_before_event_closeout`, `bso_survival_event_closed_out`, `bso_survival_before_event_publication`, `bso_survival_event_published` | action | [src/Service/EventCloseoutService.php](../src/Service/EventCloseoutService.php) |
 | Audit logging | `bso_survival_before_audit_log_write`, `bso_survival_audit_log_written`, `bso_survival_audit_log_failed` | action | [src/Service/AuditLogService.php](../src/Service/AuditLogService.php) |
 | Admin save endpoints | `admin_post_bso_survival_save_part_rule`, `admin_post_bso_survival_save_dashboard_widgets` | action | [src/Core/Plugin.php](../src/Core/Plugin.php) |
 
@@ -136,6 +137,21 @@ Laatste documentatie-update: 7 juli 2026.
   - Fired after a certificate record is stored successfully.
   - Parameters: certificate_id, event_id, team_id, certificate, meta
 
+## Dagafsluiting Actions
+
+- `bso_survival_before_event_closeout`
+  - Fired before the closeout orchestrator starts status update, certificate generation and audit logging.
+  - Parameters: event_id, changed_by, certificate_definitions, event
+- `bso_survival_event_closed_out`
+  - Fired after the closeout orchestrator has completed.
+  - Parameters: event_id, result, changed_by
+- `bso_survival_before_event_publication`
+  - Fired before the publication flow updates the event to published status.
+  - Parameters: event_id, changed_by, publication_data, event
+- `bso_survival_event_published`
+  - Fired after the publication flow has completed.
+  - Parameters: event_id, result, changed_by
+
 ## Audit Logging Actions
 
 - `bso_survival_before_audit_log_write`
@@ -165,6 +181,16 @@ Laatste documentatie-update: 7 juli 2026.
   - Body: `{ "layout": { "main": ["team_ranking"], "operations": ["message_widget"] } }`
   - Toegang: gebruiker met `manage_options`.
   - Wordt door adminpagina gebruikt voor realtime opslaan zonder volledige page reload.
+- `POST /wp-json/bso-survival/v1/event-closeout/{event_id}`
+  - Start de closeout-flow voor een event.
+  - Body: `{ "changed_by": "wedstrijdleiding", "certificates": [{ "team_id": 5, "file_path": "/tmp/team-5.pdf" }] }`
+  - Effect: zet event op `afgesloten`, registreert certificaten en schrijft auditlog.
+  - Toegang: gebruiker met `manage_options` en geldige REST nonce.
+- `POST /wp-json/bso-survival/v1/event-closeout/{event_id}/publish`
+  - Start de publicatieflow voor een afgesloten event.
+  - Body: `{ "changed_by": "wedstrijdleiding", "publication": { "headline": "Uitslag gepubliceerd" } }`
+  - Effect: zet event op `gepubliceerd` en schrijft auditlog voor publicatie.
+  - Toegang: gebruiker met `manage_options` en geldige REST nonce.
 
 ## Voorbeelden
 

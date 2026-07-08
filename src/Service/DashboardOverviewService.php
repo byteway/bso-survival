@@ -37,6 +37,9 @@ class DashboardOverviewService {
         $teams = $this->teams->listTeamsForEvent($eventId);
         $partsCount = $this->parts->countPartsForEvent($eventId);
         $teamsCount = $this->teams->countTeamsForEvent($eventId);
+        $eventStatus = (string) ($event->status ?? '');
+        $isReadOnly = in_array($eventStatus, ['afgesloten', 'gepubliceerd'], true);
+        $isPublished = $eventStatus === 'gepubliceerd';
 
         return [
             'event' => $event,
@@ -47,10 +50,12 @@ class DashboardOverviewService {
                 'teams' => $teamsCount,
             ],
             'status' => [
-                'event_status' => $event->status ?? null,
+                'event_status' => $eventStatus,
                 'has_parts' => $partsCount > 0,
                 'has_teams' => $teamsCount > 0,
                 'is_ready_for_planning' => $partsCount > 0 && $teamsCount > 0,
+                'is_read_only' => $isReadOnly,
+                'is_published' => $isPublished,
             ],
         ];
     }

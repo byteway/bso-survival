@@ -1,71 +1,234 @@
-# Dagafsluiting Voorbereiding
+# Dagafsluiting - Complete MVP Flow
 
-> Statusnotitie 7 juli 2026: read-only overzichtsschermen zijn nu beschikbaar via frontend shortcodes, maar de definitieve dagafsluitflow blijft buiten scope van dit document.
+Status: 8 juli 2026
 
-Dit document bereidt de dagafsluiting voor, maar maakt die nog niet definitief.
-
-De survivaldag is in deze fase nog actief of nog niet afgerond. Daarom bevat dit document alleen de voorbereidingsstappen, afbakeningen en checklists die nodig zijn om later een valide dagafsluiting te bouwen zonder de huidige daglogica te blokkeren.
+Dit document beschrijft de volledige dagafsluitingsflow zoals die nu in de codebase is geïmplementeerd voor MVP, inclusief triggers, statusovergangen, read-only/publicatiegedrag en validatie.
 
 ## Doel
 
-De dagafsluiting later mogelijk maken op basis van bestaande repositories, services en de golden dataset, zonder nu al de finale eindstand- of certificaatlogica vast te leggen.
+Een event gecontroleerd afronden en publiceren via een reproduceerbare flow met:
+- expliciete statusovergangen
+- certificaatregistratie
+- audit logging
+- frontend read-only/publicatiegedrag
 
-## Scope
+## Scope van de huidige implementatie
 
-Wel in scope:
-- voorbereiding van sluitingsvoorwaarden
-- controle op volledigheid van scores
-- markering van openstaande tijdsloten
-- afbakening voor read-only overgang
-- voorbereiding voor eindstand en certificaatverwerking
+In scope (af):
+- closeout-orchestratie via service-laag
+- REST-trigger voor closeout
+- REST-trigger voor publicatie
+- audit logging voor closeout en publicatie
+- frontend weergave voor read-only en gepubliceerd
+- geautomatiseerde tests op service- en REST-niveau
 
-Niet in scope:
-- definitieve eindstandberekening
-- definitieve podiumplaatsen
-- certificaatgeneratie voor productie
-- read-only afdwinging van de dag
-- bedankbericht of publicatieflow
+Nog niet in scope:
+- definitieve podium- en eindstandberekening
+- notificatie/communicatie na publicatie (mail/bericht)
+- dedicated admin-UI voor closeout/publicatieknoppen
 
-## Voorbereidende stappen
+## Kerncomponenten
 
-### 1. Controleer openstaande resultaten
+- Orchestratie: `src/Service/EventCloseoutService.php`
+- Statusmutaties: `src/Service/EventService.php`
+- Certificaatregistratie: `src/Service/CertificateService.php`
+- Audit logging: `src/Service/AuditLogService.php`
+- REST-trigger: `src/Api/EventCloseoutRestController.php`
+- Plugin wiring: `src/Core/Plugin.php`
 
-- Bepaal welke onderdelen nog geen definitieve score hebben.
-- Controleer welke teams nog ontbreken in de tussenstand.
-- Markeer tijdsloten die nog in verwerking zijn.
+```mermaid
+graph TD
+	A[REST: EventCloseoutRestController] --> B[EventCloseoutService]
+	B --> C[EventService]
+	B --> D[CertificateService]
+	B --> E[AuditLogService]
+	C --> C1[(events)]
+	D --> D1[(certificates)]
+	E --> E1[(audit_logs)]
+	B --> F[DashboardOverviewService status flags]
+	F --> G[Frontend templates]
+```
 
-### 2. Controleer afsluitvoorwaarden
+## Statusovergangen
 
-- Alle verplichte scores moeten aanwezig zijn voordat sluiting kan worden gestart.
-- Jokergebruik moet geregistreerd zijn voordat finale berekening begint.
-- Eventstatus mag nog niet op read-only worden gezet zolang de dag niet voorbij is.
+1. Active event -> `afgesloten` (closeout)
+2. `afgesloten` -> `gepubliceerd` (publicatie)
 
-### 3. Bereid publicatie voor
+```mermaid
+flowchart LR
+	A[actief] -->|closeout| B[afgesloten]
+```
 
-- Verzamel gegevens voor eindstand, top 3 en certificaatinput.
-- Zorg dat de relevante data via repositories beschikbaar is.
-- Laat de uiteindelijke publicatie nog buiten scope tot de dag daadwerkelijk is afgerond.
+```mermaid
+flowchart LR
+	B[afgesloten] -->|publish| C[gepubliceerd]
+```
 
-### 4. Bereid logging voor
+```mermaid
+flowchart TD
+	B[afgesloten] --> D[Frontend: read-only aan]
+	B --> E[Dashboard: operations widgets verborgen]
+	C[gepubliceerd] --> D
+	C --> F[Frontend: publicatiemelding zichtbaar]
+```
 
-- Leg vast welke afsluitactie later gelogd moet worden.
-- Voorzie een audit-entry voor latere sluiting.
-- Houd de daadwerkelijke afsluitactie voorlopig uit de codeflow.
+Resultaat op frontend:
+- `afgesloten`: read-only melding zichtbaar, operationele dashboardwidgets verborgen
+- `gepubliceerd`: read-only melding plus publicatiemelding zichtbaar
 
-## Prerequisites voor een latere definitieve dagafsluiting
+## REST Triggers
 
-- repository-laag voor events, teams en onderdelen is beschikbaar
-- service-laag voor read-only dataverwerking is beschikbaar
-- golden dataset is aanwezig voor regressietesten
-- statusovergangen zijn expliciet en testbaar
-- scoredata en jokerdata kunnen later worden samengevoegd
+### 1. Closeout
 
-## Acceptatie van deze voorbereidende fase
+Endpoint:
+- `POST /wp-json/bso-survival/v1/event-closeout/{event_id}`
 
-- Er bestaat een duidelijke scheiding tussen voorbereiding en definitieve afsluiting.
-- De dag kan nog actief blijven terwijl afsluitvoorwaarden worden gecontroleerd.
-- De uiteindelijke sluiting wordt bewust pas in een volgende stap uitgewerkt.
+Body:
 
-## Volgende stap
+```json
+{
+	"changed_by": "wedstrijdleiding",
+	"certificates": [
+		{
+			"team_id": 5,
+			"file_path": "/tmp/team-5.pdf",
+			"meta": {
+				"position": 1
+			}
+		}
+	]
+}
+```
 
-Wanneer de dag daadwerkelijk voorbij is, kan dit document worden uitgebreid met de definitieve eindstand-, certificaat- en read-only flow.
+Effect:
+- eventstatus naar `afgesloten`
+- certificaatrecords aangemaakt
+- auditlog met action `closeout_completed`
+
+```mermaid
+sequenceDiagram
+	participant Client
+	participant REST as EventCloseoutRestController
+	participant Closeout as EventCloseoutService
+	participant Event as EventService
+	participant Cert as CertificateService
+	participant Audit as AuditLogService
+
+	Client->>REST: POST /event-closeout/{event_id}
+	REST->>Closeout: closeEvent(event_id, changed_by, certificates)
+	Closeout->>Cert: generate(...) per team
+	Closeout->>Event: updateStatus(afgesloten)
+	Closeout->>Audit: log(closeout_completed)
+	Closeout-->>REST: result
+	REST-->>Client: { updated: true, phase: closeout }
+```
+
+### 2. Publicatie
+
+Endpoint:
+- `POST /wp-json/bso-survival/v1/event-closeout/{event_id}/publish`
+
+Body:
+
+```json
+{
+	"changed_by": "wedstrijdleiding",
+	"publication": {
+		"headline": "Uitslag gepubliceerd"
+	}
+}
+```
+
+Effect:
+- eventstatus naar `gepubliceerd`
+- auditlog met action `publication_completed`
+
+```mermaid
+sequenceDiagram
+	participant Client
+	participant REST as EventCloseoutRestController
+	participant Closeout as EventCloseoutService
+	participant Event as EventService
+	participant Audit as AuditLogService
+
+	Client->>REST: POST /event-closeout/{event_id}/publish
+	REST->>Closeout: publishEvent(event_id, changed_by, publication)
+	Closeout->>Event: updateStatus(gepubliceerd)
+	Closeout->>Audit: log(publication_completed)
+	Closeout-->>REST: result
+	REST-->>Client: { updated: true, phase: publication }
+```
+
+### Autorisatie
+
+- capability: `manage_options`
+- geldige REST nonce (`X-WP-Nonce`)
+
+## Hook Contract
+
+Closeout:
+- `bso_survival_before_event_closeout`
+- `bso_survival_event_closed_out`
+
+Publicatie:
+- `bso_survival_before_event_publication`
+- `bso_survival_event_published`
+
+Audit:
+- `bso_survival_before_audit_log_write`
+- `bso_survival_audit_log_written`
+- `bso_survival_audit_log_failed`
+
+Volledige referentie: `docs/hooks-and-filters.md`
+
+## Frontend Gedrag
+
+Read-only/publicatiegedrag is nu expliciet verwerkt in:
+- `templates/frontend-dashboard.php`
+- `templates/frontend-event-overview.php`
+- `templates/frontend-event-summary.php`
+
+Bij `is_read_only=true`:
+- melding dat event read-only is afgesloten
+- operationele widgets in dashboard worden niet gerenderd
+
+Bij `is_published=true`:
+- extra melding dat eindstand gepubliceerd is
+
+## Implementatiechecklist (afgerond)
+
+- [x] Service-orchestratie voor closeout
+- [x] Service-orchestratie voor publicatie
+- [x] REST-trigger voor closeout
+- [x] REST-trigger voor publicatie
+- [x] Frontend read-only/publicatieflow
+- [x] Hookcontract gedocumenteerd
+- [x] Testdekking voor service + trigger + frontendweergave
+
+## Testdekking
+
+Belangrijkste tests:
+- `tests/Service/EventCloseoutServiceTest.php`
+- `tests/Service/EventCloseoutRestControllerTest.php`
+- `tests/Service/DashboardControllerTest.php`
+- `tests/Service/EventOverviewControllerTest.php`
+- `tests/Service/EventSummaryControllerTest.php`
+
+Huidige testsuite:
+- `OK (111 tests, 299 assertions)`
+
+## Acceptatiecriteria
+
+De dagafsluiting-MVP is correct als:
+- closeout-route een event daadwerkelijk naar `afgesloten` zet
+- publish-route een event daadwerkelijk naar `gepubliceerd` zet
+- beide stappen audit logging schrijven
+- frontend read-only/publicatie zichtbaar maakt op overzichtsschermen
+- alle relevante tests groen blijven
+
+## Vervolg na MVP
+
+Aanbevolen volgende uitbreidingen:
+- podium- en eindstandberekening koppelen aan publicatiepayload
+- admin-UI voor closeout/publicatie toevoegen
+- communicatieflow na publicatie (mail/bericht) toevoegen

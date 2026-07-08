@@ -45,6 +45,7 @@ De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet lat
 - Regressietests: [tests/Support](tests/Support) en [tests/Service](tests/Service)
 - Dagafsluitingsvoorbereiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluiting_Voorbereiding.md)
 - Hooks en shortcodes: [docs/hooks-and-filters.md](docs/hooks-and-filters.md)
+- Dagafsluitingsflow in opbouw: [src/Service/EventCloseoutService.php](src/Service/EventCloseoutService.php)
 
 ## Frontend shortcodes (actueel)
 
@@ -104,6 +105,13 @@ Een compacte index van de belangrijkste actions en filters staat ook in [docs/ho
 ```
 
 Adminpagina gebruikt dezelfde endpoint voor realtime opslaan zonder page reload en toont inline succes/foutmeldingen.
+
+## REST API (dagafsluiting)
+
+- POST `/wp-json/bso-survival/v1/event-closeout/{event_id}`
+- POST `/wp-json/bso-survival/v1/event-closeout/{event_id}/publish`
+
+De closeout-route zet een event op `afgesloten`, registreert certificaatrecords en schrijft auditlog. De publish-route zet het event daarna op `gepubliceerd` en markeert de frontend-overzichten als gepubliceerd/read-only.
 
 ## Ontwikkelcommando's
 

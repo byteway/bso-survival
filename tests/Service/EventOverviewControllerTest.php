@@ -60,6 +60,20 @@ class EventOverviewControllerTest extends TestCase {
 
         $this->assertStringContainsString('Eventoverzicht niet beschikbaar voor event_id 99.', $output);
     }
+
+    /**
+     * @test
+     */
+    public function it_renders_read_only_and_publication_notices_for_published_events(): void {
+        $controller = new EventOverviewController(new PublishedEventOverviewService());
+
+        $output = $controller->render([
+            'event_id' => 3,
+        ]);
+
+        $this->assertStringContainsString('Dit event is read-only afgesloten.', $output);
+        $this->assertStringContainsString('De eindstand van dit event is gepubliceerd.', $output);
+    }
 }
 
 class FakeEventOverviewService extends DashboardOverviewService {
@@ -107,5 +121,27 @@ class ThrowingEventOverviewService extends DashboardOverviewService {
      */
     public function getOverviewForEvent(int $eventId): array {
         throw new InvalidArgumentException(sprintf('Event %d not found.', $eventId));
+    }
+}
+
+class PublishedEventOverviewService extends DashboardOverviewService {
+    public function __construct() {
+    }
+
+    public function getOverviewForEvent(int $eventId): array {
+        return [
+            'event' => (object) ['id' => $eventId, 'name' => 'Published event', 'status' => 'gepubliceerd'],
+            'parts' => [],
+            'teams' => [],
+            'counts' => ['parts' => 0, 'teams' => 0],
+            'status' => [
+                'event_status' => 'gepubliceerd',
+                'has_parts' => false,
+                'has_teams' => false,
+                'is_ready_for_planning' => false,
+                'is_read_only' => true,
+                'is_published' => true,
+            ],
+        ];
     }
 }
