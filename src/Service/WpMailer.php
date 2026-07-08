@@ -14,6 +14,22 @@ class WpMailer implements MailerInterface {
             return false;
         }
 
-        return (bool) wp_mail($recipient, $subject, $body, $headers, $attachments);
+        $recipient = strtolower(trim($recipient));
+        $subject = trim($subject);
+        $body = trim($body);
+
+        if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        if ($subject === '' || $body === '') {
+            return false;
+        }
+
+        try {
+            return (bool) wp_mail($recipient, $subject, $body, $headers, $attachments);
+        } catch (\Throwable $exception) {
+            return false;
+        }
     }
 }

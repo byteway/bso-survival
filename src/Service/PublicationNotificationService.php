@@ -88,9 +88,12 @@ class PublicationNotificationService {
             do_action('bso_survival_before_publication_notifications', $eventId, $recipients, $rendered['subject'], $publication, $changedBy);
         }
 
+        $queuedRecipients = [];
+        $queueFailedRecipients = [];
+
         foreach ($recipients as $recipient) {
             $dedupeKey = sha1($eventId . '|' . $recipient . '|' . (string) ($publication['published_at'] ?? '') . '|' . (string) ($publication['headline'] ?? ''));
-            $this->outbox->enqueue([
+            $queued = $this->outbox->enqueue([
                 'event_id' => $eventId,
                 'recipient' => $recipient,
                 'template_key' => $templateKey,
@@ -98,16 +101,29 @@ class PublicationNotificationService {
                 'body' => $rendered['body'],
                 'dedupe_key' => $dedupeKey,
             ]);
+
+            if ($queued) {
+                $queuedRecipients[] = $recipient;
+            } else {
+                $queueFailedRecipients[] = $recipient;
+            }
         }
 
         $processed = $this->processor->processDue(200);
+        $failedTo = $processed['failed_to'] ?? [];
+        foreach ($queueFailedRecipients as $recipient) {
+            $failedTo[] = $recipient;
+        }
+
+        $failedTo = array_values(array_unique(array_map('strval', $failedTo)));
+
         $summary = [
             'sent_count' => (int) ($processed['sent'] ?? 0),
-            'failed_count' => (int) ($processed['failed'] ?? 0),
+            'failed_count' => (int) ($processed['failed'] ?? 0) + count($queueFailedRecipients),
             'retry_count' => (int) ($processed['retry'] ?? 0),
-            'queued_count' => count($recipients),
+            'queued_count' => count($queuedRecipients),
             'sent_to' => $processed['sent_to'] ?? [],
-            'failed_to' => $processed['failed_to'] ?? [],
+            'failed_to' => $failedTo,
         ];
 
         if (function_exists('do_action')) {

@@ -98,6 +98,103 @@ class NotificationPipelineTest extends TestCase {
         $this->assertSame('failed', $record->status);
         $this->assertSame(5, (int) $record->attempt_count);
     }
+
+    /**
+     * @test
+     */
+    public function enqueue_rejects_invalid_payloads(): void {
+        $outboxRepo = new InMemoryEmailOutboxRepository();
+        $outboxService = new EmailOutboxService($outboxRepo);
+
+        $this->assertFalse($outboxService->enqueue([
+            'event_id' => 0,
+            'recipient' => 'coach@example.test',
+            'template_key' => 'publication_result',
+            'subject' => 'Subject',
+            'body' => 'Body',
+            'dedupe_key' => 'invalid-1',
+        ]));
+
+        $this->assertFalse($outboxService->enqueue([
+            'event_id' => 9,
+            'recipient' => 'not-an-email',
+            'template_key' => 'publication_result',
+            'subject' => 'Subject',
+            'body' => 'Body',
+            'dedupe_key' => 'invalid-2',
+        ]));
+
+        $this->assertFalse($outboxService->enqueue([
+            'event_id' => 9,
+            'recipient' => 'coach@example.test',
+            'template_key' => '',
+            'subject' => 'Subject',
+            'body' => 'Body',
+            'dedupe_key' => 'invalid-3',
+        ]));
+
+        $this->assertCount(0, $outboxRepo->records);
+    }
+
+    /**
+     * @test
+     */
+    public function publication_summary_counts_enqueue_failures_as_failed(): void {
+        $templateRepo = new InMemoryEmailTemplateRepository();
+        $outboxRepo = new InMemoryEmailOutboxRepository();
+        $mailer = new InMemoryMailer();
+
+        $templateService = new EmailTemplateService($templateRepo);
+        $outboxService = new EmailOutboxService($outboxRepo);
+        $processor = new OutboxProcessorService($outboxService, $mailer);
+        $service = new PublicationNotificationService($templateService, $outboxService, $processor);
+
+        $summary = $service->sendPublicationNotifications(88, [
+            'headline' => 'Uitslag',
+            'published_at' => '2026-07-08T12:00:00+00:00',
+            'top_3' => [],
+            'recipients' => ['coach@example.test', 'not-an-email'],
+        ], 'wedstrijdleiding');
+
+        $this->assertSame(1, $summary['queued_count']);
+        $this->assertSame(1, $summary['sent_count']);
+        $this->assertSame(0, $summary['failed_count']);
+        $this->assertSame(['coach@example.test'], $summary['sent_to']);
+    }
+
+    /**
+     * @test
+     */
+    public function outbox_processor_handles_mailer_exceptions_with_retry_then_fail(): void {
+        $outboxRepo = new InMemoryEmailOutboxRepository();
+        $outboxService = new EmailOutboxService($outboxRepo);
+        $mailer = new InMemoryMailer([], ['explode@example.test']);
+        $processor = new OutboxProcessorService($outboxService, $mailer);
+
+        $this->assertTrue($outboxService->enqueue([
+            'event_id' => 9,
+            'recipient' => 'explode@example.test',
+            'template_key' => 'publication_result',
+            'subject' => 'Subject',
+            'body' => 'Body',
+            'dedupe_key' => 'explode-key-1',
+        ]));
+
+        $attempt1 = $processor->processDue(10);
+        $this->assertSame(1, $attempt1['retry']);
+
+        $attempt2 = $processor->processDue(10);
+        $attempt3 = $processor->processDue(10);
+        $attempt4 = $processor->processDue(10);
+        $attempt5 = $processor->processDue(10);
+
+        $this->assertSame(1, $attempt5['failed']);
+        $this->assertSame(['explode@example.test'], $attempt5['failed_to']);
+
+        $record = array_values($outboxRepo->records)[0];
+        $this->assertSame('failed', $record->status);
+        $this->assertStringContainsString('Simulated mailer exception', (string) $record->last_error);
+    }
 }
 
 class InMemoryEmailTemplateRepository implements EmailTemplateRepositoryInterface {
@@ -201,15 +298,26 @@ class InMemoryMailer implements MailerInterface {
     /** @var array<int, string> */
     private $alwaysFailRecipients;
 
+    /** @var array<int, string> */
+    private $throwRecipients;
+
     /** @var array<int, array<string, string>> */
     public $sentMessages = [];
 
-    /** @param array<int, string> $alwaysFailRecipients */
-    public function __construct(array $alwaysFailRecipients = []) {
+    /**
+     * @param array<int, string> $alwaysFailRecipients
+     * @param array<int, string> $throwRecipients
+     */
+    public function __construct(array $alwaysFailRecipients = [], array $throwRecipients = []) {
         $this->alwaysFailRecipients = $alwaysFailRecipients;
+        $this->throwRecipients = $throwRecipients;
     }
 
     public function send(string $recipient, string $subject, string $body, $headers = [], array $attachments = []): bool {
+        if (in_array($recipient, $this->throwRecipients, true)) {
+            throw new \RuntimeException('Simulated mailer exception for ' . $recipient);
+        }
+
         if (in_array($recipient, $this->alwaysFailRecipients, true)) {
             return false;
         }

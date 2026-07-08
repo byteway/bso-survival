@@ -35,11 +35,30 @@ class OutboxProcessorService {
         foreach ($messages as $message) {
             $summary['processed']++;
             $id = (int) ($message->id ?? 0);
-            $recipient = (string) ($message->recipient ?? '');
+            $recipient = strtolower(trim((string) ($message->recipient ?? '')));
             $attemptCount = (int) ($message->attempt_count ?? 0) + 1;
-            $subject = (string) ($message->subject_snapshot ?? '');
-            $body = (string) ($message->body_snapshot ?? '');
-            $sent = $this->mailer->send($recipient, $subject, $body, ['Content-Type: text/html; charset=UTF-8']);
+            $subject = trim((string) ($message->subject_snapshot ?? ''));
+            $body = trim((string) ($message->body_snapshot ?? ''));
+
+            if ($id <= 0 || !filter_var($recipient, FILTER_VALIDATE_EMAIL) || $subject === '' || $body === '') {
+                if ($id > 0) {
+                    $this->outbox->markFailed($id, max(1, $attemptCount), 'invalid_outbox_payload');
+                }
+                $summary['failed']++;
+                if ($recipient !== '') {
+                    $summary['failed_to'][] = $recipient;
+                }
+                continue;
+            }
+
+            try {
+                $sent = $this->mailer->send($recipient, $subject, $body, ['Content-Type: text/html; charset=UTF-8']);
+            } catch (\Throwable $exception) {
+                $sent = false;
+                $sendError = trim($exception->getMessage()) !== ''
+                    ? $exception->getMessage()
+                    : 'mailer_exception';
+            }
 
             if ($sent) {
                 $this->outbox->markSent($id);
@@ -48,15 +67,19 @@ class OutboxProcessorService {
                 continue;
             }
 
+            $errorMessage = isset($sendError) ? (string) $sendError : 'wp_mail returned false';
+
             if ($attemptCount >= self::MAX_ATTEMPTS) {
-                $this->outbox->markFailed($id, $attemptCount, 'wp_mail returned false');
+                $this->outbox->markFailed($id, $attemptCount, $errorMessage);
                 $summary['failed']++;
                 $summary['failed_to'][] = $recipient;
+                unset($sendError);
                 continue;
             }
 
-            $this->outbox->markForRetry($id, $attemptCount, 'wp_mail returned false');
+            $this->outbox->markForRetry($id, $attemptCount, $errorMessage);
             $summary['retry']++;
+            unset($sendError);
         }
 
         if (function_exists('do_action')) {

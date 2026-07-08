@@ -16,9 +16,32 @@ class EmailOutboxService {
      * @param array<string, mixed> $payload
      */
     public function enqueue(array $payload): bool {
+        $eventId = (int) ($payload['event_id'] ?? 0);
+        $recipient = strtolower(trim((string) ($payload['recipient'] ?? '')));
+        $templateKey = trim((string) ($payload['template_key'] ?? ''));
+        $subject = trim((string) ($payload['subject'] ?? ''));
+        $body = trim((string) ($payload['body'] ?? ''));
         $dedupeKey = (string) ($payload['dedupe_key'] ?? '');
+
+        if ($eventId <= 0) {
+            return false;
+        }
+
+        if (!filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        if ($templateKey === '' || $subject === '' || $body === '') {
+            return false;
+        }
+
         if ($dedupeKey === '') {
             return false;
+        }
+
+        // Column length for dedupe_key is 191, keep deterministic uniqueness but avoid truncation by DB.
+        if (strlen($dedupeKey) > 191) {
+            $dedupeKey = sha1($dedupeKey);
         }
 
         if ($this->outbox->findByDedupeKey($dedupeKey) !== null) {
@@ -27,11 +50,11 @@ class EmailOutboxService {
 
         $now = gmdate('Y-m-d H:i:s');
         $record = $this->outbox->insert([
-            'event_id' => (int) ($payload['event_id'] ?? 0),
-            'recipient' => (string) ($payload['recipient'] ?? ''),
-            'template_key' => (string) ($payload['template_key'] ?? ''),
-            'subject_snapshot' => (string) ($payload['subject'] ?? ''),
-            'body_snapshot' => (string) ($payload['body'] ?? ''),
+            'event_id' => $eventId,
+            'recipient' => $recipient,
+            'template_key' => $templateKey,
+            'subject_snapshot' => $subject,
+            'body_snapshot' => $body,
             'status' => 'queued',
             'attempt_count' => 0,
             'next_attempt_at' => $now,
