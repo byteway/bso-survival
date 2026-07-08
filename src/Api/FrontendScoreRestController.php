@@ -3,6 +3,7 @@
 namespace BSO\Survival\Api;
 
 use BSO\Survival\Service\FrontendScoreSubmissionService;
+use BSO\Survival\Support\ApiResponse;
 use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
@@ -70,16 +71,16 @@ class FrontendScoreRestController {
         try {
             $result = $this->scores->submit($payload);
 
-            return $this->response([
+            return ApiResponse::success([
                 'created' => true,
                 'result' => $result,
-            ]);
+            ], 201);
         } catch (InvalidArgumentException $exception) {
-            return $this->error('invalid_score_input', $exception->getMessage(), 400);
+            return ApiResponse::error('invalid_score_input', $exception->getMessage(), 400);
         } catch (RuntimeException $exception) {
-            return $this->error('score_submit_blocked', $exception->getMessage(), 409);
+            return ApiResponse::error('score_submit_blocked', $exception->getMessage(), 409);
         } catch (Throwable $exception) {
-            return $this->error('score_submit_failed', 'Score-invoer kon niet worden verwerkt.', 500);
+            return ApiResponse::error('score_submit_failed', 'Score-invoer kon niet worden verwerkt.', 500);
         }
     }
 
@@ -125,30 +126,4 @@ class FrontendScoreRestController {
         return null;
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return mixed
-     */
-    private function response(array $payload) {
-        if (function_exists('rest_ensure_response')) {
-            return rest_ensure_response($payload);
-        }
-
-        return $payload;
-    }
-
-    /** @return mixed */
-    private function error(string $code, string $message, int $status) {
-        if (class_exists('WP_Error')) {
-            return new \WP_Error($code, $message, ['status' => $status]);
-        }
-
-        return [
-            'error' => [
-                'code' => $code,
-                'message' => $message,
-                'status' => $status,
-            ],
-        ];
-    }
 }

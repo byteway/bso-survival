@@ -46,4 +46,23 @@ class ApiResponse {
             ],
         ];
     }
+
+    /**
+     * @param array<int, mixed> $items
+     * @param array<string, mixed> $meta
+     * @return mixed
+     */
+    public static function paginated(array $items, int $total, int $page, int $perPage, array $meta = []) {
+        $totalPages = $perPage > 0 ? (int) ceil($total / $perPage) : 0;
+
+        return self::success(array_merge($meta, [
+            'items' => $items,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => $totalPages,
+            ],
+        ]));
+    }
 }

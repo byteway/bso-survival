@@ -3,6 +3,10 @@
 namespace BSO\Survival\Api;
 
 use BSO\Survival\Service\DashboardWidgetLayoutService;
+use BSO\Survival\Support\ApiResponse;
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 class DashboardWidgetLayoutRestController {
     private const NAMESPACE = 'bso-survival/v1';
@@ -68,13 +72,21 @@ class DashboardWidgetLayoutRestController {
      * @return mixed
      */
     public function getLayout($request) {
-        $eventId = $this->extractEventId($request);
-        $layout = $this->layoutService->getLayoutForEvent($eventId);
+        try {
+            $eventId = $this->extractEventId($request);
+            $layout = $this->layoutService->getLayoutForEvent($eventId);
 
-        return $this->response([
-            'event_id' => $eventId,
-            'layout' => $layout,
-        ]);
+            return ApiResponse::success([
+                'event_id' => $eventId,
+                'layout' => $layout,
+            ]);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_layout_payload', $exception->getMessage(), 400);
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error('layout_fetch_failed', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('layout_fetch_failed', 'Layout kon niet worden opgehaald.', 500);
+        }
     }
 
     /**
@@ -82,16 +94,24 @@ class DashboardWidgetLayoutRestController {
      * @return mixed
      */
     public function updateLayout($request) {
-        $eventId = $this->extractEventId($request);
-        $layout = $this->extractLayoutPayload($request);
+        try {
+            $eventId = $this->extractEventId($request);
+            $layout = $this->extractLayoutPayload($request);
 
-        $saved = $this->layoutService->saveLayoutForEvent($eventId, $layout);
+            $saved = $this->layoutService->saveLayoutForEvent($eventId, $layout);
 
-        return $this->response([
-            'event_id' => $eventId,
-            'layout' => $saved,
-            'updated' => true,
-        ]);
+            return ApiResponse::success([
+                'event_id' => $eventId,
+                'layout' => $saved,
+                'updated' => true,
+            ]);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_layout_payload', $exception->getMessage(), 400);
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error('layout_save_failed', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('layout_save_failed', 'Layout kon niet worden opgeslagen.', 500);
+        }
     }
 
     /**
@@ -126,15 +146,4 @@ class DashboardWidgetLayoutRestController {
         return [];
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return mixed
-     */
-    private function response(array $payload) {
-        if (function_exists('rest_ensure_response')) {
-            return rest_ensure_response($payload);
-        }
-
-        return $payload;
-    }
 }

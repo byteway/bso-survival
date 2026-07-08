@@ -34,10 +34,11 @@ class EventCloseoutRestControllerTest extends TestCase {
             ],
         ]));
 
-        $this->assertTrue($response['updated']);
-        $this->assertSame('closeout', $response['phase']);
-        $this->assertSame('afgesloten', $response['result']['status']);
-        $this->assertCount(1, $response['result']['certificates']);
+        $this->assertTrue($response['success']);
+        $this->assertTrue($response['data']['updated']);
+        $this->assertSame('closeout', $response['data']['phase']);
+        $this->assertSame('afgesloten', $response['data']['result']['status']);
+        $this->assertCount(1, $response['data']['result']['certificates']);
     }
 
     /**
@@ -59,13 +60,14 @@ class EventCloseoutRestControllerTest extends TestCase {
             ],
         ]));
 
-        $this->assertTrue($response['updated']);
-        $this->assertSame('publication', $response['phase']);
-        $this->assertSame('gepubliceerd', $response['result']['status']);
-        $this->assertSame('Uitslag gepubliceerd', $response['result']['publication']['headline']);
-        $this->assertCount(3, $response['result']['publication']['top_3']);
-        $this->assertCount(3, $response['result']['publication']['final_standings']);
-        $this->assertSame('publication_completed', $response['result']['audit_log']->action);
+        $this->assertTrue($response['success']);
+        $this->assertTrue($response['data']['updated']);
+        $this->assertSame('publication', $response['data']['phase']);
+        $this->assertSame('gepubliceerd', $response['data']['result']['status']);
+        $this->assertSame('Uitslag gepubliceerd', $response['data']['result']['publication']['headline']);
+        $this->assertCount(3, $response['data']['result']['publication']['top_3']);
+        $this->assertCount(3, $response['data']['result']['publication']['final_standings']);
+        $this->assertSame('publication_completed', $response['data']['result']['audit_log']->action);
     }
 
     /**
@@ -93,10 +95,11 @@ class EventCloseoutRestControllerTest extends TestCase {
             'event_id' => 14,
         ]));
 
-        $this->assertSame(14, $response['event_id']);
-        $this->assertIsArray($response['publication']);
-        $this->assertSame('Persisted uitslag', $response['publication']['headline']);
-        $this->assertCount(3, $response['publication']['top_3']);
+        $this->assertTrue($response['success']);
+        $this->assertSame(14, $response['data']['event_id']);
+        $this->assertIsArray($response['data']['publication']);
+        $this->assertSame('Persisted uitslag', $response['data']['publication']['headline']);
+        $this->assertCount(3, $response['data']['publication']['top_3']);
     }
 
     /**
@@ -109,8 +112,9 @@ class EventCloseoutRestControllerTest extends TestCase {
             'event_id' => 14,
         ]));
 
-        $this->assertSame(14, $response['event_id']);
-        $this->assertNull($response['publication']);
+        $this->assertTrue($response['success']);
+        $this->assertSame(14, $response['data']['event_id']);
+        $this->assertNull($response['data']['publication']);
     }
 
     private function buildController(EventPublicationService $publications = null): EventCloseoutRestController {

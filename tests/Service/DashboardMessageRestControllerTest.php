@@ -21,13 +21,34 @@ class DashboardMessageRestControllerTest extends TestCase {
         $response = $controller->listMessages(new FakeDashboardMessageRequest([
             'event_id' => 7,
             'scope' => 'global',
-            'limit' => 10,
+            'page' => 2,
+            'per_page' => 10,
         ]));
 
         $this->assertTrue($response['success']);
         $this->assertSame('global', $response['data']['scope']);
         $this->assertSame(1, count($response['data']['items']));
+        $this->assertSame(2, $response['data']['pagination']['page']);
+        $this->assertSame(10, $response['data']['pagination']['per_page']);
+        $this->assertSame(42, $response['data']['pagination']['total']);
         $this->assertSame('global', $service->lastListScope);
+    }
+
+    /** @test */
+    public function it_uses_legacy_limit_when_per_page_is_missing(): void {
+        $service = new FakeDashboardMessageService();
+        $controller = new DashboardMessageRestController($service);
+
+        $response = $controller->listMessages(new FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'scope' => 'event',
+            'limit' => 15,
+        ]));
+
+        $this->assertTrue($response['success']);
+        $this->assertSame(1, $response['data']['pagination']['page']);
+        $this->assertSame(15, $response['data']['pagination']['per_page']);
+        $this->assertSame(15, $service->lastListPerPage);
     }
 
     /** @test */
@@ -86,21 +107,34 @@ class FakeDashboardMessageService extends DashboardMessageService {
     /** @var string */
     public $lastSetStatus = '';
 
+    /** @var int */
+    public $lastListPage = 1;
+
+    /** @var int */
+    public $lastListPerPage = 20;
+
     public function __construct() {
     }
 
-    public function listForEvent(int $eventId, int $limit = 20, string $scope = 'all'): array {
+    public function listPageForEvent(int $eventId, int $page = 1, int $perPage = 20, string $scope = 'all'): array {
         $this->lastListScope = $scope;
+        $this->lastListPage = $page;
+        $this->lastListPerPage = $perPage;
 
         return [
-            (object) [
-                'id' => 1,
-                'event_id' => $eventId,
-                'type' => 'urgent',
-                'text' => 'Melding',
-                'visibility' => $scope === 'global' ? 'global' : 'intern',
-                'status' => 'actief',
+            'items' => [
+                (object) [
+                    'id' => 1,
+                    'event_id' => $eventId,
+                    'type' => 'urgent',
+                    'text' => 'Melding',
+                    'visibility' => $scope === 'global' ? 'global' : 'intern',
+                    'status' => 'actief',
+                ],
             ],
+            'total' => 42,
+            'page' => $page,
+            'per_page' => $perPage,
         ];
     }
 

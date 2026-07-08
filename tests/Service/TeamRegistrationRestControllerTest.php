@@ -26,8 +26,9 @@ class TeamRegistrationRestControllerTest extends TestCase {
             'idempotency_key' => 'abc',
         ]));
 
-        $this->assertTrue($response['created']);
-        $this->assertSame('registered', $response['result']['status']);
+        $this->assertTrue($response['success']);
+        $this->assertTrue($response['data']['created']);
+        $this->assertSame('registered', $response['data']['result']['status']);
         $this->assertSame(1, count($service->calls));
         $this->assertSame(7, $service->calls[0]['event_id']);
     }

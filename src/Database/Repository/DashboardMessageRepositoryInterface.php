@@ -11,7 +11,9 @@ interface DashboardMessageRepositoryInterface {
     /**
      * @return array<int, object>
      */
-    public function findByScope(int $eventId, string $scope = 'all', bool $activeOnly = false, int $limit = 20): array;
+    public function findByScope(int $eventId, string $scope = 'all', bool $activeOnly = false, int $limit = 20, int $offset = 0): array;
+
+    public function countByScope(int $eventId, string $scope = 'all', bool $activeOnly = false): int;
 
     /**
      * @return array<int, object>

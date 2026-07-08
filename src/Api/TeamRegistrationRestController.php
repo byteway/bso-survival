@@ -3,6 +3,10 @@
 namespace BSO\Survival\Api;
 
 use BSO\Survival\Service\TeamRegistrationService;
+use BSO\Survival\Support\ApiResponse;
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 class TeamRegistrationRestController {
     private const NAMESPACE = 'bso-survival/v1';
@@ -61,12 +65,20 @@ class TeamRegistrationRestController {
             'idempotency_key' => $this->extractStringParam($request, 'idempotency_key'),
         ];
 
-        $result = $this->registrations->register($payload);
+        try {
+            $result = $this->registrations->register($payload);
 
-        return $this->response([
-            'created' => true,
-            'result' => $result,
-        ]);
+            return ApiResponse::success([
+                'created' => true,
+                'result' => $result,
+            ], 201);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_registration_payload', $exception->getMessage(), 400);
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error('registration_blocked', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('registration_failed', 'Inschrijving kon niet worden verwerkt.', 500);
+        }
     }
 
     /** @param mixed $request */
@@ -112,15 +124,4 @@ class TeamRegistrationRestController {
         return [];
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return mixed
-     */
-    private function response(array $payload) {
-        if (function_exists('rest_ensure_response')) {
-            return rest_ensure_response($payload);
-        }
-
-        return $payload;
-    }
 }

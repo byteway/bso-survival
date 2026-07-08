@@ -26,8 +26,9 @@ class FrontendScoreRestControllerTest extends TestCase {
             'entered_by_role' => 'jury',
         ]));
 
-        $this->assertTrue($response['created']);
-        $this->assertSame(1, $response['result']['score_entry_id']);
+        $this->assertTrue($response['success']);
+        $this->assertTrue($response['data']['created']);
+        $this->assertSame(1, $response['data']['result']['score_entry_id']);
         $this->assertSame(1, count($service->calls));
         $this->assertSame(100, $service->calls[0]['assignment_id']);
     }
@@ -44,6 +45,7 @@ class FrontendScoreRestControllerTest extends TestCase {
             'raw_value' => 48.5,
         ]));
 
+        $this->assertFalse($response['success']);
         $this->assertSame('invalid_score_input', $response['error']['code']);
         $this->assertSame(400, $response['error']['status']);
     }
@@ -60,6 +62,7 @@ class FrontendScoreRestControllerTest extends TestCase {
             'raw_value' => 48.5,
         ]));
 
+        $this->assertFalse($response['success']);
         $this->assertSame('score_submit_blocked', $response['error']['code']);
         $this->assertSame(409, $response['error']['status']);
     }

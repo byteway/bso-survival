@@ -1330,6 +1330,11 @@ Statusupdate 8 juli 2026:
 - `src/Support/ApiResponse.php` toegevoegd als centrale success/error helper
 - nieuwe admin score REST endpoints gebruiken de wrapper
 
+Statusupdate 9 juli 2026:
+- REST controllers voor teamregistratie, event-closeout/publicatie, dashboard-layout en frontend score submit omgezet naar de centrale ApiResponse-wrapper
+- paginering toegevoegd op `GET /bso-survival/v1/dashboard/messages` met `page` en `per_page` (plus legacy `limit` fallback)
+- PHPUnit uitgebreid voor response-envelope en paginering
+
 **File:** `src/Support/ApiResponse.php`
 
 ```php
@@ -1371,8 +1376,8 @@ class ApiResponse {
 ### Validatiechecklist:
 - [x] Versioning plan gedocumenteerd
 - [x] ApiResponse-klasse geschreven
-- [ ] Alle endpoints consistent response-formaat gebruiken
-- [ ] Paginering werkend op list endpoints
+- [x] Alle endpoints consistent response-formaat gebruiken
+- [x] Paginering werkend op list endpoints
 - [ ] Filtering examples in docs
 
 ---

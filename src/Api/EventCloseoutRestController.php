@@ -4,6 +4,10 @@ namespace BSO\Survival\Api;
 
 use BSO\Survival\Service\EventCloseoutService;
 use BSO\Survival\Service\EventPublicationService;
+use BSO\Survival\Support\ApiResponse;
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 class EventCloseoutRestController {
     private const NAMESPACE = 'bso-survival/v1';
@@ -81,13 +85,21 @@ class EventCloseoutRestController {
         $changedBy = $this->extractStringParam($request, 'changed_by');
         $certificates = $this->extractArrayParam($request, 'certificates');
 
-        $result = $this->closeout->closeEvent($eventId, $changedBy, $certificates);
+        try {
+            $result = $this->closeout->closeEvent($eventId, $changedBy, $certificates);
 
-        return $this->response([
-            'updated' => true,
-            'phase' => 'closeout',
-            'result' => $result,
-        ]);
+            return ApiResponse::success([
+                'updated' => true,
+                'phase' => 'closeout',
+                'result' => $result,
+            ]);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_closeout_payload', $exception->getMessage(), 400);
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error('closeout_failed', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('closeout_failed', 'Event kon niet worden afgesloten.', 500);
+        }
     }
 
     /**
@@ -99,13 +111,21 @@ class EventCloseoutRestController {
         $changedBy = $this->extractStringParam($request, 'changed_by');
         $publication = $this->extractArrayParam($request, 'publication');
 
-        $result = $this->closeout->publishEvent($eventId, $changedBy, $publication);
+        try {
+            $result = $this->closeout->publishEvent($eventId, $changedBy, $publication);
 
-        return $this->response([
-            'updated' => true,
-            'phase' => 'publication',
-            'result' => $result,
-        ]);
+            return ApiResponse::success([
+                'updated' => true,
+                'phase' => 'publication',
+                'result' => $result,
+            ]);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_publication_payload', $exception->getMessage(), 400);
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error('publication_failed', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('publication_failed', 'Event kon niet worden gepubliceerd.', 500);
+        }
     }
 
     /**
@@ -120,7 +140,7 @@ class EventCloseoutRestController {
             $publication = $this->publications->getForEvent($eventId);
         }
 
-        return $this->response([
+        return ApiResponse::success([
             'event_id' => $eventId,
             'publication' => $publication,
         ]);
@@ -169,15 +189,4 @@ class EventCloseoutRestController {
         return [];
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     * @return mixed
-     */
-    private function response(array $payload) {
-        if (function_exists('rest_ensure_response')) {
-            return rest_ensure_response($payload);
-        }
-
-        return $payload;
-    }
 }

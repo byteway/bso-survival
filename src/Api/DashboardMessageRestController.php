@@ -91,18 +91,36 @@ class DashboardMessageRestController {
     public function listMessages($request) {
         $eventId = $this->extractIntParam($request, 'event_id');
         $scope = $this->extractStringParam($request, 'scope');
-        $limit = $this->extractIntParam($request, 'limit');
-        if ($limit <= 0) {
-            $limit = 20;
+        $page = $this->extractIntParam($request, 'page');
+        if ($page <= 0) {
+            $page = 1;
         }
 
+        $perPage = $this->extractIntParam($request, 'per_page');
+        if ($perPage <= 0) {
+            $legacyLimit = $this->extractIntParam($request, 'limit');
+            $perPage = $legacyLimit > 0 ? $legacyLimit : 20;
+        }
+
+        if ($perPage > 100) {
+            $perPage = 100;
+        }
+
+        $resolvedScope = $scope !== '' ? $scope : 'all';
+
         try {
-            $rows = $this->messages->listForEvent($eventId, $limit, $scope !== '' ? $scope : 'all');
-            return ApiResponse::success([
-                'event_id' => $eventId,
-                'scope' => $scope !== '' ? $scope : 'all',
-                'items' => $rows,
-            ]);
+            $result = $this->messages->listPageForEvent($eventId, $page, $perPage, $resolvedScope);
+
+            return ApiResponse::paginated(
+                $result['items'],
+                (int) ($result['total'] ?? 0),
+                (int) ($result['page'] ?? $page),
+                (int) ($result['per_page'] ?? $perPage),
+                [
+                    'event_id' => $eventId,
+                    'scope' => $resolvedScope,
+                ]
+            );
         } catch (InvalidArgumentException $exception) {
             return ApiResponse::error('invalid_message_filter', $exception->getMessage(), 400);
         } catch (Throwable $exception) {

@@ -26,7 +26,33 @@ class DashboardMessageService {
             throw new InvalidArgumentException('event_id must be a positive integer.');
         }
 
-        return $this->messages->findByScope($eventId, $scope, false, $limit);
+        return $this->messages->findByScope($eventId, $scope, false, $limit, 0);
+    }
+
+    /**
+     * @return array{items: array<int, object>, total: int, page: int, per_page: int}
+     */
+    public function listPageForEvent(int $eventId, int $page = 1, int $perPage = 20, string $scope = 'all'): array {
+        if ($eventId <= 0) {
+            throw new InvalidArgumentException('event_id must be a positive integer.');
+        }
+
+        if ($page <= 0) {
+            throw new InvalidArgumentException('page must be a positive integer.');
+        }
+
+        if ($perPage <= 0 || $perPage > 100) {
+            throw new InvalidArgumentException('per_page must be between 1 and 100.');
+        }
+
+        $offset = ($page - 1) * $perPage;
+
+        return [
+            'items' => $this->messages->findByScope($eventId, $scope, false, $perPage, $offset),
+            'total' => $this->messages->countByScope($eventId, $scope, false),
+            'page' => $page,
+            'per_page' => $perPage,
+        ];
     }
 
     /**
@@ -37,7 +63,7 @@ class DashboardMessageService {
             throw new InvalidArgumentException('event_id must be a positive integer.');
         }
 
-        return $this->messages->findByScope($eventId, $scope, true, $limit);
+        return $this->messages->findByScope($eventId, $scope, true, $limit, 0);
     }
 
     /**

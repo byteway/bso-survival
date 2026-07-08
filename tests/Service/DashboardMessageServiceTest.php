@@ -40,6 +40,31 @@ class DashboardMessageServiceTest extends TestCase {
     }
 
     /** @test */
+    public function it_lists_paginated_messages_with_total_count(): void {
+        $repo = new InMemoryDashboardMessageRepository();
+        $repo->setCountByScope(37);
+        $service = new DashboardMessageService($repo);
+
+        $result = $service->listPageForEvent(5, 3, 10, 'global');
+
+        $this->assertSame(5, $repo->lastFindEventId);
+        $this->assertSame('global', $repo->lastFindScope);
+        $this->assertSame(10, $repo->lastFindLimit);
+        $this->assertSame(20, $repo->lastFindOffset);
+        $this->assertSame(37, $result['total']);
+        $this->assertSame(3, $result['page']);
+        $this->assertSame(10, $result['per_page']);
+    }
+
+    /** @test */
+    public function it_rejects_invalid_per_page_in_paginated_listing(): void {
+        $service = new DashboardMessageService(new InMemoryDashboardMessageRepository());
+
+        $this->expectException(InvalidArgumentException::class);
+        $service->listPageForEvent(5, 1, 0, 'all');
+    }
+
+    /** @test */
     public function it_updates_global_message_status_without_event_constraint(): void {
         $repo = new InMemoryDashboardMessageRepository();
         $repo->seed((object) [
@@ -93,19 +118,34 @@ class InMemoryDashboardMessageRepository implements DashboardMessageRepositoryIn
     public $lastFindLimit = 0;
 
     /** @var int */
+    public $lastFindOffset = 0;
+
+    /** @var int */
     public $lastStatusEventId = -1;
+
+    /** @var int */
+    private $countByScope = 0;
 
     public function findByEventId(int $eventId, int $limit = 20): array {
         return $this->findByScope($eventId, 'all', false, $limit);
     }
 
-    public function findByScope(int $eventId, string $scope = 'all', bool $activeOnly = false, int $limit = 20): array {
+    public function findByScope(int $eventId, string $scope = 'all', bool $activeOnly = false, int $limit = 20, int $offset = 0): array {
         $this->lastFindEventId = $eventId;
         $this->lastFindScope = $scope;
         $this->lastFindActiveOnly = $activeOnly;
         $this->lastFindLimit = $limit;
+        $this->lastFindOffset = $offset;
 
         return [];
+    }
+
+    public function countByScope(int $eventId, string $scope = 'all', bool $activeOnly = false): int {
+        $this->lastFindEventId = $eventId;
+        $this->lastFindScope = $scope;
+        $this->lastFindActiveOnly = $activeOnly;
+
+        return $this->countByScope;
     }
 
     public function findActiveByEventId(int $eventId, int $limit = 5): array {
@@ -153,5 +193,9 @@ class InMemoryDashboardMessageRepository implements DashboardMessageRepositoryIn
         if ($id >= $this->nextId) {
             $this->nextId = $id + 1;
         }
+    }
+
+    public function setCountByScope(int $count): void {
+        $this->countByScope = $count;
     }
 }

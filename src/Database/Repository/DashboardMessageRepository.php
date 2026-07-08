@@ -21,8 +21,10 @@ class DashboardMessageRepository implements DashboardMessageRepositoryInterface 
         return $this->findByScope($eventId, 'all', false, $limit);
     }
 
-    public function findByScope(int $eventId, string $scope = 'all', bool $activeOnly = false, int $limit = 20): array {
+    public function findByScope(int $eventId, string $scope = 'all', bool $activeOnly = false, int $limit = 20, int $offset = 0): array {
         $table = $this->tableName();
+        $limit = max(1, $limit);
+        $offset = max(0, $offset);
 
         $whereScope = $this->buildScopeWhereClause($scope);
         $activeClause = $activeOnly ? " AND status = 'actief'" : '';
@@ -37,14 +39,29 @@ class DashboardMessageRepository implements DashboardMessageRepositoryInterface 
             updated_at DESC,
             id DESC";
 
-        $template = "SELECT * FROM {$table} WHERE {$whereScope}{$activeClause}{$orderClause} LIMIT %d";
+        $template = "SELECT * FROM {$table} WHERE {$whereScope}{$activeClause}{$orderClause} LIMIT %d OFFSET %d";
         if ($scope === 'global') {
-            $sql = $this->wpdb->prepare($template, $limit);
+            $sql = $this->wpdb->prepare($template, $limit, $offset);
         } else {
-            $sql = $this->wpdb->prepare($template, $eventId, $limit);
+            $sql = $this->wpdb->prepare($template, $eventId, $limit, $offset);
         }
 
         return $this->wpdb->get_results($sql) ?: [];
+    }
+
+    public function countByScope(int $eventId, string $scope = 'all', bool $activeOnly = false): int {
+        $table = $this->tableName();
+        $whereScope = $this->buildScopeWhereClause($scope);
+        $activeClause = $activeOnly ? " AND status = 'actief'" : '';
+
+        $template = "SELECT COUNT(*) FROM {$table} WHERE {$whereScope}{$activeClause}";
+        if ($scope === 'global') {
+            $sql = $template;
+        } else {
+            $sql = $this->wpdb->prepare($template, $eventId);
+        }
+
+        return (int) $this->wpdb->get_var($sql);
     }
 
     public function findActiveByEventId(int $eventId, int $limit = 5): array {

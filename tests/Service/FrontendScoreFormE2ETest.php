@@ -50,9 +50,10 @@ class FrontendScoreFormE2ETest extends TestCase {
             'entered_by_role' => 'frontend_jury',
         ]));
 
-        $this->assertTrue($successResponse['created']);
-        $this->assertSame(1, $successResponse['result']['score_entry_id']);
-        $this->assertSame(62.25, $successResponse['result']['normalized_points']);
+        $this->assertTrue($successResponse['success']);
+        $this->assertTrue($successResponse['data']['created']);
+        $this->assertSame(1, $successResponse['data']['result']['score_entry_id']);
+        $this->assertSame(62.25, $successResponse['data']['result']['normalized_points']);
 
         $overviewService->readOnly = true;
 
