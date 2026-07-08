@@ -218,3 +218,8 @@ Statusupdate:
 - Beslissen of bulk-operaties synchroon of queue-based moeten zijn.
 - Bepalen of `search` SQL-like of dedicated index nodig heeft.
 - Definiëren van maximale batchgrootte (advies: 100 ids).
+
+## Formele afsluiting
+
+- F6-05 is afgerond en formeel gesloten op 8 juli 2026.
+- Afsluitreferentie: `docs/Fase6_Formele_Afsluiting_2026-07-08.md`.

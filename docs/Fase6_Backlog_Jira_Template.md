@@ -3,6 +3,13 @@
 Deze backlog is direct bruikbaar als bron voor Jira-issues.
 Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire volgorde.
 
+## Formele Afsluiting
+
+- Afsluitdatum: 8 juli 2026
+- Fase status: Gesloten
+- Afsluitdocument: docs/Fase6_Formele_Afsluiting_2026-07-08.md
+- Governance matrix: docs/V2_Contract_Governance_Compat_Matrix.md
+
 ## Gebruik
 
 1. Kopieer het template per nieuw issue.
