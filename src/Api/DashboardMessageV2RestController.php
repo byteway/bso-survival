@@ -11,6 +11,7 @@ use Throwable;
 class DashboardMessageV2RestController {
     private const NAMESPACE = 'bso-survival/v2';
     private const COLLECTION_ROUTE = '/dashboard/messages';
+    private const BULK_STATUS_ROUTE = '/dashboard/messages/bulk-status';
 
     /** @var DashboardMessageService */
     private $messages;
@@ -28,6 +29,14 @@ class DashboardMessageV2RestController {
             [
                 'methods' => 'GET',
                 'callback' => [$this, 'listMessages'],
+                'permission_callback' => [$this, 'canManage'],
+            ],
+        ]);
+
+        register_rest_route(self::NAMESPACE, self::BULK_STATUS_ROUTE, [
+            [
+                'methods' => 'POST',
+                'callback' => [$this, 'bulkUpdateStatus'],
                 'permission_callback' => [$this, 'canManage'],
             ],
         ]);
@@ -116,6 +125,28 @@ class DashboardMessageV2RestController {
         }
     }
 
+    /**
+     * @param mixed $request
+     * @return mixed
+     */
+    public function bulkUpdateStatus($request) {
+        $eventId = $this->extractIntParam($request, 'event_id');
+        $messageIds = $this->extractArrayParam($request, 'message_ids');
+        $status = $this->extractStringParam($request, 'status');
+        $changedBy = $this->extractStringParam($request, 'changed_by');
+
+        try {
+            $result = $this->messages->bulkSetStatusForEvent($eventId, $messageIds, $status, $changedBy);
+            return ApiResponse::success(['result' => $result]);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_bulk_payload', $exception->getMessage(), 400);
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::error('bulk_update_conflict', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('bulk_update_failed', 'Bulk status update kon niet worden uitgevoerd.', 500);
+        }
+    }
+
     /** @param mixed $request */
     private function extractIntParam($request, string $key): int {
         if (is_object($request) && method_exists($request, 'get_param')) {
@@ -140,5 +171,22 @@ class DashboardMessageV2RestController {
         }
 
         return '';
+    }
+
+    /**
+     * @param mixed $request
+     * @return array<int, mixed>
+     */
+    private function extractArrayParam($request, string $key): array {
+        if (is_object($request) && method_exists($request, 'get_param')) {
+            $value = $request->get_param($key);
+            return is_array($value) ? array_values($value) : [];
+        }
+
+        if (is_array($request) && isset($request[$key]) && is_array($request[$key])) {
+            return array_values($request[$key]);
+        }
+
+        return [];
     }
 }

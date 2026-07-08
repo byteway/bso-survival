@@ -27,7 +27,7 @@ Van strategische v2-thema's naar sprintklare stories met API-contract, foutcodes
 Statusupdate:
 
 - [x] F6-05-S1 geïmplementeerd in runtime (`/wp-json/bso-survival/v2/dashboard/messages`)
-- [ ] F6-05-S2
+- [x] F6-05-S2 geïmplementeerd in runtime (`/wp-json/bso-survival/v2/dashboard/messages/bulk-status`)
 - [ ] F6-05-S3
 - [ ] F6-05-S4
 - [ ] F6-05-S5
@@ -209,7 +209,7 @@ Statusupdate:
 
 ## Sprintvoorstel
 
-1. Sprint C.1: S1 afgerond, start S2
+1. Sprint C.1: S1 + S2 afgerond
 2. Sprint C.2: S3 + S4
 3. Sprint C.3: S5 en release-gates
 

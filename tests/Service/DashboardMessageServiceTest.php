@@ -161,6 +161,55 @@ class DashboardMessageServiceTest extends TestCase {
     }
 
     /** @test */
+    public function it_bulk_updates_message_status_for_event_messages(): void {
+        $repo = new InMemoryDashboardMessageRepository();
+        $repo->seed((object) [
+            'id' => 21,
+            'event_id' => 5,
+            'status' => 'actief',
+            'visibility' => 'intern',
+        ]);
+        $repo->seed((object) [
+            'id' => 22,
+            'event_id' => 5,
+            'status' => 'actief',
+            'visibility' => 'intern',
+        ]);
+
+        $service = new DashboardMessageService($repo);
+        $result = $service->bulkSetStatusForEvent(5, [21, 22], 'inactief', 'planner');
+
+        $this->assertSame(2, $result['updated_count']);
+        $this->assertSame([21, 22], $result['updated_ids']);
+        $this->assertSame('inactief', (string) $repo->findById(21)->status);
+        $this->assertSame('inactief', (string) $repo->findById(22)->status);
+    }
+
+    /** @test */
+    public function it_rejects_bulk_update_when_message_ids_do_not_match_event(): void {
+        $repo = new InMemoryDashboardMessageRepository();
+        $repo->seed((object) [
+            'id' => 30,
+            'event_id' => 9,
+            'status' => 'actief',
+            'visibility' => 'intern',
+        ]);
+
+        $service = new DashboardMessageService($repo);
+
+        $this->expectException(\RuntimeException::class);
+        $service->bulkSetStatusForEvent(5, [30], 'inactief', 'planner');
+    }
+
+    /** @test */
+    public function it_rejects_bulk_update_with_empty_message_ids(): void {
+        $service = new DashboardMessageService(new InMemoryDashboardMessageRepository());
+
+        $this->expectException(InvalidArgumentException::class);
+        $service->bulkSetStatusForEvent(5, [], 'inactief', 'planner');
+    }
+
+    /** @test */
     public function it_updates_message_content_and_status(): void {
         $repo = new InMemoryDashboardMessageRepository();
         $repo->seed((object) [

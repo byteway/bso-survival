@@ -286,6 +286,84 @@ class DashboardMessageService {
     }
 
     /**
+     * @param array<int, mixed> $messageIds
+     * @return array{event_id: int, status: string, updated_count: int, updated_ids: array<int, int>}
+     */
+    public function bulkSetStatusForEvent(int $eventId, array $messageIds, string $status, string $changedBy = 'admin'): array {
+        if ($eventId <= 0) {
+            throw new InvalidArgumentException('event_id must be a positive integer.');
+        }
+
+        if (!in_array($status, ['actief', 'inactief'], true)) {
+            throw new InvalidArgumentException('status moet actief of inactief zijn.');
+        }
+
+        $normalizedIds = array_values(array_unique(array_map('intval', $messageIds)));
+        $normalizedIds = array_values(array_filter($normalizedIds, static function (int $id): bool {
+            return $id > 0;
+        }));
+
+        if ($normalizedIds === []) {
+            throw new InvalidArgumentException('message_ids must contain at least one positive integer.');
+        }
+
+        if (count($normalizedIds) > 100) {
+            throw new InvalidArgumentException('message_ids may contain up to 100 entries.');
+        }
+
+        $invalidIds = [];
+        $existingRows = [];
+        foreach ($normalizedIds as $messageId) {
+            $existing = $this->messages->findById($messageId);
+            if ($existing === null || (int) ($existing->event_id ?? 0) !== $eventId) {
+                $invalidIds[] = $messageId;
+                continue;
+            }
+
+            $existingRows[$messageId] = $existing;
+        }
+
+        if ($invalidIds !== []) {
+            throw new RuntimeException('Niet alle message_ids horen bij dit event_id: ' . implode(',', $invalidIds));
+        }
+
+        $updatedIds = [];
+        foreach ($normalizedIds as $messageId) {
+            $updated = $this->messages->updateStatusForEvent($messageId, $eventId, $status);
+            if ($updated === null) {
+                throw new RuntimeException(sprintf('Bulk update mislukt voor message_id %d.', $messageId));
+            }
+
+            $updatedIds[] = $messageId;
+
+            if ($this->audit !== null) {
+                $existing = $existingRows[$messageId] ?? null;
+                $this->audit->log(
+                    $eventId,
+                    'dashboard_message',
+                    $messageId,
+                    'bulk_status_changed',
+                    ['status' => (string) ($existing->status ?? '')],
+                    ['status' => $status],
+                    trim($changedBy) === '' ? 'admin' : $changedBy,
+                    [
+                        'requested_count' => count($normalizedIds),
+                        'updated_count' => count($updatedIds),
+                        'status' => $status,
+                    ]
+                );
+            }
+        }
+
+        return [
+            'event_id' => $eventId,
+            'status' => $status,
+            'updated_count' => count($updatedIds),
+            'updated_ids' => $updatedIds,
+        ];
+    }
+
+    /**
      * @param array<string, mixed> $payload
      * @return object
      */

@@ -93,6 +93,30 @@ Foutcodes:
 - `invalid_pagination` (400)
 - `message_list_failed` (500)
 
+## v2 Implemented (S2)
+
+Endpoint:
+
+```http
+POST /wp-json/bso-survival/v2/dashboard/messages/bulk-status
+```
+
+Payload:
+
+```json
+{
+  "event_id": 12,
+  "message_ids": [11, 12, 13],
+  "status": "inactief",
+  "changed_by": "planner"
+}
+```
+
+Foutcodes:
+- `invalid_bulk_payload` (400)
+- `bulk_update_conflict` (409)
+- `bulk_update_failed` (500)
+
 ## Filtering Examples (v1)
 
 Voorbeeld: dashboardmeldingen ophalen voor een event met scope-filter en paginering.

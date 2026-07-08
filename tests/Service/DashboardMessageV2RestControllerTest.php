@@ -70,6 +70,58 @@ class DashboardMessageV2RestControllerTest extends TestCase {
     }
 
     /** @test */
+    public function it_bulk_updates_message_status_via_v2_endpoint(): void {
+        $service = new V2FakeDashboardMessageService();
+        $controller = new DashboardMessageV2RestController($service);
+
+        $response = $controller->bulkUpdateStatus(new V2FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'message_ids' => [11, 12, 13],
+            'status' => 'inactief',
+            'changed_by' => 'planner',
+        ]));
+
+        $this->assertTrue($response['success']);
+        $this->assertSame(3, $response['data']['result']['updated_count']);
+        $this->assertSame([11, 12, 13], $response['data']['result']['updated_ids']);
+        $this->assertSame([11, 12, 13], $service->lastBulkMessageIds);
+        $this->assertSame('inactief', $service->lastBulkStatus);
+    }
+
+    /** @test */
+    public function it_returns_invalid_bulk_payload_when_message_ids_are_missing(): void {
+        $service = new V2FakeDashboardMessageService();
+        $controller = new DashboardMessageV2RestController($service);
+
+        $response = $controller->bulkUpdateStatus(new V2FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'message_ids' => [],
+            'status' => 'inactief',
+        ]));
+
+        $this->assertFalse($response['success']);
+        $this->assertSame('invalid_bulk_payload', $response['error']['code']);
+        $this->assertSame(400, $response['error']['status']);
+    }
+
+    /** @test */
+    public function it_returns_conflict_when_bulk_update_contains_foreign_message_ids(): void {
+        $service = new V2FakeDashboardMessageService();
+        $service->bulkMode = 'conflict';
+        $controller = new DashboardMessageV2RestController($service);
+
+        $response = $controller->bulkUpdateStatus(new V2FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'message_ids' => [11, 99],
+            'status' => 'inactief',
+        ]));
+
+        $this->assertFalse($response['success']);
+        $this->assertSame('bulk_update_conflict', $response['error']['code']);
+        $this->assertSame(409, $response['error']['status']);
+    }
+
+    /** @test */
     public function it_requires_message_capability_or_admin_fallback_and_valid_nonce(): void {
         set_test_current_user_caps([
             'manage_survival_messages' => false,
@@ -109,6 +161,15 @@ class V2FakeDashboardMessageService extends DashboardMessageService {
     /** @var array<string, mixed> */
     public $lastFilters = [];
 
+    /** @var array<int, int> */
+    public $lastBulkMessageIds = [];
+
+    /** @var string */
+    public $lastBulkStatus = '';
+
+    /** @var string */
+    public $bulkMode = 'ok';
+
     public function __construct() {
     }
 
@@ -138,6 +199,26 @@ class V2FakeDashboardMessageService extends DashboardMessageService {
             'page' => $page,
             'per_page' => $perPage,
             'filters' => $filters,
+        ];
+    }
+
+    public function bulkSetStatusForEvent(int $eventId, array $messageIds, string $status, string $changedBy = 'admin'): array {
+        if ($messageIds === []) {
+            throw new \InvalidArgumentException('message_ids must contain at least one positive integer.');
+        }
+
+        if ($this->bulkMode === 'conflict') {
+            throw new \RuntimeException('Niet alle message_ids horen bij dit event_id: 99');
+        }
+
+        $this->lastBulkMessageIds = array_values(array_map('intval', $messageIds));
+        $this->lastBulkStatus = $status;
+
+        return [
+            'event_id' => $eventId,
+            'status' => $status,
+            'updated_count' => count($this->lastBulkMessageIds),
+            'updated_ids' => $this->lastBulkMessageIds,
         ];
     }
 }
