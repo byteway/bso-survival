@@ -1125,12 +1125,12 @@ Dashboard teller ontwerp:
     - badge `VOL` zodra capaciteit bereikt is
 
 Validatiechecklist 6.1.B:
-- [ ] Vrijwilliger kan team met leden succesvol inschrijven
-- [ ] Inschrijving blokkeert buiten open registratie-window
-- [ ] Admin ziet teller `x / max_teams` per event
-- [ ] Dashboard toont registratievoortgang en VOL-status
-- [ ] Team- en team_member records worden atomair opgeslagen
-- [ ] PHPUnit + integratietest dekken happy-path en foutpaden
+- [x] Vrijwilliger kan team met leden succesvol inschrijven
+- [x] Inschrijving blokkeert buiten open registratie-window
+- [x] Admin ziet teller `x / max_teams` per event
+- [x] Dashboard toont registratievoortgang en VOL-status
+- [x] Team- en team_member records worden atomair opgeslagen
+- [x] PHPUnit + integratietest dekken happy-path en foutpaden
 
 #### 6.1.C Inschrijvingsbevestiging mail + beheerbare HTML-template
 
@@ -1139,9 +1139,9 @@ Doel:
 - Beheerder kan in admin een HTML-template beheren met slimme veldcodes.
 
 Controle huidige mailstructuur (feitelijke status):
-- In runtime-code bestaat nog geen concrete mailservice of email-template CRUD.
-- Er is geen productiematige verzendketen met retry/outbox/logging.
-- Conclusie stabiliteit: huidige mailstructuur is nog niet robuust, omdat kerncomponenten ontbreken.
+- In runtime-code zijn `EmailTemplateService`, `RegistrationConfirmationService` en admin templatebeheer aanwezig.
+- Outbox-verzending met retry/backoff draait via `EmailOutboxService` + `OutboxProcessorService`.
+- Conclusie stabiliteit: MVP-keten is operationeel; verdere hardening zit vooral in monitoring en rapportage.
 
 Technisch ontwerp 6.1.C:
 
@@ -1187,12 +1187,12 @@ Stabiliteitsmaatregelen:
 - duidelijke monitoringstatistieken: queued/sent/failed
 
 Validatiechecklist 6.1.C:
-- [ ] Beheerder kan HTML-template opslaan en previewen
-- [ ] Placeholder-resolutie werkt voor alle MVP veldcodes
-- [ ] Outbox bericht wordt aangemaakt na teaminschrijving
-- [ ] Cron/processor verstuurt mail en verwerkt retries
-- [ ] Dubbele bevestigingsmail wordt voorkomen via idempotency-regel
-- [ ] Fouten zijn zichtbaar in admin (status + last_error)
+- [x] Beheerder kan HTML-template opslaan en previewen
+- [x] Placeholder-resolutie werkt voor alle MVP veldcodes
+- [x] Outbox bericht wordt aangemaakt na teaminschrijving
+- [x] Cron/processor verstuurt mail en verwerkt retries
+- [x] Dubbele bevestigingsmail wordt voorkomen via idempotency-regel
+- [x] Fouten zijn zichtbaar in admin (status + last_error)
 
 ### Go/No-Go Gate voor start 6.1.B en 6.1.C
 
@@ -1226,6 +1226,10 @@ Go/No-Go beslissing:
 Executiebeleid na GO:
 1. Start 6.1.B (vrijwilliger-aanmelding + teaminschrijving + tellers).
 2. Start daarna 6.1.C (email-templatebeheer + bevestigingsmail outbox-flow).
+
+Statusupdate 8 juli 2026:
+- 6.1.B MVP geïmplementeerd en functioneel getest.
+- 6.1.C MVP geïmplementeerd en functioneel getest.
 
 ### Subfase 6.2: Frontend scoreformulier (operationele invoer)
 

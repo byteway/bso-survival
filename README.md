@@ -18,6 +18,8 @@ De codebase staat nu in een vroeg maar werkend v2-fundament:
 - dagafsluitingsflow is operationeel (closeout/publicatie via REST, admin en CLI)
 - persisted publicatiebron is beschikbaar voor top-3/eindstand (incl. admin refresh)
 - template/outbox notificatieketen met retries is operationeel
+- teaminschrijving (frontend shortcode + REST) is operationeel binnen registratievenster
+- admin inschrijvingsdashboard en registratie-capaciteitswidget zijn toegevoegd
 
 De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en kan verder worden uitgebreid met geavanceerde ranking- en communicatielagen.
 
@@ -65,6 +67,8 @@ De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en 
 	- Attributen: `event_id`, `title`, `compact` (`yes`/`no`, default `no`)
 - `[bso_survival_event_summary]`
 	- Attributen: `event_id`, `title`
+- `[bso_survival_team_registration]`
+	- Attributen: `event_id`, `title`, `button_label`
 
 Voorbeeld:
 
@@ -116,6 +120,34 @@ Adminpagina gebruikt dezelfde endpoint voor realtime opslaan zonder page reload 
 - GET `/wp-json/bso-survival/v1/event-closeout/{event_id}/publication`
 
 De closeout-route zet een event op `afgesloten`, registreert certificaatrecords en schrijft auditlog. De publish-route zet het event daarna op `gepubliceerd`, normaliseert publicatiepayload naar `top_3` en `final_standings`, slaat het resultaat persisted op en verwerkt notificaties via template/outbox. De publication-route levert het persisted resultaat voor operationele controle in admin.
+
+## REST API (teaminschrijving)
+
+- POST `/wp-json/bso-survival/v1/registrations`
+
+Body (voorbeeld):
+
+```json
+{
+	"event_id": 14,
+	"team_name": "Team Kompas",
+	"contact_name": "Ouder Voorbeeld",
+	"contact_email": "ouder@example.test",
+	"contact_phone": "0612345678",
+	"team_members": ["Kind 1", "Kind 2"],
+	"registration_nonce": "...",
+	"idempotency_key": "reg-..."
+}
+```
+
+Response bevat o.a. `registration_id`, `team_id`, `status`, en `counts.registered_teams/max_teams`.
+
+## Admin Quickstart (inschrijvingen)
+
+1. Plaats shortcode `[bso_survival_team_registration event_id="14"]` op een frontend-pagina.
+2. Laat vrijwilliger team + teamleden invoeren en submitten.
+3. Controleer in admin `BSO Rules -> Inschrijvingen` de teller `x / max_teams` en vensterstatus.
+4. Controleer in dashboard de widget `Inschrijfcapaciteit` en eventuele `VOL` badge.
 
 ## Admin Quickstart (dagafsluiting)
 
@@ -176,6 +208,18 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 - Handmatige refresh en auto-refresh na publish toegevoegd.
 - UX verbeterd met busy-labels, spinner, en specifieke statusmeldingen.
 
+### 0.5.7 - 6.1.B Teaminschrijving en tellers
+
+- Nieuwe registratie-REST endpoint en frontend shortcode-flow toegevoegd.
+- Team + teamleden worden atomair opgeslagen met window/capacity-validatie.
+- Admin inschrijvingspagina en dashboard capaciteit-widget (`x / max_teams`, `VOL`) toegevoegd.
+
+### 0.5.8 - 6.1.C Template-editor en outboxbevestiging
+
+- Registratiebevestiging-template toegevoegd met MVP veldcodes.
+- Email template admin uitgebreid met templatekeuze, preview en placeholder-validatie.
+- Outbox status + `last_error` zichtbaar gemaakt in admin.
+
 ## Ontwikkelcommando's
 
 - composer install
@@ -187,4 +231,4 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 - ./vendor/bin/phpunit tests/Service/PartRuleConfiguratorServiceTest.php
 - ./vendor/bin/phpunit tests/Service/PartRuleScoringFlowTest.php
 
-Huidige teststatus: 118/118 groen.
+Huidige teststatus: 125/125 groen.
