@@ -63,6 +63,13 @@ In non-WP testcontext (fallback) blijft de interne wrappervorm beschikbaar:
 - bulk-operaties voor beheeracties
 - gestandaardiseerde metadata-blokken
 
+Concretisering naar stories staat in `docs/F6-05_V2_Story_Backlog.md`:
+- F6-05-S1: geavanceerde message filtering
+- F6-05-S2: bulk status updates
+- F6-05-S3: bulk delete met safeguards
+- F6-05-S4: metadata-contract standaardisatie
+- F6-05-S5: contract governance en compat matrix
+
 ## Filtering Examples (v1)
 
 Voorbeeld: dashboardmeldingen ophalen voor een event met scope-filter en paginering.

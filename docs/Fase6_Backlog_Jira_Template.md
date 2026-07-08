@@ -315,7 +315,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Epic: Fase 6 REST API Versioning Strategie
 - Type: Task
 - Priority: P3
-- Status: Todo
+- Status: In Progress
 - Labels: fase-6, planning, v2
 - Components: Docs, API
 - Estimate: M
@@ -338,6 +338,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Splits elk v2-thema in kleine, leverbare stories.
 - Voeg per story acceptatiecriteria en testcases toe.
 - Definieer prioriteit, estimate en afhankelijkheden.
+- Werkdocument met sprintklare stories: `docs/F6-05_V2_Story_Backlog.md`.
 
 ### Acceptatiecriteria
 - [ ] Geprioriteerde v2 backlog is opgesteld.
@@ -358,8 +359,8 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Te grote stories die niet sprintbaar zijn.
 
 ### Subtasks
-- [ ] Thema's opsplitsen
-- [ ] Contracten uitwerken
+- [x] Thema's opsplitsen
+- [x] Contracten uitwerken
 - [ ] AC en testplan toevoegen
 - [ ] Schatting en prioriteit bepalen
 - [ ] Review met team
