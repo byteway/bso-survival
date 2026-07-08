@@ -72,6 +72,43 @@ class EventAdminService {
         return $created;
     }
 
+    /** @return object */
+    public function updateEvent(int $eventId, string $name, string $eventDate, int $maxTeams = 22) {
+        $event = $this->requireEditableEvent($eventId);
+
+        $cleanName = trim($name);
+        if ($cleanName === '') {
+            throw new InvalidArgumentException('event_name is verplicht.');
+        }
+
+        $cleanDate = trim($eventDate);
+        if (!$this->isValidDate($cleanDate)) {
+            throw new InvalidArgumentException('event_date moet YYYY-MM-DD zijn.');
+        }
+
+        if ($maxTeams <= 0) {
+            throw new InvalidArgumentException('max_teams moet groter zijn dan 0.');
+        }
+
+        $metaData = json_encode(['max_teams' => $maxTeams], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($metaData === false) {
+            throw new RuntimeException('meta_data kon niet worden opgebouwd.');
+        }
+
+        $updated = $this->eventAdmin->updateById((int) ($event->id ?? $eventId), [
+            'name' => $cleanName,
+            'event_date' => $cleanDate,
+            'meta_data' => $metaData,
+            'updated_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
+        if ($updated === null) {
+            throw new RuntimeException('Event kon niet worden bijgewerkt.');
+        }
+
+        return $updated;
+    }
+
     /**
      * @return array{event_id: int, linked_count: int, unlinked_count: int, linked_ids: array<int, int>, unlinked_ids: array<int, int>}
      */
@@ -215,7 +252,73 @@ class EventAdminService {
      * @return array<int, object>
      */
     public function listLinkableParts(): array {
-        return $this->parts->findAll();
+        return array_values(array_filter($this->parts->findAll(), static function ($part): bool {
+            return (string) ($part->status ?? '') !== 'verwijderd';
+        }));
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function listEligiblePartsForEvent(int $eventId, string $search = ''): array {
+        $event = $this->events->findById($eventId);
+        if ($event === null) {
+            throw new InvalidArgumentException(sprintf('Event %d niet gevonden.', $eventId));
+        }
+
+        $attachedParts = $this->parts->findByEventId($eventId);
+        $attachedById = [];
+        $attachedNames = [];
+        foreach ($attachedParts as $part) {
+            $partId = (int) ($part->id ?? 0);
+            if ($partId > 0) {
+                $attachedById[$partId] = true;
+            }
+
+            $name = trim((string) ($part->name ?? ''));
+            if ($name !== '') {
+                $attachedNames[$this->normalizePartName($name)] = true;
+            }
+        }
+
+        $query = $this->normalizePartName(trim($search));
+        $eligible = [];
+        foreach ($this->listLinkableParts() as $part) {
+            $partId = (int) ($part->id ?? 0);
+            $ownerEventId = isset($part->event_id) ? (int) $part->event_id : 0;
+            $isAttachedToSelected = isset($attachedById[$partId]);
+
+            if (!$isAttachedToSelected && $ownerEventId > 0) {
+                $ownerEvent = $this->events->findById($ownerEventId);
+                $ownerStatus = $ownerEvent !== null ? (string) ($ownerEvent->status ?? '') : '';
+                if (!$this->isClosedLikeStatus($ownerStatus) && $ownerStatus !== 'verwijderd') {
+                    continue;
+                }
+            }
+
+            $name = trim((string) ($part->name ?? ''));
+            $nameKey = $this->normalizePartName($name);
+            if (!$isAttachedToSelected && $nameKey !== '' && isset($attachedNames[$nameKey])) {
+                continue;
+            }
+
+            if ($query !== '' && strpos($nameKey, $query) === false) {
+                continue;
+            }
+
+            $eligible[] = $part;
+        }
+
+        usort($eligible, static function ($left, $right): int {
+            $nameCompare = strcmp((string) ($left->name ?? ''), (string) ($right->name ?? ''));
+            if ($nameCompare !== 0) {
+                return $nameCompare;
+            }
+
+            return ((int) ($left->id ?? 0)) <=> ((int) ($right->id ?? 0));
+        });
+
+        return $eligible;
     }
 
     /** @return object */
@@ -239,6 +342,10 @@ class EventAdminService {
 
     private function isClosedLikeStatus(string $status): bool {
         return in_array($status, ['afgesloten', 'gepubliceerd'], true);
+    }
+
+    private function normalizePartName(string $name): string {
+        return function_exists('mb_strtolower') ? mb_strtolower($name) : strtolower($name);
     }
 
     private function isValidDate(string $value): bool {

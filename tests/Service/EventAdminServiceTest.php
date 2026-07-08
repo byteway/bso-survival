@@ -161,6 +161,66 @@ class EventAdminServiceTest extends TestCase {
         $this->expectException(InvalidArgumentException::class);
         $service->createEvent('', '2026-09-01', 22);
     }
+
+    /** @test */
+    public function it_updates_event_metadata_for_admin_edit(): void {
+        $events = new InMemoryEventReadRepository();
+        $events->seed((object) [
+            'id' => 15,
+            'name' => 'Oud event',
+            'event_date' => '2026-09-01',
+            'status' => 'concept',
+            'meta_data' => '{"max_teams":22}',
+        ]);
+
+        $service = new EventAdminService(
+            $events,
+            new InMemoryEventAdminRepository($events),
+            new InMemoryPartAdminRepository(),
+            new InMemoryEventPublicationRepository()
+        );
+
+        $updated = $service->updateEvent(15, 'Nieuw event', '2026-09-15', 18);
+
+        $this->assertSame('Nieuw event', (string) ($updated->name ?? ''));
+        $this->assertSame('2026-09-15', (string) ($updated->event_date ?? ''));
+        $meta = json_decode((string) ($updated->meta_data ?? ''), true);
+        $this->assertSame(18, (int) ($meta['max_teams'] ?? 0));
+    }
+
+    /** @test */
+    public function it_lists_only_eligible_parts_for_event_linking(): void {
+        $events = new InMemoryEventReadRepository();
+        $events->seed((object) ['id' => 21, 'name' => 'Doel', 'status' => 'concept']);
+        $events->seed((object) ['id' => 22, 'name' => 'Ander actief', 'status' => 'actief']);
+        $events->seed((object) ['id' => 23, 'name' => 'Ander gesloten', 'status' => 'afgesloten']);
+
+        $parts = new InMemoryPartAdminRepository();
+        $parts->seed((object) ['id' => 501, 'name' => 'Kanovaren', 'event_id' => 21, 'status' => 'actief']);
+        $parts->seed((object) ['id' => 502, 'name' => 'Klimnet', 'event_id' => null, 'status' => 'actief']);
+        $parts->seed((object) ['id' => 503, 'name' => 'Vlotbouwen', 'event_id' => 22, 'status' => 'actief']);
+        $parts->seed((object) ['id' => 504, 'name' => 'KanoVAREN', 'event_id' => 23, 'status' => 'actief']);
+        $parts->seed((object) ['id' => 505, 'name' => 'Tokkelbaan', 'event_id' => 23, 'status' => 'actief']);
+        $parts->seed((object) ['id' => 506, 'name' => 'Verborgen', 'event_id' => null, 'status' => 'verwijderd']);
+
+        $service = new EventAdminService(
+            $events,
+            new InMemoryEventAdminRepository($events),
+            $parts,
+            new InMemoryEventPublicationRepository()
+        );
+
+        $eligible = $service->listEligiblePartsForEvent(21);
+        $eligibleIds = array_map(static function ($part): int {
+            return (int) ($part->id ?? 0);
+        }, $eligible);
+
+        $this->assertSame([501, 502, 505], $eligibleIds);
+
+        $filtered = $service->listEligiblePartsForEvent(21, 'tok');
+        $this->assertCount(1, $filtered);
+        $this->assertSame(505, (int) ($filtered[0]->id ?? 0));
+    }
 }
 
 class InMemoryEventReadRepository implements EventRepositoryInterface {
@@ -215,6 +275,19 @@ class InMemoryEventAdminRepository implements EventAdminRepositoryInterface {
         return $row;
     }
 
+    public function updateById(int $eventId, array $data) {
+        $row = $this->events->findById($eventId);
+        if ($row === null) {
+            return null;
+        }
+
+        foreach ($data as $key => $value) {
+            $row->{$key} = $value;
+        }
+
+        return $row;
+    }
+
     public function markDeleted(int $eventId): bool {
         return $this->events->updateStatus($eventId, 'verwijderd');
     }
@@ -244,6 +317,39 @@ class InMemoryPartAdminRepository implements PartAdminRepositoryInterface {
         return array_values(array_filter($this->rows, static function ($row) use ($eventId): bool {
             return (int) ($row->event_id ?? 0) === $eventId;
         }));
+    }
+
+    public function findById(int $partId) {
+        return $this->rows[$partId] ?? null;
+    }
+
+    public function create(array $data) {
+        $id = count($this->rows) + 1;
+        $row = (object) array_merge(['id' => $id], $data);
+        $this->rows[$id] = $row;
+        return $row;
+    }
+
+    public function updateById(int $partId, array $data) {
+        if (!isset($this->rows[$partId])) {
+            return null;
+        }
+
+        foreach ($data as $key => $value) {
+            $this->rows[$partId]->{$key} = $value;
+        }
+
+        return $this->rows[$partId];
+    }
+
+    public function markDeleted(int $partId): bool {
+        if (!isset($this->rows[$partId])) {
+            return false;
+        }
+
+        $this->rows[$partId]->status = 'verwijderd';
+        $this->rows[$partId]->event_id = null;
+        return true;
     }
 
     public function assignToEvent(int $partId, ?int $eventId): bool {

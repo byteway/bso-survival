@@ -20,7 +20,8 @@ De codebase staat nu in een vroeg maar werkend v2-fundament:
 - template/outbox notificatieketen met retries is operationeel
 - teaminschrijving (frontend shortcode + REST) is operationeel binnen registratievenster
 - admin inschrijvingsdashboard en registratie-capaciteitswidget zijn toegevoegd
-- admin eventbeheer toegevoegd: event aanmaken, bestaande parts koppelen en veilig verwijderen zonder part-verlies
+- admin eventbeheer toegevoegd: event aanmaken/bewerken, geldig part-filteren, bestaande parts koppelen en veilig verwijderen zonder part-verlies
+- admin onderdelenbeheer toegevoegd: CRUD en JSON import/export voor herbruikbare onderdelen
 
 De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en kan verder worden uitgebreid met geavanceerde ranking- en communicatielagen.
 
@@ -57,6 +58,8 @@ De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en 
 - Publicatienotificatieservice: [src/Service/PublicationNotificationService.php](src/Service/PublicationNotificationService.php)
 - Eventbeheer adminpagina: [src/Admin/EventAdminPage.php](src/Admin/EventAdminPage.php)
 - Eventbeheer service: [src/Service/EventAdminService.php](src/Service/EventAdminService.php)
+- Onderdelen adminpagina: [src/Admin/PartAdminPage.php](src/Admin/PartAdminPage.php)
+- Onderdelen adminservice: [src/Service/PartAdminService.php](src/Service/PartAdminService.php)
 - Eventbeheer handleiding: [docs/Admin_Eventbeheer.md](docs/Admin_Eventbeheer.md)
 
 ## Frontend shortcodes (actueel)
@@ -165,9 +168,19 @@ De task `Auto WP Runtime Smoke on Folder Open` draait automatisch bij openen van
 
 1. Open `Survival -> Events`.
 2. Maak een nieuw event aan met naam, datum en max teams.
-3. Kies het event in dezelfde pagina en koppel bestaande parts.
-4. Gesloten/gepubliceerde events zijn read-only voor part-koppelingen.
-5. Verwijderen van event koppelt parts los maar verwijdert parts niet.
+3. Kies een bestaand event, wijzig indien nodig naam/datum/max teams en sla op.
+4. Gebruik het onderdelenfilter om alleen geldig koppelbare parts snel te vinden.
+5. Gesloten/gepubliceerde events zijn read-only voor inhoudelijke mutaties.
+6. Verwijderen van event koppelt parts los maar verwijdert parts niet.
+
+## Admin Quickstart (onderdelenbeheer)
+
+1. Open `Survival -> Onderdelen`.
+2. Maak een nieuw onderdeel aan met minimaal naam en status.
+3. Leg optioneel GPS-coordinaten en uitbreidbare `meta_data` JSON vast.
+4. Gebruik `Bewerken` om bestaand onderdeel inhoudelijk te wijzigen.
+5. Importeer een JSON-lijst voor bulktoevoeging of exporteer de huidige set als herbruikbaar JSON-bestand.
+6. Verwijderen faalt veilig als het onderdeel nog aan een actief event gekoppeld is.
 
 Handleiding: [docs/Admin_Eventbeheer.md](docs/Admin_Eventbeheer.md)
 
@@ -175,6 +188,7 @@ Handleiding: [docs/Admin_Eventbeheer.md](docs/Admin_Eventbeheer.md)
 
 ```bash
 ./scripts/run-admin-event-tests.sh
+./scripts/run-admin-part-tests.sh
 ```
 
 ## REST API (dagafsluiting)

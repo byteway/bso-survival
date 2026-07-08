@@ -141,7 +141,17 @@ Acceptatiecriteria:
 - Parts blijven beschikbaar voor koppeling aan andere events.
 - Verwijderactie geeft duidelijke waarschuwing over wat wel en niet verwijderd wordt.
 
-**US-B1d - Nieuwe survival inplannen**
+**US-B1d - Bestaand event bewerken met alleen geldige koppelbare onderdelen**
+
+Als beheerder wil ik bij het bewerken van een event alleen onderdelen zien die geldig gekoppeld kunnen worden zodat ik geen ongeldige of conflicterende keuzes kan opslaan.
+
+Acceptatiecriteria:
+- De event-bewerkpagina toont alleen onderdelen die beschikbaar zijn voor koppeling aan het gekozen event.
+- Onderdelen die al gekoppeld zijn aan een actief ander event zijn niet koppelbaar.
+- Onderdelen met conflicterende naam binnen hetzelfde event worden vooraf geblokkeerd.
+- In de onderdelenlijst is een filter beschikbaar om sneller te zoeken/selecteren.
+
+**US-B1e - Nieuwe survival inplannen**
 
 Als beheerder wil ik een nieuwe survival kunnen inplannen zodat het dagprogramma bekend is en onderdelen per tijdslot score-invoer kunnen ontvangen.
 
@@ -170,6 +180,16 @@ Acceptatiecriteria:
 
 ### Epic C - Onderdeelconfiguratie en route
 
+**US-C0 - Bestaand onderdeel aanmaken, bewerken en verwijderen in Admin**
+
+Als beheerder wil ik onderdelen in de Admin kunnen aanmaken, bewerken en verwijderen zodat de beschikbare survivalonderdelen centraal beheerd kunnen worden.
+
+Acceptatiecriteria:
+- Een beheerder kan een nieuw onderdeel aanmaken met minimaal naam en status.
+- Een beheerder kan een bestaand onderdeel inhoudelijk wijzigen.
+- Een beheerder kan een onderdeel verwijderen of deactiveren met duidelijke bevestiging.
+- Verwijderen van een onderdeel faalt veilig wanneer het onderdeel nog in gebruik is in actieve eventcontext.
+
 **US-C1 - Scoremethode per onderdeel configureren**
 
 Als beheerder wil ik per onderdeel kunnen instellen hoe score wordt bepaald (tijd, punten, afstand) zodat score-invoer consistent verwerkt wordt.
@@ -196,6 +216,16 @@ Acceptatiecriteria:
 - Onderdeel bevat latitude en longitude.
 - Frontend bevat route-link naar Google Maps met walking route.
 - Route is beschikbaar vanuit planningsoverzicht en onderdeel-detail.
+
+**US-C4 - Onderdelen importeren en exporteren**
+
+Als beheerder wil ik onderdelen kunnen importeren en exporteren zodat ik onderdeelsets sneller kan hergebruiken, migreren of beheren.
+
+Acceptatiecriteria:
+- Export levert een leesbaar en herbruikbaar bestandformaat op voor onderdelen.
+- Import valideert verplichte velden en weigert ongeldige records met duidelijke foutmelding.
+- Import veroorzaakt geen onbedoelde duplicaten zonder expliciete keuze of validatie.
+- Geimporteerde onderdelen zijn direct beschikbaar voor koppeling aan events.
 
 ### Epic D - Score-invoer en wedstrijdvoering
 
@@ -782,10 +812,18 @@ graph TD
 Per onderdeel kan beheer instellen:
 
 - Naam en status.
+- CRUD-beheer via een centrale onderdelen-adminpagina.
+- JSON import/export voor herbruikbare onderdeelsets.
 - Scoremethode: tijd, punten of afstand.
 - Helptekst en illustraties.
 - GPS-coordinaten.
 - Scheidsrechterkoppeling.
+
+Bij eventbewerking geldt aanvullend:
+
+- Alleen geldig koppelbare onderdelen worden getoond.
+- Onderdelen gekoppeld aan een actief ander event zijn uitgesloten.
+- Een naamfilter versnelt het selecteren van onderdelen zonder verborgen ontkoppelingen te veroorzaken.
 
 ### Operationele parameters configureren
 

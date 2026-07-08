@@ -31,6 +31,18 @@ class EventAdminRepository implements EventAdminRepositoryInterface {
         return (object) array_merge(['id' => $id], $data);
     }
 
+    public function updateById(int $eventId, array $data) {
+        $table = $this->tableName();
+        $updated = $this->wpdb->update($table, $data, ['id' => $eventId]);
+
+        if ($updated === false) {
+            return null;
+        }
+
+        $sql = $this->wpdb->prepare("SELECT * FROM {$table} WHERE id = %d LIMIT 1", $eventId);
+        return $this->wpdb->get_row($sql) ?: null;
+    }
+
     public function markDeleted(int $eventId): bool {
         $table = $this->tableName();
 

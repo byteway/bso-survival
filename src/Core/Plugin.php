@@ -7,6 +7,7 @@ use BSO\Survival\Admin\DashboardMessageAdminPage;
 use BSO\Survival\Admin\EmailTemplateAdminPage;
 use BSO\Survival\Admin\EventAdminPage;
 use BSO\Survival\Admin\EventLifecycleAdminPage;
+use BSO\Survival\Admin\PartAdminPage;
 use BSO\Survival\Admin\PartRuleAdminPage;
 use BSO\Survival\Admin\RegistrationAdminPage;
 use BSO\Survival\Admin\ScoreEntryAdminPage;
@@ -53,6 +54,7 @@ use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\FrontendScoreSubmissionService;
 use BSO\Survival\Service\OutboxProcessorService;
+use BSO\Survival\Service\PartAdminService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
 use BSO\Survival\Service\PartService;
 use BSO\Survival\Service\PublicationNotificationService;
@@ -81,6 +83,10 @@ class Plugin {
         add_action('admin_enqueue_scripts', [$this, 'register_assets']);
         add_action('admin_menu', [$this, 'register_admin_pages']);
         add_action('admin_post_bso_survival_save_part_rule', [$this, 'handle_part_rule_save']);
+        add_action('admin_post_bso_survival_part_save', [$this, 'handle_part_save']);
+        add_action('admin_post_bso_survival_part_delete', [$this, 'handle_part_delete']);
+        add_action('admin_post_bso_survival_part_import', [$this, 'handle_part_import']);
+        add_action('admin_post_bso_survival_part_export', [$this, 'handle_part_export']);
         add_action('admin_post_bso_survival_save_dashboard_widgets', [$this, 'handle_dashboard_widget_save']);
         add_action('admin_post_bso_survival_save_email_template', [$this, 'handle_email_template_save']);
         add_action('admin_post_bso_survival_admin_score_create', [$this, 'handle_admin_score_create']);
@@ -90,6 +96,7 @@ class Plugin {
         add_action('admin_post_bso_survival_dashboard_message_toggle', [$this, 'handle_dashboard_message_toggle']);
         add_action('admin_post_bso_survival_dashboard_message_delete', [$this, 'handle_dashboard_message_delete']);
         add_action('admin_post_bso_survival_event_create', [$this, 'handle_event_create']);
+        add_action('admin_post_bso_survival_event_update', [$this, 'handle_event_update']);
         add_action('admin_post_bso_survival_event_link_parts', [$this, 'handle_event_link_parts']);
         add_action('admin_post_bso_survival_event_delete', [$this, 'handle_event_delete']);
         add_action('rest_api_init', [$this, 'register_rest_routes']);
@@ -128,6 +135,7 @@ class Plugin {
 
     public function register_admin_pages(): void {
         $this->buildPartRuleAdminPage()->registerMenu();
+        $this->buildPartAdminPage()->registerMenu();
         $this->buildEventAdminPage()->registerMenu();
         $this->buildDashboardWidgetAdminPage()->registerMenu();
         $this->buildRegistrationAdminPage()->registerMenu();
@@ -139,6 +147,22 @@ class Plugin {
 
     public function handle_part_rule_save(): void {
         $this->buildPartRuleAdminPage()->handleSave();
+    }
+
+    public function handle_part_save(): void {
+        $this->buildPartAdminPage()->handleSave();
+    }
+
+    public function handle_part_delete(): void {
+        $this->buildPartAdminPage()->handleDelete();
+    }
+
+    public function handle_part_import(): void {
+        $this->buildPartAdminPage()->handleImport();
+    }
+
+    public function handle_part_export(): void {
+        $this->buildPartAdminPage()->handleExport();
     }
 
     public function handle_dashboard_widget_save(): void {
@@ -175,6 +199,10 @@ class Plugin {
 
     public function handle_event_create(): void {
         $this->buildEventAdminPage()->handleCreate();
+    }
+
+    public function handle_event_update(): void {
+        $this->buildEventAdminPage()->handleUpdate();
     }
 
     public function handle_event_link_parts(): void {
@@ -340,6 +368,12 @@ class Plugin {
         $configurator = new PartRuleConfiguratorService($rules);
 
         return new PartRuleAdminPage($eventService, $configurator, $rules);
+    }
+
+    private function buildPartAdminPage(): PartAdminPage {
+        return new PartAdminPage(
+            new PartAdminService(new PartAdminRepository(), new EventRepository())
+        );
     }
 
     private function buildDashboardWidgetAdminPage(): DashboardWidgetAdminPage {
