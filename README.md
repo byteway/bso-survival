@@ -20,6 +20,7 @@ De codebase staat nu in een vroeg maar werkend v2-fundament:
 - template/outbox notificatieketen met retries is operationeel
 - teaminschrijving (frontend shortcode + REST) is operationeel binnen registratievenster
 - admin inschrijvingsdashboard en registratie-capaciteitswidget zijn toegevoegd
+- admin eventbeheer toegevoegd: event aanmaken, bestaande parts koppelen en veilig verwijderen zonder part-verlies
 
 De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en kan verder worden uitgebreid met geavanceerde ranking- en communicatielagen.
 
@@ -54,6 +55,9 @@ De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en 
 - Dagafsluiting adminpagina: [src/Admin/EventLifecycleAdminPage.php](src/Admin/EventLifecycleAdminPage.php)
 - Dagafsluiting CLI-command: [src/Core/Cli/EventLifecycleCommand.php](src/Core/Cli/EventLifecycleCommand.php)
 - Publicatienotificatieservice: [src/Service/PublicationNotificationService.php](src/Service/PublicationNotificationService.php)
+- Eventbeheer adminpagina: [src/Admin/EventAdminPage.php](src/Admin/EventAdminPage.php)
+- Eventbeheer service: [src/Service/EventAdminService.php](src/Service/EventAdminService.php)
+- Eventbeheer handleiding: [docs/Admin_Eventbeheer.md](docs/Admin_Eventbeheer.md)
 
 ## Frontend shortcodes (actueel)
 
@@ -156,6 +160,22 @@ Handmatig uitvoeren:
 ```
 
 De task `Auto WP Runtime Smoke on Folder Open` draait automatisch bij openen van de projectmap (na toestaan van auto-tasks in VS Code).
+
+## Admin Quickstart (eventbeheer)
+
+1. Open `Survival -> Events`.
+2. Maak een nieuw event aan met naam, datum en max teams.
+3. Kies het event in dezelfde pagina en koppel bestaande parts.
+4. Gesloten/gepubliceerde events zijn read-only voor part-koppelingen.
+5. Verwijderen van event koppelt parts los maar verwijdert parts niet.
+
+Handleiding: [docs/Admin_Eventbeheer.md](docs/Admin_Eventbeheer.md)
+
+## Gerichte tests (eventbeheer)
+
+```bash
+./scripts/run-admin-event-tests.sh
+```
 
 ## REST API (dagafsluiting)
 

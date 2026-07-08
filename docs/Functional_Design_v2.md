@@ -105,12 +105,48 @@ Acceptatiecriteria:
 
 ### Epic B - Dagplanning en toewijzing
 
-**US-B1 - Nieuwe survival inplannen**
+**US-B1 - Nieuw Survival Event aanmaken in Admin**
+
+Als beheerder wil ik in de Admin een nieuw Survival Event kunnen aanmaken zodat een nieuwe wedstrijddag als aparte entiteit beheerd kan worden.
+
+Acceptatiecriteria:
+- In Admin is een expliciete actie beschikbaar om een nieuw event aan te maken.
+- Een event bevat minimaal naam, datum en status.
+- Nieuw aangemaakte events zijn direct selecteerbaar in beheerpagina's (dashboard widgets, lifecycle, inschrijvingen).
+
+**US-B1a - Bestaande parts koppelen aan nieuw event**
+
+Als beheerder wil ik na het aanmaken van een event bestaande Survival parts aan dat event kunnen koppelen zodat parts herbruikbaar zijn over meerdere events.
+
+Acceptatiecriteria:
+- Koppelen gebruikt bestaande part-definities, zonder duplicaten te maken.
+- Een event kan meerdere bestaande parts bevatten.
+- Na koppeling zijn de parts zichtbaar in event-overzicht en planning context.
+
+**US-B1b - Gesloten events niet meer wijzigbaar**
+
+Als beheerder wil ik dat gesloten events niet meer aangepast kunnen worden zodat historische resultaten niet per ongeluk worden gewijzigd.
+
+Acceptatiecriteria:
+- Voor events met status gesloten/read-only zijn mutaties geblokkeerd.
+- Alleen de samenvatting/eindresultaat van gesloten events blijft beschikbaar voor raadpleging.
+- Details over opbouw (parts, tussenstanden, scoredetails) hoeven na samenvatting niet meer wijzigbaar of leidend te zijn.
+
+**US-B1c - Event verwijderen zonder part-verlies**
+
+Als beheerder wil ik een event kunnen verwijderen zonder gekoppelde parts te verwijderen zodat andere events dezelfde parts kunnen blijven gebruiken.
+
+Acceptatiecriteria:
+- Verwijderen van een event verwijdert geen part-definities.
+- Parts blijven beschikbaar voor koppeling aan andere events.
+- Verwijderactie geeft duidelijke waarschuwing over wat wel en niet verwijderd wordt.
+
+**US-B1d - Nieuwe survival inplannen**
 
 Als beheerder wil ik een nieuwe survival kunnen inplannen zodat het dagprogramma bekend is en onderdelen per tijdslot score-invoer kunnen ontvangen.
 
 Acceptatiecriteria:
-- Planning kan alleen starten als teams en onderdelen definitief zijn.
+- Planning kan alleen starten als teams en onderdelen voor het event definitief zijn gekoppeld.
 - Planning houdt rekening met maxima: 22 teams, 20 onderdelen.
 - Per tijdslot is zichtbaar welke teams bij welk onderdeel staan.
 
@@ -307,6 +343,8 @@ Acceptatiecriteria:
 ---
 
 ## 4. Architectuur volgens WordPress best practice
+
+Praktische beheerhandleiding voor events en part-koppelingen: [Admin_Eventbeheer.md](Admin_Eventbeheer.md).
 
 ### Hoog niveau
 

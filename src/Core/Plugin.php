@@ -5,6 +5,7 @@ namespace BSO\Survival\Core;
 use BSO\Survival\Admin\DashboardWidgetAdminPage;
 use BSO\Survival\Admin\DashboardMessageAdminPage;
 use BSO\Survival\Admin\EmailTemplateAdminPage;
+use BSO\Survival\Admin\EventAdminPage;
 use BSO\Survival\Admin\EventLifecycleAdminPage;
 use BSO\Survival\Admin\PartRuleAdminPage;
 use BSO\Survival\Admin\RegistrationAdminPage;
@@ -26,9 +27,11 @@ use BSO\Survival\Database\Repository\DashboardMessageRepository;
 use BSO\Survival\Database\Repository\DashboardWidgetLayoutRepository;
 use BSO\Survival\Database\Repository\EmailOutboxRepository;
 use BSO\Survival\Database\Repository\EmailTemplateRepository;
+use BSO\Survival\Database\Repository\EventAdminRepository;
 use BSO\Survival\Database\Repository\EventPublicationRepository;
 use BSO\Survival\Database\Repository\EventRepository;
 use BSO\Survival\Database\Repository\PartRepository;
+use BSO\Survival\Database\Repository\PartAdminRepository;
 use BSO\Survival\Database\Repository\PartRuleRepository;
 use BSO\Survival\Database\Repository\RegistrationWindowRepository;
 use BSO\Survival\Database\Repository\ScoreEntryRepository;
@@ -44,6 +47,7 @@ use BSO\Survival\Service\DashboardWidgetLayoutService;
 use BSO\Survival\Service\DashboardWidgetRegistry;
 use BSO\Survival\Service\EmailOutboxService;
 use BSO\Survival\Service\EmailTemplateService;
+use BSO\Survival\Service\EventAdminService;
 use BSO\Survival\Service\EventCloseoutService;
 use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Service\EventService;
@@ -85,6 +89,9 @@ class Plugin {
         add_action('admin_post_bso_survival_dashboard_message_update', [$this, 'handle_dashboard_message_update']);
         add_action('admin_post_bso_survival_dashboard_message_toggle', [$this, 'handle_dashboard_message_toggle']);
         add_action('admin_post_bso_survival_dashboard_message_delete', [$this, 'handle_dashboard_message_delete']);
+        add_action('admin_post_bso_survival_event_create', [$this, 'handle_event_create']);
+        add_action('admin_post_bso_survival_event_link_parts', [$this, 'handle_event_link_parts']);
+        add_action('admin_post_bso_survival_event_delete', [$this, 'handle_event_delete']);
         add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('init', [$this, 'schedule_email_outbox_processing']);
         add_action('bso_survival_process_email_outbox', [$this, 'process_email_outbox']);
@@ -121,6 +128,7 @@ class Plugin {
 
     public function register_admin_pages(): void {
         $this->buildPartRuleAdminPage()->registerMenu();
+        $this->buildEventAdminPage()->registerMenu();
         $this->buildDashboardWidgetAdminPage()->registerMenu();
         $this->buildRegistrationAdminPage()->registerMenu();
         $this->buildScoreEntryAdminPage()->registerMenu();
@@ -163,6 +171,18 @@ class Plugin {
 
     public function handle_dashboard_message_delete(): void {
         $this->buildDashboardMessageAdminPage()->handleDelete();
+    }
+
+    public function handle_event_create(): void {
+        $this->buildEventAdminPage()->handleCreate();
+    }
+
+    public function handle_event_link_parts(): void {
+        $this->buildEventAdminPage()->handleLinkParts();
+    }
+
+    public function handle_event_delete(): void {
+        $this->buildEventAdminPage()->handleDelete();
     }
 
     public function register_assets(): void {
@@ -327,6 +347,18 @@ class Plugin {
         $layoutService = new DashboardWidgetLayoutService(new DashboardWidgetLayoutRepository());
 
         return new DashboardWidgetAdminPage($eventService, $layoutService);
+    }
+
+    private function buildEventAdminPage(): EventAdminPage {
+        $eventService = new EventService(new EventRepository());
+        $adminService = new EventAdminService(
+            new EventRepository(),
+            new EventAdminRepository(),
+            new PartAdminRepository(),
+            new EventPublicationRepository()
+        );
+
+        return new EventAdminPage($eventService, $adminService);
     }
 
     private function buildRegistrationAdminPage(): RegistrationAdminPage {

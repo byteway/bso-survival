@@ -139,7 +139,7 @@ class Schema {
             'parts' => [
                 'columns' => [
                     'id' => 'BIGINT UNSIGNED NOT NULL AUTO_INCREMENT',
-                    'event_id' => 'BIGINT UNSIGNED NOT NULL',
+                    'event_id' => 'BIGINT UNSIGNED NULL DEFAULT NULL',
                     'name' => 'VARCHAR(191) NOT NULL',
                     'latitude' => 'DECIMAL(10,8) NULL DEFAULT NULL',
                     'longitude' => 'DECIMAL(11,8) NULL DEFAULT NULL',
@@ -161,7 +161,7 @@ class Schema {
                     [
                         'column' => 'event_id',
                         'references' => 'events.id',
-                        'on_delete' => 'CASCADE',
+                        'on_delete' => 'SET NULL',
                     ],
                 ],
             ],

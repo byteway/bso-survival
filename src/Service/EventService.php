@@ -17,7 +17,10 @@ class EventService {
      * @return array<int, object>
      */
     public function listEvents(): array {
-        return $this->events->findAll();
+        return array_values(array_filter($this->events->findAll(), static function ($event): bool {
+            $status = is_object($event) ? (string) ($event->status ?? '') : '';
+            return $status !== 'verwijderd';
+        }));
     }
 
     /**
