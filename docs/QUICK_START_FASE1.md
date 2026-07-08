@@ -18,6 +18,19 @@ Directe smoke-test shortcodes:
 [bso_survival_event_summary event_id="2"]
 ```
 
+## Operator Runbook F6-03 (10 regels)
+
+1. Ga naar de plugin-root: cd /config/workspace/projects/bso-survival
+2. Controleer WP-CLI: wp --info
+3. Kies een geldig event_id, bijvoorbeeld 1
+4. Start smoke-check: ./tests/manual/f6-03-smoke.sh 1
+5. Controleer PASS-regel: future visible_from is nog niet zichtbaar
+6. Controleer PASS-regel: verlopen visible_until is niet zichtbaar
+7. Controleer PASS-regel: huidig zichtvenster is zichtbaar
+8. Controleer PASS-regel: ongeldige tijdcombinatie wordt geweigerd
+9. Controleer eindregel: F6-03 SMOKE RESULT: PASS
+10. Bij FAIL: herhaal met een ander actief event_id en controleer pluginlog + message-admin
+
 **Goal:** Get MetaDataHelper working and all tests passing  
 **Time:** 30–45 minutes  
 **For:** First-time developer on this project
