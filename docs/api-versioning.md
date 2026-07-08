@@ -117,6 +117,33 @@ Foutcodes:
 - `bulk_update_conflict` (409)
 - `bulk_update_failed` (500)
 
+## v2 Implemented (S3)
+
+Endpoint:
+
+```http
+POST /wp-json/bso-survival/v2/dashboard/messages/bulk-delete
+```
+
+Payload:
+
+```json
+{
+  "event_id": 12,
+  "message_ids": [19, 21],
+  "confirm": true,
+  "changed_by": "admin"
+}
+```
+
+Safeguard:
+- `confirm` moet expliciet `true` zijn, anders geen delete.
+
+Foutcodes:
+- `invalid_bulk_payload` (400)
+- `bulk_delete_conflict` (409)
+- `bulk_delete_failed` (500)
+
 ## Filtering Examples (v1)
 
 Voorbeeld: dashboardmeldingen ophalen voor een event met scope-filter en paginering.

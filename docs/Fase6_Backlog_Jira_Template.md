@@ -344,7 +344,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - [x] Geprioriteerde v2 backlog is opgesteld.
 - [x] Elke story heeft API-contract en acceptatiecriteria.
 - [x] Elke story heeft testaanpak en afhankelijkheden.
-- [ ] Backlog is klaar voor sprintplanning zonder extra analyse.
+- [x] Backlog is klaar voor sprintplanning zonder extra analyse.
 
 ### Testcriteria
 - Unit: n.v.t.

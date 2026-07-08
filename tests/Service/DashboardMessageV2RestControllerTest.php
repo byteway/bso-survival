@@ -122,6 +122,57 @@ class DashboardMessageV2RestControllerTest extends TestCase {
     }
 
     /** @test */
+    public function it_bulk_deletes_messages_via_v2_endpoint_when_confirmed(): void {
+        $service = new V2FakeDashboardMessageService();
+        $controller = new DashboardMessageV2RestController($service);
+
+        $response = $controller->bulkDeleteMessages(new V2FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'message_ids' => [11, 12],
+            'confirm' => true,
+            'changed_by' => 'planner',
+        ]));
+
+        $this->assertTrue($response['success']);
+        $this->assertSame(2, $response['data']['result']['deleted_count']);
+        $this->assertSame([11, 12], $response['data']['result']['deleted_ids']);
+        $this->assertSame([11, 12], $service->lastBulkDeleteMessageIds);
+    }
+
+    /** @test */
+    public function it_rejects_bulk_delete_without_confirmation_flag(): void {
+        $service = new V2FakeDashboardMessageService();
+        $controller = new DashboardMessageV2RestController($service);
+
+        $response = $controller->bulkDeleteMessages(new V2FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'message_ids' => [11],
+            'confirm' => false,
+        ]));
+
+        $this->assertFalse($response['success']);
+        $this->assertSame('invalid_bulk_payload', $response['error']['code']);
+        $this->assertSame(400, $response['error']['status']);
+    }
+
+    /** @test */
+    public function it_returns_conflict_when_bulk_delete_contains_foreign_message_ids(): void {
+        $service = new V2FakeDashboardMessageService();
+        $service->bulkDeleteMode = 'conflict';
+        $controller = new DashboardMessageV2RestController($service);
+
+        $response = $controller->bulkDeleteMessages(new V2FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'message_ids' => [11, 99],
+            'confirm' => true,
+        ]));
+
+        $this->assertFalse($response['success']);
+        $this->assertSame('bulk_delete_conflict', $response['error']['code']);
+        $this->assertSame(409, $response['error']['status']);
+    }
+
+    /** @test */
     public function it_requires_message_capability_or_admin_fallback_and_valid_nonce(): void {
         set_test_current_user_caps([
             'manage_survival_messages' => false,
@@ -169,6 +220,12 @@ class V2FakeDashboardMessageService extends DashboardMessageService {
 
     /** @var string */
     public $bulkMode = 'ok';
+
+    /** @var array<int, int> */
+    public $lastBulkDeleteMessageIds = [];
+
+    /** @var string */
+    public $bulkDeleteMode = 'ok';
 
     public function __construct() {
     }
@@ -219,6 +276,28 @@ class V2FakeDashboardMessageService extends DashboardMessageService {
             'status' => $status,
             'updated_count' => count($this->lastBulkMessageIds),
             'updated_ids' => $this->lastBulkMessageIds,
+        ];
+    }
+
+    public function bulkDeleteForEvent(int $eventId, array $messageIds, bool $confirm, string $changedBy = 'admin'): array {
+        if (!$confirm) {
+            throw new \InvalidArgumentException('confirm must be true for bulk delete.');
+        }
+
+        if ($messageIds === []) {
+            throw new \InvalidArgumentException('message_ids must contain at least one positive integer.');
+        }
+
+        if ($this->bulkDeleteMode === 'conflict') {
+            throw new \RuntimeException('Niet alle message_ids horen bij dit event_id: 99');
+        }
+
+        $this->lastBulkDeleteMessageIds = array_values(array_map('intval', $messageIds));
+
+        return [
+            'event_id' => $eventId,
+            'deleted_count' => count($this->lastBulkDeleteMessageIds),
+            'deleted_ids' => $this->lastBulkDeleteMessageIds,
         ];
     }
 }

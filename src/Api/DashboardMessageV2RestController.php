@@ -12,6 +12,7 @@ class DashboardMessageV2RestController {
     private const NAMESPACE = 'bso-survival/v2';
     private const COLLECTION_ROUTE = '/dashboard/messages';
     private const BULK_STATUS_ROUTE = '/dashboard/messages/bulk-status';
+    private const BULK_DELETE_ROUTE = '/dashboard/messages/bulk-delete';
 
     /** @var DashboardMessageService */
     private $messages;
@@ -37,6 +38,14 @@ class DashboardMessageV2RestController {
             [
                 'methods' => 'POST',
                 'callback' => [$this, 'bulkUpdateStatus'],
+                'permission_callback' => [$this, 'canManage'],
+            ],
+        ]);
+
+        register_rest_route(self::NAMESPACE, self::BULK_DELETE_ROUTE, [
+            [
+                'methods' => 'POST',
+                'callback' => [$this, 'bulkDeleteMessages'],
                 'permission_callback' => [$this, 'canManage'],
             ],
         ]);
@@ -147,6 +156,28 @@ class DashboardMessageV2RestController {
         }
     }
 
+    /**
+     * @param mixed $request
+     * @return mixed
+     */
+    public function bulkDeleteMessages($request) {
+        $eventId = $this->extractIntParam($request, 'event_id');
+        $messageIds = $this->extractArrayParam($request, 'message_ids');
+        $confirm = $this->extractBoolParam($request, 'confirm');
+        $changedBy = $this->extractStringParam($request, 'changed_by');
+
+        try {
+            $result = $this->messages->bulkDeleteForEvent($eventId, $messageIds, $confirm, $changedBy);
+            return ApiResponse::success(['result' => $result]);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_bulk_payload', $exception->getMessage(), 400);
+        } catch (\RuntimeException $exception) {
+            return ApiResponse::error('bulk_delete_conflict', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('bulk_delete_failed', 'Bulk delete kon niet worden uitgevoerd.', 500);
+        }
+    }
+
     /** @param mixed $request */
     private function extractIntParam($request, string $key): int {
         if (is_object($request) && method_exists($request, 'get_param')) {
@@ -188,5 +219,31 @@ class DashboardMessageV2RestController {
         }
 
         return [];
+    }
+
+    /** @param mixed $request */
+    private function extractBoolParam($request, string $key): bool {
+        $raw = null;
+
+        if (is_object($request) && method_exists($request, 'get_param')) {
+            $raw = $request->get_param($key);
+        } elseif (is_array($request) && array_key_exists($key, $request)) {
+            $raw = $request[$key];
+        }
+
+        if (is_bool($raw)) {
+            return $raw;
+        }
+
+        if (is_int($raw)) {
+            return $raw === 1;
+        }
+
+        if (is_string($raw)) {
+            $normalized = strtolower(trim($raw));
+            return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
+        }
+
+        return false;
     }
 }

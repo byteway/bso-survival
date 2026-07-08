@@ -210,6 +210,55 @@ class DashboardMessageServiceTest extends TestCase {
     }
 
     /** @test */
+    public function it_bulk_deletes_messages_for_event_when_confirmed(): void {
+        $repo = new InMemoryDashboardMessageRepository();
+        $repo->seed((object) [
+            'id' => 41,
+            'event_id' => 5,
+            'status' => 'actief',
+            'visibility' => 'intern',
+        ]);
+        $repo->seed((object) [
+            'id' => 42,
+            'event_id' => 5,
+            'status' => 'actief',
+            'visibility' => 'intern',
+        ]);
+
+        $service = new DashboardMessageService($repo);
+        $result = $service->bulkDeleteForEvent(5, [41, 42], true, 'planner');
+
+        $this->assertSame(2, $result['deleted_count']);
+        $this->assertSame([41, 42], $result['deleted_ids']);
+        $this->assertNull($repo->findById(41));
+        $this->assertNull($repo->findById(42));
+    }
+
+    /** @test */
+    public function it_rejects_bulk_delete_without_confirmation_flag(): void {
+        $service = new DashboardMessageService(new InMemoryDashboardMessageRepository());
+
+        $this->expectException(InvalidArgumentException::class);
+        $service->bulkDeleteForEvent(5, [41], false, 'planner');
+    }
+
+    /** @test */
+    public function it_rejects_bulk_delete_when_message_ids_do_not_match_event(): void {
+        $repo = new InMemoryDashboardMessageRepository();
+        $repo->seed((object) [
+            'id' => 50,
+            'event_id' => 9,
+            'status' => 'actief',
+            'visibility' => 'intern',
+        ]);
+
+        $service = new DashboardMessageService($repo);
+
+        $this->expectException(\RuntimeException::class);
+        $service->bulkDeleteForEvent(5, [50], true, 'planner');
+    }
+
+    /** @test */
     public function it_updates_message_content_and_status(): void {
         $repo = new InMemoryDashboardMessageRepository();
         $repo->seed((object) [

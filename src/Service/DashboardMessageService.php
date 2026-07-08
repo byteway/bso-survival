@@ -364,6 +364,86 @@ class DashboardMessageService {
     }
 
     /**
+     * @param array<int, mixed> $messageIds
+     * @return array{event_id: int, deleted_count: int, deleted_ids: array<int, int>}
+     */
+    public function bulkDeleteForEvent(int $eventId, array $messageIds, bool $confirm, string $changedBy = 'admin'): array {
+        if ($eventId <= 0) {
+            throw new InvalidArgumentException('event_id must be a positive integer.');
+        }
+
+        if (!$confirm) {
+            throw new InvalidArgumentException('confirm must be true for bulk delete.');
+        }
+
+        $normalizedIds = array_values(array_unique(array_map('intval', $messageIds)));
+        $normalizedIds = array_values(array_filter($normalizedIds, static function (int $id): bool {
+            return $id > 0;
+        }));
+
+        if ($normalizedIds === []) {
+            throw new InvalidArgumentException('message_ids must contain at least one positive integer.');
+        }
+
+        if (count($normalizedIds) > 100) {
+            throw new InvalidArgumentException('message_ids may contain up to 100 entries.');
+        }
+
+        $invalidIds = [];
+        $existingRows = [];
+        foreach ($normalizedIds as $messageId) {
+            $existing = $this->messages->findById($messageId);
+            if ($existing === null || (int) ($existing->event_id ?? 0) !== $eventId) {
+                $invalidIds[] = $messageId;
+                continue;
+            }
+
+            $existingRows[$messageId] = $existing;
+        }
+
+        if ($invalidIds !== []) {
+            throw new RuntimeException('Niet alle message_ids horen bij dit event_id: ' . implode(',', $invalidIds));
+        }
+
+        $deletedIds = [];
+        foreach ($normalizedIds as $messageId) {
+            $deleted = $this->messages->deleteByIdForEvent($messageId, $eventId);
+            if (!$deleted) {
+                throw new RuntimeException(sprintf('Bulk delete mislukt voor message_id %d.', $messageId));
+            }
+
+            $deletedIds[] = $messageId;
+
+            if ($this->audit !== null) {
+                $existing = $existingRows[$messageId] ?? null;
+                $this->audit->log(
+                    $eventId,
+                    'dashboard_message',
+                    $messageId,
+                    'bulk_deleted',
+                    [
+                        'type' => (string) ($existing->type ?? ''),
+                        'text' => (string) ($existing->text ?? ''),
+                        'status' => (string) ($existing->status ?? ''),
+                    ],
+                    null,
+                    trim($changedBy) === '' ? 'admin' : $changedBy,
+                    [
+                        'requested_count' => count($normalizedIds),
+                        'deleted_count' => count($deletedIds),
+                    ]
+                );
+            }
+        }
+
+        return [
+            'event_id' => $eventId,
+            'deleted_count' => count($deletedIds),
+            'deleted_ids' => $deletedIds,
+        ];
+    }
+
+    /**
      * @param array<string, mixed> $payload
      * @return object
      */
