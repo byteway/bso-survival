@@ -25,9 +25,12 @@ class DashboardMessageRepository implements DashboardMessageRepositoryInterface 
         $table = $this->tableName();
         $limit = max(1, $limit);
         $offset = max(0, $offset);
+        $now = gmdate('Y-m-d H:i:s');
 
         $whereScope = $this->buildScopeWhereClause($scope);
-        $activeClause = $activeOnly ? " AND status = 'actief'" : '';
+        $activeClause = $activeOnly
+            ? " AND status = 'actief' AND (visible_from IS NULL OR visible_from <= %s) AND (visible_until IS NULL OR visible_until >= %s)"
+            : '';
         $orderClause = " ORDER BY
             CASE type
                 WHEN 'urgent' THEN 400
@@ -41,9 +44,17 @@ class DashboardMessageRepository implements DashboardMessageRepositoryInterface 
 
         $template = "SELECT * FROM {$table} WHERE {$whereScope}{$activeClause}{$orderClause} LIMIT %d OFFSET %d";
         if ($scope === 'global') {
-            $sql = $this->wpdb->prepare($template, $limit, $offset);
+            if ($activeOnly) {
+                $sql = $this->wpdb->prepare($template, $now, $now, $limit, $offset);
+            } else {
+                $sql = $this->wpdb->prepare($template, $limit, $offset);
+            }
         } else {
-            $sql = $this->wpdb->prepare($template, $eventId, $limit, $offset);
+            if ($activeOnly) {
+                $sql = $this->wpdb->prepare($template, $eventId, $now, $now, $limit, $offset);
+            } else {
+                $sql = $this->wpdb->prepare($template, $eventId, $limit, $offset);
+            }
         }
 
         return $this->wpdb->get_results($sql) ?: [];
@@ -52,13 +63,24 @@ class DashboardMessageRepository implements DashboardMessageRepositoryInterface 
     public function countByScope(int $eventId, string $scope = 'all', bool $activeOnly = false): int {
         $table = $this->tableName();
         $whereScope = $this->buildScopeWhereClause($scope);
-        $activeClause = $activeOnly ? " AND status = 'actief'" : '';
+        $now = gmdate('Y-m-d H:i:s');
+        $activeClause = $activeOnly
+            ? " AND status = 'actief' AND (visible_from IS NULL OR visible_from <= %s) AND (visible_until IS NULL OR visible_until >= %s)"
+            : '';
 
         $template = "SELECT COUNT(*) FROM {$table} WHERE {$whereScope}{$activeClause}";
         if ($scope === 'global') {
-            $sql = $template;
+            if ($activeOnly) {
+                $sql = $this->wpdb->prepare($template, $now, $now);
+            } else {
+                $sql = $template;
+            }
         } else {
-            $sql = $this->wpdb->prepare($template, $eventId);
+            if ($activeOnly) {
+                $sql = $this->wpdb->prepare($template, $eventId, $now, $now);
+            } else {
+                $sql = $this->wpdb->prepare($template, $eventId);
+            }
         }
 
         return (int) $this->wpdb->get_var($sql);

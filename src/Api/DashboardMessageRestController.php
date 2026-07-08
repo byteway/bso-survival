@@ -144,6 +144,8 @@ class DashboardMessageRestController {
             'visibility' => $this->extractStringParam($request, 'visibility'),
             'status' => $this->extractStringParam($request, 'status'),
             'scope' => $this->extractStringParam($request, 'scope'),
+            'visible_from' => $this->extractStringParam($request, 'visible_from'),
+            'visible_until' => $this->extractStringParam($request, 'visible_until'),
             'changed_by' => $this->extractStringParam($request, 'changed_by'),
             'meta_data' => $this->extractArrayParam($request, 'meta_data'),
         ];
@@ -193,6 +195,16 @@ class DashboardMessageRestController {
         $scope = $this->extractOptionalStringParam($request, 'scope');
         if ($scope !== null) {
             $payload['scope'] = $scope;
+        }
+
+        $visibleFrom = $this->extractOptionalStringParam($request, 'visible_from');
+        if ($visibleFrom !== null) {
+            $payload['visible_from'] = $visibleFrom;
+        }
+
+        $visibleUntil = $this->extractOptionalStringParam($request, 'visible_until');
+        if ($visibleUntil !== null) {
+            $payload['visible_until'] = $visibleUntil;
         }
 
         $metaData = $this->extractOptionalArrayParam($request, 'meta_data');

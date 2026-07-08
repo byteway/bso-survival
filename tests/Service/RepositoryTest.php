@@ -2,6 +2,7 @@
 
 namespace BSO\Survival\Tests\Service;
 
+use BSO\Survival\Database\Repository\DashboardMessageRepository;
 use BSO\Survival\Database\Repository\EventRepository;
 use BSO\Survival\Database\Repository\PartRepository;
 use BSO\Survival\Database\Repository\TeamRepository;
@@ -119,6 +120,24 @@ class RepositoryTest extends TestCase {
         $count = $repository->countByEventId(1);
         $this->assertSame(22, $count);
     }
+
+    /**
+     * @test
+     */
+    public function dashboard_message_repository_applies_visibility_window_for_active_queries(): void {
+        $wpdb = new FakeWpdb('wp_');
+        $repository = new DashboardMessageRepository($wpdb);
+
+        $repository->findByScope(12, 'event', true, 20, 0);
+        $this->assertStringContainsString("status = 'actief'", $wpdb->lastResultsQuery);
+        $this->assertStringContainsString('visible_from IS NULL OR visible_from <=', $wpdb->lastResultsQuery);
+        $this->assertStringContainsString('visible_until IS NULL OR visible_until >=', $wpdb->lastResultsQuery);
+
+        $repository->countByScope(12, 'all', true);
+        $this->assertStringContainsString("status = 'actief'", $wpdb->lastVarQuery);
+        $this->assertStringContainsString('visible_from IS NULL OR visible_from <=', $wpdb->lastVarQuery);
+        $this->assertStringContainsString('visible_until IS NULL OR visible_until >=', $wpdb->lastVarQuery);
+    }
 }
 
 class FakeWpdb {
@@ -133,6 +152,12 @@ class FakeWpdb {
 
     /** @var array<string, string> */
     private $vars = [];
+
+    /** @var string */
+    public $lastResultsQuery = '';
+
+    /** @var string */
+    public $lastVarQuery = '';
 
     public function __construct(string $prefix) {
         $this->prefix = $prefix;
@@ -179,6 +204,7 @@ class FakeWpdb {
      * @return array<int, object>
      */
     public function get_results(string $sql): array {
+        $this->lastResultsQuery = $sql;
         return $this->results[$sql] ?? [];
     }
 
@@ -193,6 +219,7 @@ class FakeWpdb {
      * @return string|null
      */
     public function get_var(string $sql) {
+        $this->lastVarQuery = $sql;
         return $this->vars[$sql] ?? null;
     }
 }

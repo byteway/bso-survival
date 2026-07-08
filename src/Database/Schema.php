@@ -370,6 +370,8 @@ class Schema {
                     'visibility' => "VARCHAR(32) NOT NULL DEFAULT 'intern'",
                     'status' => "VARCHAR(32) NOT NULL DEFAULT 'actief'",
                     'meta_data' => "LONGTEXT NULL DEFAULT NULL",
+                    'visible_from' => 'DATETIME NULL DEFAULT NULL',
+                    'visible_until' => 'DATETIME NULL DEFAULT NULL',
                     'created_at' => 'DATETIME NOT NULL',
                     'updated_at' => 'DATETIME NOT NULL',
                 ],

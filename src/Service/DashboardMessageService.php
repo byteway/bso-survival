@@ -79,6 +79,8 @@ class DashboardMessageService {
         $status = trim((string) ($payload['status'] ?? 'actief'));
         $changedBy = trim((string) ($payload['changed_by'] ?? 'admin'));
         $metaData = $payload['meta_data'] ?? null;
+        $visibleFromRaw = $payload['visible_from'] ?? null;
+        $visibleUntilRaw = $payload['visible_until'] ?? null;
 
         if ($eventId <= 0) {
             throw new InvalidArgumentException('event_id must be a positive integer.');
@@ -105,6 +107,7 @@ class DashboardMessageService {
         }
 
         $metaDataJson = $this->normalizeMetaData($metaData);
+        $window = $this->normalizeVisibilityWindow($visibleFromRaw, $visibleUntilRaw);
 
         if ($scope === 'global') {
             $visibility = 'global';
@@ -118,6 +121,8 @@ class DashboardMessageService {
             'visibility' => $visibility,
             'status' => $status,
             'meta_data' => $metaDataJson,
+            'visible_from' => $window['visible_from'],
+            'visible_until' => $window['visible_until'],
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -279,12 +284,22 @@ class DashboardMessageService {
             : (string) ($existing->meta_data ?? '');
         $metaDataJson = $this->normalizeMetaData($metaDataPayload);
 
+        $visibleFromRaw = array_key_exists('visible_from', $payload)
+            ? $payload['visible_from']
+            : (string) ($existing->visible_from ?? '');
+        $visibleUntilRaw = array_key_exists('visible_until', $payload)
+            ? $payload['visible_until']
+            : (string) ($existing->visible_until ?? '');
+        $window = $this->normalizeVisibilityWindow($visibleFromRaw, $visibleUntilRaw);
+
         $data = [
             'type' => $type,
             'text' => $text,
             'visibility' => $visibility,
             'status' => $status,
             'meta_data' => $metaDataJson,
+            'visible_from' => $window['visible_from'],
+            'visible_until' => $window['visible_until'],
             'updated_at' => gmdate('Y-m-d H:i:s'),
         ];
 
@@ -310,6 +325,8 @@ class DashboardMessageService {
                     'visibility' => (string) ($existing->visibility ?? ''),
                     'status' => (string) ($existing->status ?? ''),
                     'meta_data' => (string) ($existing->meta_data ?? ''),
+                    'visible_from' => (string) ($existing->visible_from ?? ''),
+                    'visible_until' => (string) ($existing->visible_until ?? ''),
                 ],
                 [
                     'type' => $type,
@@ -317,6 +334,8 @@ class DashboardMessageService {
                     'visibility' => $visibility,
                     'status' => $status,
                     'meta_data' => $metaDataJson,
+                    'visible_from' => $window['visible_from'],
+                    'visible_until' => $window['visible_until'],
                 ],
                 trim($changedBy) === '' ? 'admin' : $changedBy
             );
@@ -371,5 +390,46 @@ class DashboardMessageService {
         }
 
         return true;
+    }
+
+    /**
+     * @param mixed $visibleFromRaw
+     * @param mixed $visibleUntilRaw
+     * @return array{visible_from: string|null, visible_until: string|null}
+     */
+    private function normalizeVisibilityWindow($visibleFromRaw, $visibleUntilRaw): array {
+        $visibleFrom = $this->normalizeDateTime($visibleFromRaw, 'visible_from');
+        $visibleUntil = $this->normalizeDateTime($visibleUntilRaw, 'visible_until');
+
+        if ($visibleFrom !== null && $visibleUntil !== null && strtotime($visibleUntil) <= strtotime($visibleFrom)) {
+            throw new InvalidArgumentException('visible_until moet groter zijn dan visible_from.');
+        }
+
+        return [
+            'visible_from' => $visibleFrom,
+            'visible_until' => $visibleUntil,
+        ];
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private function normalizeDateTime($value, string $field): ?string {
+        if ($value === null) {
+            return null;
+        }
+
+        $raw = trim((string) $value);
+        if ($raw === '') {
+            return null;
+        }
+
+        $normalized = str_replace('T', ' ', $raw);
+        $timestamp = strtotime($normalized);
+        if ($timestamp === false) {
+            throw new InvalidArgumentException(sprintf('%s moet een geldige datum/tijd zijn.', $field));
+        }
+
+        return gmdate('Y-m-d H:i:s', $timestamp);
     }
 }

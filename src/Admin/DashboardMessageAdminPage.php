@@ -58,6 +58,8 @@ class DashboardMessageAdminPage {
                 'visibility' => isset($_POST['visibility']) ? sanitize_key(wp_unslash((string) $_POST['visibility'])) : 'intern',
                 'status' => isset($_POST['status']) ? sanitize_key(wp_unslash((string) $_POST['status'])) : 'actief',
                 'scope' => isset($_POST['scope']) ? sanitize_key(wp_unslash((string) $_POST['scope'])) : 'event',
+                'visible_from' => isset($_POST['visible_from']) ? sanitize_text_field(wp_unslash((string) $_POST['visible_from'])) : '',
+                'visible_until' => isset($_POST['visible_until']) ? sanitize_text_field(wp_unslash((string) $_POST['visible_until'])) : '',
                 'changed_by' => isset($_POST['changed_by']) ? sanitize_text_field(wp_unslash((string) $_POST['changed_by'])) : 'admin',
             ]);
 
@@ -87,6 +89,8 @@ class DashboardMessageAdminPage {
                     'visibility' => isset($_POST['visibility']) ? sanitize_key(wp_unslash((string) $_POST['visibility'])) : '',
                     'status' => isset($_POST['status']) ? sanitize_key(wp_unslash((string) $_POST['status'])) : '',
                     'scope' => isset($_POST['scope']) ? sanitize_key(wp_unslash((string) $_POST['scope'])) : '',
+                    'visible_from' => isset($_POST['visible_from']) ? sanitize_text_field(wp_unslash((string) $_POST['visible_from'])) : '',
+                    'visible_until' => isset($_POST['visible_until']) ? sanitize_text_field(wp_unslash((string) $_POST['visible_until'])) : '',
                 ],
                 isset($_POST['changed_by']) ? sanitize_text_field(wp_unslash((string) $_POST['changed_by'])) : 'admin'
             );
@@ -235,6 +239,12 @@ class DashboardMessageAdminPage {
         echo '<option value="global">global</option>';
         echo '</select></p>';
 
+        echo '<p><label for="bso-msg-visible-from"><strong>' . esc_html__('Zichtbaar vanaf', 'bso-survival') . '</strong></label><br />';
+        echo '<input id="bso-msg-visible-from" type="datetime-local" name="visible_from" value="" /></p>';
+
+        echo '<p><label for="bso-msg-visible-until"><strong>' . esc_html__('Zichtbaar tot', 'bso-survival') . '</strong></label><br />';
+        echo '<input id="bso-msg-visible-until" type="datetime-local" name="visible_until" value="" /></p>';
+
         echo '<p><label for="bso-msg-by"><strong>' . esc_html__('Gewijzigd door', 'bso-survival') . '</strong></label><br />';
         echo '<input id="bso-msg-by" type="text" name="changed_by" value="admin" /></p>';
 
@@ -306,6 +316,14 @@ class DashboardMessageAdminPage {
             echo '<textarea name="text" rows="2" class="large-text">' . esc_textarea((string) ($row->text ?? '')) . '</textarea>';
             echo '</label><br />';
 
+            echo '<label>' . esc_html__('Zichtbaar vanaf', 'bso-survival') . '<br />';
+            echo '<input type="datetime-local" name="visible_from" value="' . esc_attr($this->formatDateTimeLocal((string) ($row->visible_from ?? ''))) . '" />';
+            echo '</label><br />';
+
+            echo '<label>' . esc_html__('Zichtbaar tot', 'bso-survival') . '<br />';
+            echo '<input type="datetime-local" name="visible_until" value="' . esc_attr($this->formatDateTimeLocal((string) ($row->visible_until ?? ''))) . '" />';
+            echo '</label><br />';
+
             wp_nonce_field(self::UPDATE_NONCE_ACTION, self::UPDATE_NONCE_FIELD);
             echo '<button class="button button-small button-primary" type="submit">' . esc_html__('Opslaan', 'bso-survival') . '</button>';
             echo '</form>';
@@ -372,5 +390,19 @@ class DashboardMessageAdminPage {
             default:
                 return 50;
         }
+    }
+
+    private function formatDateTimeLocal(string $value): string {
+        $value = trim($value);
+        if ($value === '' || $value === '0000-00-00 00:00:00') {
+            return '';
+        }
+
+        $timestamp = strtotime($value);
+        if ($timestamp === false) {
+            return '';
+        }
+
+        return gmdate('Y-m-d\TH:i', $timestamp);
     }
 }

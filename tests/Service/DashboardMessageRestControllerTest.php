@@ -90,6 +90,47 @@ class DashboardMessageRestControllerTest extends TestCase {
     }
 
     /** @test */
+    public function it_passes_visibility_window_when_creating_message_via_rest(): void {
+        $service = new FakeDashboardMessageService();
+        $controller = new DashboardMessageRestController($service);
+
+        $response = $controller->createMessage(new FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'type' => 'info',
+            'text' => 'Met tijdvenster',
+            'scope' => 'event',
+            'status' => 'actief',
+            'visible_from' => '2026-07-08T10:00',
+            'visible_until' => '2026-07-08T11:00',
+        ]));
+
+        $this->assertTrue($response['success']);
+        $this->assertSame('2026-07-08T10:00', $service->lastCreateVisibleFrom);
+        $this->assertSame('2026-07-08T11:00', $service->lastCreateVisibleUntil);
+    }
+
+    /** @test */
+    public function it_returns_400_for_invalid_visibility_window_payload(): void {
+        $service = new FakeDashboardMessageService();
+        $service->mode = 'invalid_window';
+        $controller = new DashboardMessageRestController($service);
+
+        $response = $controller->createMessage(new FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'type' => 'info',
+            'text' => 'Met ongeldig tijdvenster',
+            'scope' => 'event',
+            'status' => 'actief',
+            'visible_from' => '2026-07-08T11:00',
+            'visible_until' => '2026-07-08T10:00',
+        ]));
+
+        $this->assertFalse($response['success']);
+        $this->assertSame('invalid_message_payload', $response['error']['code']);
+        $this->assertSame(400, $response['error']['status']);
+    }
+
+    /** @test */
     public function it_supports_activate_endpoint(): void {
         $service = new FakeDashboardMessageService();
         $controller = new DashboardMessageRestController($service);
@@ -170,6 +211,15 @@ class FakeDashboardMessageService extends DashboardMessageService {
     /** @var array<string, mixed> */
     public $lastCreateMetaData = [];
 
+    /** @var string */
+    public $lastCreateVisibleFrom = '';
+
+    /** @var string */
+    public $lastCreateVisibleUntil = '';
+
+    /** @var string */
+    public $mode = 'ok';
+
     /** @var int */
     public $lastListPage = 1;
 
@@ -204,6 +254,13 @@ class FakeDashboardMessageService extends DashboardMessageService {
     public function create(array $payload) {
         $this->lastCreateScope = (string) ($payload['scope'] ?? 'event');
         $this->lastCreateMetaData = is_array($payload['meta_data'] ?? null) ? $payload['meta_data'] : [];
+        $this->lastCreateVisibleFrom = (string) ($payload['visible_from'] ?? '');
+        $this->lastCreateVisibleUntil = (string) ($payload['visible_until'] ?? '');
+
+        if ($this->mode === 'invalid_window') {
+            throw new InvalidArgumentException('visible_until moet groter zijn dan visible_from.');
+        }
+
         if ((string) ($payload['text'] ?? '') === '') {
             throw new InvalidArgumentException('text is verplicht.');
         }

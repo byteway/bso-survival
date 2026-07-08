@@ -24,11 +24,13 @@ class SchemaPartRuleTest extends TestCase {
     }
 
     /** @test */
-    public function messages_schema_contains_meta_data_column(): void {
+    public function messages_schema_contains_meta_data_and_visibility_columns(): void {
         $tables = Schema::tables();
 
         $this->assertArrayHasKey('messages', $tables);
         $this->assertArrayHasKey('columns', $tables['messages']);
         $this->assertArrayHasKey('meta_data', $tables['messages']['columns']);
+        $this->assertArrayHasKey('visible_from', $tables['messages']['columns']);
+        $this->assertArrayHasKey('visible_until', $tables['messages']['columns']);
     }
 }

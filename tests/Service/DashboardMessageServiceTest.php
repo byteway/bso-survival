@@ -48,6 +48,25 @@ class DashboardMessageServiceTest extends TestCase {
     }
 
     /** @test */
+    public function it_persists_visibility_window_on_create(): void {
+        $repo = new InMemoryDashboardMessageRepository();
+        $service = new DashboardMessageService($repo);
+
+        $created = $service->create([
+            'event_id' => 8,
+            'type' => 'info',
+            'text' => 'Met zichtvenster',
+            'scope' => 'event',
+            'status' => 'actief',
+            'visible_from' => '2026-07-08T10:00',
+            'visible_until' => '2026-07-08T11:00',
+        ]);
+
+        $this->assertSame('2026-07-08 10:00:00', $created->visible_from);
+        $this->assertSame('2026-07-08 11:00:00', $created->visible_until);
+    }
+
+    /** @test */
     public function it_forwards_scope_to_repository_when_listing(): void {
         $repo = new InMemoryDashboardMessageRepository();
         $service = new DashboardMessageService($repo);
@@ -123,12 +142,32 @@ class DashboardMessageServiceTest extends TestCase {
             'text' => 'Nieuw bericht',
             'status' => 'inactief',
             'scope' => 'event',
+            'visible_from' => '2026-07-08T12:00',
+            'visible_until' => '2026-07-08T13:00',
         ], 'beheer');
 
         $this->assertSame('warning', $updated->type);
         $this->assertSame('Nieuw bericht', $updated->text);
         $this->assertSame('inactief', $updated->status);
+        $this->assertSame('2026-07-08 12:00:00', $updated->visible_from);
+        $this->assertSame('2026-07-08 13:00:00', $updated->visible_until);
         $this->assertSame(3, $repo->lastUpdateEventId);
+    }
+
+    /** @test */
+    public function it_rejects_invalid_visibility_window_order(): void {
+        $service = new DashboardMessageService(new InMemoryDashboardMessageRepository());
+
+        $this->expectException(InvalidArgumentException::class);
+        $service->create([
+            'event_id' => 8,
+            'type' => 'info',
+            'text' => 'abc',
+            'scope' => 'event',
+            'status' => 'actief',
+            'visible_from' => '2026-07-08T11:00',
+            'visible_until' => '2026-07-08T10:00',
+        ]);
     }
 
     /** @test */

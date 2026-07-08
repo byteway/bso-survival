@@ -138,7 +138,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Epic: Fase 6 REST API Versioning Strategie
 - Type: Story
 - Priority: P1
-- Status: Todo
+- Status: Done
 - Labels: fase-6, messages, crud, rest
 - Components: API, Service, Repository, Admin
 - Estimate: L
@@ -223,16 +223,16 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Voeg heldere foutcodes toe voor tijdvalidatie.
 
 ### Acceptatiecriteria
-- [ ] Message met toekomstige visible_from is nog niet zichtbaar.
-- [ ] Message met verlopen visible_until is niet zichtbaar.
-- [ ] Ongeldige tijdcombinatie wordt geweigerd met duidelijke fout.
-- [ ] Sortering blijft correct na tijdfilters.
+- [x] Message met toekomstige visible_from is nog niet zichtbaar.
+- [x] Message met verlopen visible_until is niet zichtbaar.
+- [x] Ongeldige tijdcombinatie wordt geweigerd met duidelijke fout.
+- [x] Sortering blijft correct na tijdfilters.
 
 ### Testcriteria
-- Unit: validatie op datetime-combinaties.
-- Integratie: repository filtering op tijdvenster.
-- API: create/update met geldige/ongeldige windows.
-- E2E: widget zichtbaarheid rond randmomenten.
+- Unit: validatie op datetime-combinaties. (DashboardMessageServiceTest)
+- Integratie: repository filtering op tijdvenster. (RepositoryTest)
+- API: create/update met geldige/ongeldige windows. (DashboardMessageRestControllerTest)
+- E2E: widget zichtbaarheid rond randmomenten. (handmatige smoke test aanbevolen)
 
 ### Afhankelijkheden
 - F6-01
@@ -241,11 +241,11 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Tijdzonefouten bij vergelijking datetimes.
 
 ### Subtasks
-- [ ] Schema-update
-- [ ] Servicevalidatie
-- [ ] Repositoryfiltering
-- [ ] API/UI verwerking
-- [ ] Tests en docs
+- [x] Schema-update
+- [x] Servicevalidatie
+- [x] Repositoryfiltering
+- [x] API/UI verwerking
+- [x] Tests en docs
 
 ---
 
