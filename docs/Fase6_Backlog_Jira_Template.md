@@ -91,6 +91,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 ### Beschrijving
 - Context: Message-ontwerp in documentatie en runtime moet volledig gelijk lopen.
 - Doel: Eenduidige datamodelkeuze en migratiepad vastleggen.
+- Verificatie log: docs/F6-01_DEV_Verification.md
 - Scope in:
 - Beslisdocument voor message-opslagmodel
 - Schema en docs op 1 lijn
