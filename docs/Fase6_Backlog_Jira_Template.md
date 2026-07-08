@@ -232,7 +232,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Unit: validatie op datetime-combinaties. (DashboardMessageServiceTest)
 - Integratie: repository filtering op tijdvenster. (RepositoryTest)
 - API: create/update met geldige/ongeldige windows. (DashboardMessageRestControllerTest)
-- E2E: widget zichtbaarheid rond randmomenten. (handmatige smoke test aanbevolen)
+- E2E: widget zichtbaarheid rond randmomenten. (handmatige smoke test: `tests/manual/f6-03-smoke.sh`)
 
 ### Afhankelijkheden
 - F6-01

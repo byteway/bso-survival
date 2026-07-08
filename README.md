@@ -113,6 +113,33 @@ Een compacte index van de belangrijkste actions en filters staat ook in [docs/ho
 
 Adminpagina gebruikt dezelfde endpoint voor realtime opslaan zonder page reload en toont inline succes/foutmeldingen.
 
+## REST API (dashboard messages)
+
+- GET `/wp-json/bso-survival/v1/dashboard/messages?event_id={event_id}&scope=all&page=1&per_page=20`
+- POST `/wp-json/bso-survival/v1/dashboard/messages`
+- PATCH `/wp-json/bso-survival/v1/dashboard/messages/{message_id}`
+- DELETE `/wp-json/bso-survival/v1/dashboard/messages/{message_id}`
+
+Voor tijdgestuurde zichtbaarheid ondersteunt create/update de velden `visible_from` en `visible_until`.
+Wanneer beide zijn gezet, moet `visible_until` groter zijn dan `visible_from`.
+
+## Handmatige smoke check (F6-03)
+
+- Script: [tests/manual/f6-03-smoke.sh](tests/manual/f6-03-smoke.sh)
+- Doel: randmomenten rond zichtvenster controleren (future, verlopen, huidig, invalid window)
+
+Uitvoeren:
+
+```bash
+./tests/manual/f6-03-smoke.sh <event_id>
+```
+
+Of:
+
+```bash
+BSO_EVENT_ID=<event_id> ./tests/manual/f6-03-smoke.sh
+```
+
 ## REST API (dagafsluiting)
 
 - POST `/wp-json/bso-survival/v1/event-closeout/{event_id}`
