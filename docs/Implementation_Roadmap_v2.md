@@ -962,7 +962,301 @@ class NotificationManager {
 ### Doel
 Maak REST API toekomstvast met versioning en filtering.
 
-### Stap 6.1: API Versioning Plan
+### Subfase 6.1: Admin score-invoer en direct bewerken
+
+Doel:
+- Beheerders kunnen direct scores invoeren en corrigeren vanuit de adminomgeving.
+
+Scope:
+- adminformulier voor score-invoer per assignment
+- adminformulier voor scorebewerking (update op bestaande entry)
+- validatie op part rule + scoremethode
+- audit logging op create/update
+- herberekening/ranking-refresh na wijziging
+
+Technische ingangen:
+- nieuwe admin REST-endpoints onder `/wp-json/bso-survival/v1/scores/...`
+- nonce + capability (`manage_options` of fijnmaziger score-capability)
+- service-laag gebruikt `ScoreEntryService` + `RankingService` + `AuditLogService`
+
+Minimum endpointset:
+- `POST /scores/entries` (nieuwe score)
+- `PATCH /scores/entries/{score_entry_id}` (scorecorrectie)
+- `POST /scores/entries/{score_entry_id}/recalculate` (optioneel geforceerde herberekening)
+
+UI-plaatsing:
+- submenu onder BSO Rules: "Score Invoer"
+- filtering op event -> timeslot -> assignment
+- inline validatiefeedback en opslaan zonder full reload
+
+Validatiechecklist 6.1:
+- [ ] Adminformulier kan nieuwe score opslaan
+- [ ] Adminformulier kan bestaande score bewerken
+- [ ] Hooks `bso_survival_before_score_validation` en `bso_survival_score_recorded` worden afgevuurd
+- [ ] Ranking update wordt aangeroepen na scorewijziging
+- [ ] Audit log bevat score create/update acties
+- [ ] Permission + nonce checks aanwezig
+
+#### 6.1.A Beheer-meldingen voor centraal dashboard
+
+Doel:
+- Beheerders kunnen zelf meldingen plaatsen, plannen en intrekken voor het centrale dashboard.
+
+Huidige situatie (baseline):
+- Weergave bestaat al via `MessageWidget`, maar zonder admin-invoer of persistente opslag van vrije meldingen.
+
+Uitbreiding scope:
+- nieuw admin-submenu: "Dashboard Meldingen"
+- CRUD voor meldingen (aanmaken, bewerken, deactiveren, verwijderen)
+- prioriteit en zichtbaarheid per event
+- optionele geldigheid (`visible_from`, `visible_until`)
+- audit logging op create/update/delete
+
+Datamodel (nieuw):
+- tabel: `bso_dashboard_messages`
+- velden:
+    - `id` (PK)
+    - `event_id` (nullable; null = globale melding)
+    - `title`
+    - `body`
+    - `severity` (`info|warning|success|urgent`)
+    - `is_active` (bool)
+    - `priority` (int, hoger = eerder tonen)
+    - `visible_from` (datetime nullable)
+    - `visible_until` (datetime nullable)
+    - `created_by`, `updated_by`, `created_at`, `updated_at`
+
+REST-contract (admin):
+- `GET /wp-json/bso-survival/v1/dashboard/messages`
+- `POST /wp-json/bso-survival/v1/dashboard/messages`
+- `PATCH /wp-json/bso-survival/v1/dashboard/messages/{message_id}`
+- `DELETE /wp-json/bso-survival/v1/dashboard/messages/{message_id}`
+- `POST /wp-json/bso-survival/v1/dashboard/messages/{message_id}/activate`
+- `POST /wp-json/bso-survival/v1/dashboard/messages/{message_id}/deactivate`
+
+Business rules:
+- Alleen gebruikers met dashboard-manage capability mogen muteren.
+- `visible_until` moet groter zijn dan `visible_from` indien beide gezet zijn.
+- Alleen actieve en geldige meldingen worden gerenderd in het centrale dashboard.
+- Sortering: `priority DESC`, daarna `updated_at DESC`.
+
+Integratie met widgets:
+- `MessageWidget` leest meldingen via nieuwe `DashboardMessageService`.
+- Fallback op bestaande statische tekst alleen als er geen actieve meldingen zijn.
+- Widget-output krijgt severity CSS classes voor visuele nadruk.
+
+Validatiechecklist 6.1.A:
+- [ ] Admin kan melding aanmaken met titel, body en severity
+- [ ] Admin kan melding aan/uit zetten zonder verwijderen
+- [ ] Event-specifieke en globale meldingen worden correct gefilterd
+- [ ] MessageWidget toont prioriteit-volgorde correct
+- [ ] Read-only eventstatus blokkeert score-invoer, maar niet message-beheer in admin
+- [ ] PHPUnit dekt repository/service/controller paden voor messages
+
+#### 6.1.B Vrijwilliger-aanmeldscherm + teaminschrijving
+
+Doel:
+- Vrijwilliger (ouder) kan een team inschrijven met teamnaam, contactgegevens en teamleden.
+- Beheerder ziet in admin direct de inschrijfstand: `ingeschreven / max_teams`.
+- Dashboard toont een teller zodra inschrijvingen volledig zijn.
+
+Controle huidige codebasis (feitelijke status):
+- Er is momenteel geen frontend aanmeldscherm met submit-flow voor vrijwilligers.
+- `TeamsController` en template tonen alleen read-only teamlijsten.
+- Teamlaag (`TeamService`, `TeamRepository`) ondersteunt nu read/list/count, geen create/update voor inschrijving.
+- `registration_windows` bestaat in schema, maar er is nog geen actieve controller/service-flow voor open/gesloten inschrijving.
+- Dashboard toont wel team-count, maar nog geen `x / max_teams` registratievoortgang.
+
+Technisch ontwerp 6.1.B:
+
+Nieuwe frontend ingang:
+- shortcode: `bso_survival_team_registration`
+- controller: `src/Frontend/TeamRegistrationController.php`
+- template: `templates/frontend-team-registration.php`
+- script: `assets/js/bso-survival-team-registration.js`
+
+REST-contract registratie:
+- `POST /wp-json/bso-survival/v1/registrations`
+- payload:
+    - `event_id`
+    - `team_name`
+    - `contact_name`
+    - `contact_email`
+    - `contact_phone`
+    - `team_members` (array met minimaal 1 naam)
+- response:
+    - `registration_id`
+    - `team_id`
+    - `status`
+    - `counts` (`registered_teams`, `max_teams`)
+
+Service/repository uitbreidingen:
+- `TeamRepositoryInterface` uitbreiden met:
+    - `create(array $teamData): int`
+    - `setStatus(int $teamId, string $status): bool`
+- nieuwe `TeamMemberRepository` voor bulk insert teamleden
+- nieuwe `RegistrationWindowService` voor open/gesloten periode check
+- nieuwe `TeamRegistrationService` die volledige flow orkestreert
+
+Validatieregels registratie:
+- inschrijven alleen binnen geopende inschrijfperiode
+- unieke teamnaam per event
+- geldig email-formaat en minimaal 1 teamlid
+- max team-capaciteit respecteren (`registered_teams < max_teams`)
+- duplicate-submit bescherming via nonce + idempotency key
+
+Admin teller ontwerp:
+- nieuw admin-submenu: "Inschrijvingen"
+- overzicht per event:
+    - `Ingeschreven teams: x / max_teams`
+    - `% bezetting`
+    - status inschrijfperiode (open/gesloten)
+- bron:
+    - `x` uit `TeamRepository::countByEventId(event_id)`
+    - `max_teams` uit event `meta_data.max_teams`
+
+Dashboard teller ontwerp:
+- `DashboardOverviewService` uitbreiden met:
+    - `counts.registered_teams`
+    - `counts.max_teams`
+    - `status.is_registration_full`
+- nieuwe widget: `RegistrationCapacityWidget`
+    - tekst: `Inschrijving: x / max_teams`
+    - badge `VOL` zodra capaciteit bereikt is
+
+Validatiechecklist 6.1.B:
+- [ ] Vrijwilliger kan team met leden succesvol inschrijven
+- [ ] Inschrijving blokkeert buiten open registratie-window
+- [ ] Admin ziet teller `x / max_teams` per event
+- [ ] Dashboard toont registratievoortgang en VOL-status
+- [ ] Team- en team_member records worden atomair opgeslagen
+- [ ] PHPUnit + integratietest dekken happy-path en foutpaden
+
+#### 6.1.C Inschrijvingsbevestiging mail + beheerbare HTML-template
+
+Doel:
+- Na complete teaminschrijving ontvangt vrijwilliger automatisch een bevestigingsmail.
+- Beheerder kan in admin een HTML-template beheren met slimme veldcodes.
+
+Controle huidige mailstructuur (feitelijke status):
+- In runtime-code bestaat nog geen concrete mailservice of email-template CRUD.
+- Er is geen productiematige verzendketen met retry/outbox/logging.
+- Conclusie stabiliteit: huidige mailstructuur is nog niet robuust, omdat kerncomponenten ontbreken.
+
+Technisch ontwerp 6.1.C:
+
+Datamodel:
+- nieuwe tabel `bso_email_templates`
+    - `id`, `template_key`, `subject`, `html_body`, `is_active`, `updated_by`, `updated_at`
+- nieuwe tabel `bso_email_outbox`
+    - `id`, `event_id`, `team_id`, `recipient`, `template_key`, `subject_snapshot`, `body_snapshot`, `status`, `attempt_count`, `last_error`, `scheduled_at`, `sent_at`, `created_at`, `updated_at`
+
+Template veldcodes (MVP):
+- `{vrijwilliger_naam}`
+- `{team_naam}`
+- `{event_naam}`
+- `{event_datum}`
+- `{aantal_teamleden}`
+- `{inschrijf_id}`
+
+Admin beheer:
+- nieuw submenu: "Email Templates"
+- editor met subject + HTML body + live preview
+- lijst met beschikbare veldcodes en test-render voor voorbeelddata
+- versiehistorie (minimaal laatste 5 versies) of auditlog op wijziging
+
+Mail pipeline (robuust):
+- registratieflow plaatst bericht in `bso_email_outbox` (geen directe hard-fail op wp_mail)
+- worker/cron verwerkt outbox batchgewijs
+- retries met backoff (bijv. 1m, 5m, 30m, 2h)
+- idempotency: unieke sleutel op (`template_key`, `team_id`, `recipient`) voor eenmalige bevestiging
+- volledige logging in audit/outbox voor support en herverzending
+
+Interface-laag (toekomstvast):
+- `EmailTemplateRepositoryInterface`
+- `EmailRendererInterface`
+- `MailerInterface`
+- `RegistrationConfirmationService`
+- `OutboxProcessorService`
+
+Stabiliteitsmaatregelen:
+- strikte placeholder validatie (onbekende code -> expliciete foutmelding in admin)
+- HTML sanitization bij opslaan (toegestane tags whitelist)
+- tekst fallback (`text/plain`) naast HTML
+- transactie rond registratie + outbox enqueue
+- duidelijke monitoringstatistieken: queued/sent/failed
+
+Validatiechecklist 6.1.C:
+- [ ] Beheerder kan HTML-template opslaan en previewen
+- [ ] Placeholder-resolutie werkt voor alle MVP veldcodes
+- [ ] Outbox bericht wordt aangemaakt na teaminschrijving
+- [ ] Cron/processor verstuurt mail en verwerkt retries
+- [ ] Dubbele bevestigingsmail wordt voorkomen via idempotency-regel
+- [ ] Fouten zijn zichtbaar in admin (status + last_error)
+
+### Go/No-Go Gate voor start 6.1.B en 6.1.C
+
+Doel van deze gate:
+- Voorkomen dat inschrijving- en notificatieontwikkeling start op een nog veranderende publicatiebasis.
+
+Volgorde (verplicht):
+1. Rond openstaande closeout/publicatie-verankering af.
+2. Bevries publicatiepayload contract.
+3. Start pas daarna implementatie van 6.1.B en 6.1.C.
+
+Gate A - Operationele triggerlaag gereed (uit vorige fase):
+- [ ] Er is een echte admin-UI of CLI-actie boven de bestaande closeout/publication REST-routes.
+- [ ] Beheerder kan event afsluiten/publiceren zonder handmatige losse API-calls.
+- [ ] Positieve en negatieve paden zijn functioneel getest.
+
+Gate B - Publicatiepayload geconcretiseerd en stabiel:
+- [ ] Publicatie response bevat minimaal top-3 en volledige eindstandinformatie.
+- [ ] Veldnamen en datastructuur zijn gedocumenteerd als contract.
+- [ ] Contractwijzigingen zijn expliciet gelogd (changelog/roadmap).
+
+Gate C - Kwaliteitsdrempel vóór communicatieflow:
+- [ ] PHPUnit suite groen op actuele branch.
+- [ ] Geen open blockers op eventstatus-overgangen (concept -> actief -> afgesloten -> gepubliceerd).
+- [ ] Audit logging op closeout/publicatie volledig actief.
+
+Go/No-Go beslissing:
+- GO: alle Gate A, B en C checklist-items zijn afgerond.
+- NO-GO: minimaal 1 item open -> 6.1.B/6.1.C niet starten.
+
+Executiebeleid na GO:
+1. Start 6.1.B (vrijwilliger-aanmelding + teaminschrijving + tellers).
+2. Start daarna 6.1.C (email-templatebeheer + bevestigingsmail outbox-flow).
+
+### Subfase 6.2: Frontend scoreformulier (operationele invoer)
+
+Doel:
+- Leiding/jury kan tijdens event scores invoeren via frontend/mobile zonder adminscherm.
+
+Scope:
+- shortcode of dedicated frontend route voor score-invoer
+- rolgebaseerde toegang (geen publieke invoer)
+- optimistic UI met duidelijke succes/foutmeldingen
+- read-only blokkade wanneer eventstatus `afgesloten` of `gepubliceerd` is
+
+Technische ingangen:
+- frontend gebruikt dezelfde score-endpoints als subfase 6.1
+- server-side validatie blijft leidend
+- statuscheck via `DashboardOverviewService` flags (`is_read_only`, `is_published`)
+
+Validatiechecklist 6.2:
+- [ ] Frontendformulier kan score invoeren voor geautoriseerde gebruiker
+- [ ] Frontendformulier weigert invoer bij read-only/publicatiestatus
+- [ ] Foutmeldingen zijn begrijpelijk bij invalid input
+- [ ] Ranking/dashboardweergave wordt na invoer consistent geactualiseerd
+- [ ] E2E test dekt volledige frontend submit-flow
+
+### Relatie met bestaande Phase 6 API-taken
+
+Bestaande versioning/response-standaardisatie blijft relevant en wordt na 6.1/6.2 doorgezet als:
+- 6.3 API versioning plan
+- 6.4 standard response wrapper
+
+### Stap 6.3: API Versioning Plan
 
 **File:** `docs/api-versioning.md`
 
@@ -1001,7 +1295,7 @@ Versioning is onderdeel van URL:
 - Deprecated endpoints marked with warning header
 ```
 
-### Stap 6.2: Standard REST response wrapper
+### Stap 6.4: Standard REST response wrapper
 
 **File:** `src/Support/ApiResponse.php`
 

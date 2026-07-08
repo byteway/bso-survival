@@ -6,9 +6,11 @@ use BSO\Survival\Api\EventCloseoutRestController;
 use BSO\Survival\Database\Repository\AuditLogRepositoryInterface;
 use BSO\Survival\Database\Repository\CertificateRepositoryInterface;
 use BSO\Survival\Database\Repository\EventRepositoryInterface;
+use BSO\Survival\Database\Repository\EventPublicationRepositoryInterface;
 use BSO\Survival\Service\AuditLogService;
 use BSO\Survival\Service\CertificateService;
 use BSO\Survival\Service\EventCloseoutService;
+use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Service\EventService;
 use PHPUnit\Framework\TestCase;
 
@@ -47,12 +49,22 @@ class EventCloseoutRestControllerTest extends TestCase {
         $response = $controller->publishEvent(new EventCloseoutFakeRestRequest([
             'event_id' => 14,
             'changed_by' => 'wedstrijdleiding',
-            'publication' => ['headline' => 'Uitslag gepubliceerd'],
+            'publication' => [
+                'headline' => 'Uitslag gepubliceerd',
+                'standings' => [
+                    ['rank' => 1, 'team_id' => 1, 'team_name' => 'Team 1', 'points' => 100],
+                    ['rank' => 2, 'team_id' => 2, 'team_name' => 'Team 2', 'points' => 95],
+                    ['rank' => 3, 'team_id' => 3, 'team_name' => 'Team 3', 'points' => 90],
+                ],
+            ],
         ]));
 
         $this->assertTrue($response['updated']);
         $this->assertSame('publication', $response['phase']);
         $this->assertSame('gepubliceerd', $response['result']['status']);
+        $this->assertSame('Uitslag gepubliceerd', $response['result']['publication']['headline']);
+        $this->assertCount(3, $response['result']['publication']['top_3']);
+        $this->assertCount(3, $response['result']['publication']['final_standings']);
         $this->assertSame('publication_completed', $response['result']['audit_log']->action);
     }
 
@@ -69,13 +81,32 @@ class EventCloseoutRestControllerTest extends TestCase {
         $this->assertFalse($controller->canManage($request));
     }
 
-    private function buildController(): EventCloseoutRestController {
+    /**
+     * @test
+     */
+    public function it_returns_persisted_publication_snapshot(): void {
+        $controller = $this->buildController(
+            new EventPublicationService(new EventCloseoutRestPublicationRepository())
+        );
+
+        $response = $controller->getPublicationResult(new EventCloseoutFakeRestRequest([
+            'event_id' => 14,
+        ]));
+
+        $this->assertSame(14, $response['event_id']);
+        $this->assertIsArray($response['publication']);
+        $this->assertSame('Persisted uitslag', $response['publication']['headline']);
+        $this->assertCount(3, $response['publication']['top_3']);
+    }
+
+    private function buildController(EventPublicationService $publications = null): EventCloseoutRestController {
         return new EventCloseoutRestController(
             new EventCloseoutService(
                 new EventService(new EventCloseoutRestEventRepository()),
                 new CertificateService(new EventCloseoutRestCertificateRepository()),
                 new AuditLogService(new EventCloseoutRestAuditLogRepository())
-            )
+            ),
+            $publications
         );
     }
 }
@@ -150,5 +181,34 @@ class EventCloseoutRestAuditLogRepository implements AuditLogRepositoryInterface
         $row = (object) array_merge(['id' => $id], $data);
         $this->rows[$id] = $row;
         return $row;
+    }
+}
+
+class EventCloseoutRestPublicationRepository implements EventPublicationRepositoryInterface {
+    public function findByEventId(int $eventId) {
+        if ($eventId !== 14) {
+            return null;
+        }
+
+        return (object) [
+            'headline' => 'Persisted uitslag',
+            'published_at' => '2026-07-08T10:00:00+00:00',
+            'top_3_json' => json_encode([
+                ['rank' => 1, 'team_name' => 'Team A', 'points' => 120],
+                ['rank' => 2, 'team_name' => 'Team B', 'points' => 110],
+                ['rank' => 3, 'team_name' => 'Team C', 'points' => 105],
+            ]),
+            'final_standings_json' => json_encode([
+                ['rank' => 1, 'team_name' => 'Team A', 'points' => 120],
+                ['rank' => 2, 'team_name' => 'Team B', 'points' => 110],
+                ['rank' => 3, 'team_name' => 'Team C', 'points' => 105],
+                ['rank' => 4, 'team_name' => 'Team D', 'points' => 95],
+            ]),
+            'changed_by' => 'wedstrijdleiding',
+        ];
+    }
+
+    public function upsertByEventId(int $eventId, array $data) {
+        return null;
     }
 }

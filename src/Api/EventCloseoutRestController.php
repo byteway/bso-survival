@@ -3,17 +3,23 @@
 namespace BSO\Survival\Api;
 
 use BSO\Survival\Service\EventCloseoutService;
+use BSO\Survival\Service\EventPublicationService;
 
 class EventCloseoutRestController {
     private const NAMESPACE = 'bso-survival/v1';
     private const CLOSEOUT_ROUTE = '/event-closeout/(?P<event_id>\d+)';
     private const PUBLISH_ROUTE = '/event-closeout/(?P<event_id>\d+)/publish';
+    private const PUBLICATION_ROUTE = '/event-closeout/(?P<event_id>\d+)/publication';
 
     /** @var EventCloseoutService */
     private $closeout;
 
-    public function __construct(EventCloseoutService $closeout) {
+    /** @var EventPublicationService|null */
+    private $publications;
+
+    public function __construct(EventCloseoutService $closeout, EventPublicationService $publications = null) {
         $this->closeout = $closeout;
+        $this->publications = $publications;
     }
 
     public function registerRoutes(): void {
@@ -30,6 +36,12 @@ class EventCloseoutRestController {
         register_rest_route(self::NAMESPACE, self::PUBLISH_ROUTE, [[
             'methods' => 'POST',
             'callback' => [$this, 'publishEvent'],
+            'permission_callback' => [$this, 'canManage'],
+        ]]);
+
+        register_rest_route(self::NAMESPACE, self::PUBLICATION_ROUTE, [[
+            'methods' => 'GET',
+            'callback' => [$this, 'getPublicationResult'],
             'permission_callback' => [$this, 'canManage'],
         ]]);
     }
@@ -93,6 +105,24 @@ class EventCloseoutRestController {
             'updated' => true,
             'phase' => 'publication',
             'result' => $result,
+        ]);
+    }
+
+    /**
+     * @param mixed $request
+     * @return mixed
+     */
+    public function getPublicationResult($request) {
+        $eventId = $this->extractEventId($request);
+        $publication = null;
+
+        if ($this->publications !== null && $eventId > 0) {
+            $publication = $this->publications->getForEvent($eventId);
+        }
+
+        return $this->response([
+            'event_id' => $eventId,
+            'publication' => $publication,
         ]);
     }
 

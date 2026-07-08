@@ -446,6 +446,90 @@ class Schema {
                     ],
                 ],
             ],
+
+            'email_templates' => [
+                'columns' => [
+                    'id' => 'BIGINT UNSIGNED NOT NULL AUTO_INCREMENT',
+                    'template_key' => 'VARCHAR(128) NOT NULL',
+                    'subject' => 'VARCHAR(255) NOT NULL',
+                    'html_body' => 'LONGTEXT NOT NULL',
+                    'is_active' => 'TINYINT(1) NOT NULL DEFAULT 1',
+                    'updated_by' => 'VARCHAR(191) NOT NULL',
+                    'created_at' => 'DATETIME NOT NULL',
+                    'updated_at' => 'DATETIME NOT NULL',
+                ],
+                'primary_key' => ['id'],
+                'unique_keys' => [
+                    ['template_key'],
+                ],
+                'indexes' => [
+                    ['is_active'],
+                ],
+            ],
+
+            'email_outbox' => [
+                'columns' => [
+                    'id' => 'BIGINT UNSIGNED NOT NULL AUTO_INCREMENT',
+                    'event_id' => 'BIGINT UNSIGNED NOT NULL',
+                    'recipient' => 'VARCHAR(191) NOT NULL',
+                    'template_key' => 'VARCHAR(128) NOT NULL',
+                    'subject_snapshot' => 'VARCHAR(255) NOT NULL',
+                    'body_snapshot' => 'LONGTEXT NOT NULL',
+                    'status' => "VARCHAR(32) NOT NULL DEFAULT 'queued'",
+                    'attempt_count' => 'INT UNSIGNED NOT NULL DEFAULT 0',
+                    'next_attempt_at' => 'DATETIME NOT NULL',
+                    'sent_at' => 'DATETIME NULL DEFAULT NULL',
+                    'last_error' => 'LONGTEXT NULL DEFAULT NULL',
+                    'dedupe_key' => 'VARCHAR(191) NOT NULL',
+                    'created_at' => 'DATETIME NOT NULL',
+                    'updated_at' => 'DATETIME NOT NULL',
+                ],
+                'primary_key' => ['id'],
+                'unique_keys' => [
+                    ['dedupe_key'],
+                ],
+                'indexes' => [
+                    ['event_id'],
+                    ['status'],
+                    ['next_attempt_at'],
+                ],
+                'foreign_keys' => [
+                    [
+                        'column' => 'event_id',
+                        'references' => 'events.id',
+                        'on_delete' => 'CASCADE',
+                    ],
+                ],
+            ],
+
+            'event_publications' => [
+                'columns' => [
+                    'id' => 'BIGINT UNSIGNED NOT NULL AUTO_INCREMENT',
+                    'event_id' => 'BIGINT UNSIGNED NOT NULL',
+                    'headline' => 'VARCHAR(255) NOT NULL',
+                    'published_at' => 'VARCHAR(64) NOT NULL',
+                    'top_3_json' => 'LONGTEXT NOT NULL',
+                    'final_standings_json' => 'LONGTEXT NOT NULL',
+                    'raw_publication_json' => 'LONGTEXT NOT NULL',
+                    'changed_by' => 'VARCHAR(191) NOT NULL',
+                    'created_at' => 'DATETIME NOT NULL',
+                    'updated_at' => 'DATETIME NOT NULL',
+                ],
+                'primary_key' => ['id'],
+                'unique_keys' => [
+                    ['event_id'],
+                ],
+                'indexes' => [
+                    ['published_at'],
+                ],
+                'foreign_keys' => [
+                    [
+                        'column' => 'event_id',
+                        'references' => 'events.id',
+                        'on_delete' => 'CASCADE',
+                    ],
+                ],
+            ],
         ];
     }
 }

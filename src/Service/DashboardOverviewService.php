@@ -14,10 +14,14 @@ class DashboardOverviewService {
     /** @var TeamService */
     private $teams;
 
-    public function __construct(EventService $events, PartService $parts, TeamService $teams) {
+    /** @var EventPublicationService|null */
+    private $publications;
+
+    public function __construct(EventService $events, PartService $parts, TeamService $teams, EventPublicationService $publications = null) {
         $this->events = $events;
         $this->parts = $parts;
         $this->teams = $teams;
+        $this->publications = $publications;
     }
 
     /**
@@ -40,14 +44,23 @@ class DashboardOverviewService {
         $eventStatus = (string) ($event->status ?? '');
         $isReadOnly = in_array($eventStatus, ['afgesloten', 'gepubliceerd'], true);
         $isPublished = $eventStatus === 'gepubliceerd';
+        $publication = null;
+
+        if ($this->publications !== null) {
+            $publication = $this->publications->getForEvent($eventId);
+        }
 
         return [
             'event' => $event,
             'parts' => $parts,
             'teams' => $teams,
+            'publication' => $publication,
             'counts' => [
                 'parts' => $partsCount,
                 'teams' => $teamsCount,
+                'published_final_standings' => is_array($publication['final_standings'] ?? null)
+                    ? count($publication['final_standings'])
+                    : 0,
             ],
             'status' => [
                 'event_status' => $eventStatus,
@@ -56,6 +69,7 @@ class DashboardOverviewService {
                 'is_ready_for_planning' => $partsCount > 0 && $teamsCount > 0,
                 'is_read_only' => $isReadOnly,
                 'is_published' => $isPublished,
+                'has_published_results' => is_array($publication['final_standings'] ?? null) && $publication['final_standings'] !== [],
             ],
         ];
     }

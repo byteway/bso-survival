@@ -18,14 +18,17 @@ In scope (af):
 - closeout-orchestratie via service-laag
 - REST-trigger voor closeout
 - REST-trigger voor publicatie
+- admin lifecycle-UI voor closeout/publicatie
+- CLI lifecycle-actie voor closeout/publicatie
 - audit logging voor closeout en publicatie
+- geconcretiseerde publicatiepayload (top-3 + eindstand)
+- publicatienotificatieflow op basis van recipients
 - frontend weergave voor read-only en gepubliceerd
 - geautomatiseerde tests op service- en REST-niveau
 
 Nog niet in scope:
 - definitieve podium- en eindstandberekening
-- notificatie/communicatie na publicatie (mail/bericht)
-- dedicated admin-UI voor closeout/publicatieknoppen
+- uitbouw naar template-gestuurde communicatie (admin templatebeheer, outbox/retry)
 
 ## Kerncomponenten
 
@@ -164,6 +167,79 @@ sequenceDiagram
 - capability: `manage_options`
 - geldige REST nonce (`X-WP-Nonce`)
 
+## Compacte Admin Handleiding
+
+Deze handleiding is bedoeld voor snelle, veilige uitvoering van dagafsluiting in de admin.
+
+Locatie:
+- WordPress admin -> `BSO Rules` -> `Event Lifecycle`
+
+### Snelle closeout-flow
+
+1. Kies het juiste event bovenaan de pagina.
+2. Vul `Changed by` in (standaard staat huidige beheerder).
+3. Klik `Voorbeeld closeout laden` of plak eigen `Certificates JSON`.
+4. Klik `JSON valideren`.
+5. Klik `Event afsluiten (closeout)` en bevestig de popup.
+6. Controleer `Laatste response` op `phase=closeout` en `status=afgesloten`.
+
+### Snelle publicatie-flow
+
+1. Vul `Publicatie headline` in.
+2. Vul optioneel `Published at` in (ISO-8601).
+3. Klik `Voorbeeld publicatie laden` of plak eigen `Standings JSON`.
+4. Controleer `Publicatie preview` (aantal + top 3).
+5. Zet `Notificaties versturen bij publicatie` aan/uit.
+6. Voeg optioneel recipients toe (komma, puntkomma of nieuwe regel gescheiden).
+7. Klik `JSON valideren`.
+8. Klik `Event publiceren` en bevestig de popup.
+9. Controleer `Laatste response` op `phase=publication`, `status=gepubliceerd`, `publication.top_3` en `publication.final_standings`.
+
+### Verwachte minimum-JSON
+
+Certificates JSON (closeout):
+
+```json
+[
+	{
+		"team_id": 5,
+		"file_path": "/tmp/team-5.pdf",
+		"meta": { "position": 1 }
+	}
+]
+```
+
+Standings JSON (publicatie):
+
+```json
+[
+	{ "rank": 1, "team_id": 11, "team_name": "Team Rood", "points": 98.5 },
+	{ "rank": 2, "team_id": 22, "team_name": "Team Blauw", "points": 96.25 },
+	{ "rank": 3, "team_id": 33, "team_name": "Team Groen", "points": 92.75 }
+]
+```
+
+### CLI alternatief (beheer/automation)
+
+Closeout:
+
+```bash
+wp bso-survival lifecycle --phase=closeout --event_id=14 --changed_by=wedstrijdleiding --certificates='[{"team_id":5,"file_path":"/tmp/team-5.pdf"}]'
+```
+
+Publicatie:
+
+```bash
+wp bso-survival lifecycle --phase=publish --event_id=14 --changed_by=wedstrijdleiding --publication='{"headline":"Uitslag gepubliceerd","standings":[{"rank":1,"team_id":11,"team_name":"Team Rood","points":98.5}],"recipients":["coach@example.test"]}'
+```
+
+### Snelle foutcheck
+
+- `JSON validatie faalt`: controleer op array-structuur in certificates/standings.
+- `403/nonce fout`: vernieuw de adminpagina en probeer opnieuw.
+- `changed_by is verplicht`: vul een niet-lege waarde in.
+- `notifications.failed_count > 0`: controleer recipient-adressen en mailconfiguratie van WordPress.
+
 ## Hook Contract
 
 Closeout:
@@ -215,7 +291,7 @@ Belangrijkste tests:
 - `tests/Service/EventSummaryControllerTest.php`
 
 Huidige testsuite:
-- `OK (111 tests, 299 assertions)`
+- `OK (112 tests, 316 assertions)`
 
 ## Acceptatiecriteria
 
@@ -229,6 +305,6 @@ De dagafsluiting-MVP is correct als:
 ## Vervolg na MVP
 
 Aanbevolen volgende uitbreidingen:
-- podium- en eindstandberekening koppelen aan publicatiepayload
-- admin-UI voor closeout/publicatie toevoegen
-- communicatieflow na publicatie (mail/bericht) toevoegen
+- podium- en eindstandberekening koppelen aan rankingservice i.p.v. handmatige standings-input
+- communicatieflow uitbouwen met beheerde templates + outbox/retry
+- operationele rapportage toevoegen op notification success/failure ratio

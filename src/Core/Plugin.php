@@ -3,13 +3,19 @@
 namespace BSO\Survival\Core;
 
 use BSO\Survival\Admin\DashboardWidgetAdminPage;
+use BSO\Survival\Admin\EmailTemplateAdminPage;
+use BSO\Survival\Admin\EventLifecycleAdminPage;
 use BSO\Survival\Admin\PartRuleAdminPage;
 use BSO\Survival\Api\DashboardWidgetLayoutRestController;
 use BSO\Survival\Api\EventCloseoutRestController;
+use BSO\Survival\Core\Cli\EventLifecycleCommand;
 use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
 use BSO\Survival\Database\Repository\AuditLogRepository;
 use BSO\Survival\Database\Repository\CertificateRepository;
 use BSO\Survival\Database\Repository\DashboardWidgetLayoutRepository;
+use BSO\Survival\Database\Repository\EmailOutboxRepository;
+use BSO\Survival\Database\Repository\EmailTemplateRepository;
+use BSO\Survival\Database\Repository\EventPublicationRepository;
 use BSO\Survival\Database\Repository\EventRepository;
 use BSO\Survival\Database\Repository\PartRuleRepository;
 use BSO\Survival\Frontend\ShortcodeController;
@@ -17,10 +23,16 @@ use BSO\Survival\Service\AuditLogService;
 use BSO\Survival\Service\CertificateService;
 use BSO\Survival\Service\DashboardWidgetLayoutService;
 use BSO\Survival\Service\DashboardWidgetRegistry;
+use BSO\Survival\Service\EmailOutboxService;
+use BSO\Survival\Service\EmailTemplateService;
 use BSO\Survival\Service\EventCloseoutService;
+use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Service\EventService;
+use BSO\Survival\Service\OutboxProcessorService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
+use BSO\Survival\Service\PublicationNotificationService;
 use BSO\Survival\Service\ScoringMethodRegistry;
+use BSO\Survival\Service\WpMailer;
 
 class Plugin {
     private const DASHBOARD_NOTICE_TRANSIENT = 'bso_survival_dashboard_admin_notice';
@@ -36,7 +48,10 @@ class Plugin {
         add_action('admin_menu', [$this, 'register_admin_pages']);
         add_action('admin_post_bso_survival_save_part_rule', [$this, 'handle_part_rule_save']);
         add_action('admin_post_bso_survival_save_dashboard_widgets', [$this, 'handle_dashboard_widget_save']);
+        add_action('admin_post_bso_survival_save_email_template', [$this, 'handle_email_template_save']);
         add_action('rest_api_init', [$this, 'register_rest_routes']);
+        add_action('init', [$this, 'schedule_email_outbox_processing']);
+        add_action('bso_survival_process_email_outbox', [$this, 'process_email_outbox']);
         add_action('admin_notices', [$this, 'render_dashboard_admin_notice']);
         add_action('bso_survival_dashboard_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
         add_action('bso_survival_parts_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
@@ -70,6 +85,8 @@ class Plugin {
     public function register_admin_pages(): void {
         $this->buildPartRuleAdminPage()->registerMenu();
         $this->buildDashboardWidgetAdminPage()->registerMenu();
+        $this->buildEventLifecycleAdminPage()->registerMenu();
+        $this->buildEmailTemplateAdminPage()->registerMenu();
     }
 
     public function handle_part_rule_save(): void {
@@ -78,6 +95,10 @@ class Plugin {
 
     public function handle_dashboard_widget_save(): void {
         $this->buildDashboardWidgetAdminPage()->handleSave();
+    }
+
+    public function handle_email_template_save(): void {
+        $this->buildEmailTemplateAdminPage()->handleSave();
     }
 
     public function register_assets(): void {
@@ -126,6 +147,14 @@ class Plugin {
             true
         );
 
+        wp_register_script(
+            'bso-survival-admin-event-lifecycle',
+            plugins_url('assets/js/bso-survival-event-lifecycle-admin.js', __DIR__ . '/../../bso-survival.php'),
+            [],
+            '2.0.0',
+            true
+        );
+
         wp_register_style(
             'bso-survival-part-rules-admin',
             plugins_url('assets/css/bso-survival-part-rules-admin.css', __DIR__ . '/../../bso-survival.php'),
@@ -139,6 +168,24 @@ class Plugin {
         $this->buildEventCloseoutRestController()->registerRoutes();
     }
 
+    public function schedule_email_outbox_processing(): void {
+        if (!function_exists('wp_next_scheduled') || !function_exists('wp_schedule_event')) {
+            return;
+        }
+
+        $hook = 'bso_survival_process_email_outbox';
+        if (wp_next_scheduled($hook)) {
+            return;
+        }
+
+        wp_schedule_event(time() + 60, 'hourly', $hook);
+    }
+
+    public function process_email_outbox(): void {
+        $processor = $this->buildOutboxProcessorService();
+        $processor->processDue(200);
+    }
+
     private function register_cli_commands(): void {
         if (!defined('WP_CLI') || WP_CLI !== true || !class_exists('WP_CLI')) {
             return;
@@ -146,6 +193,10 @@ class Plugin {
 
         if (class_exists(SeedGoldenDatasetCommand::class)) {
             \WP_CLI::add_command('bso-survival seed-golden', SeedGoldenDatasetCommand::class);
+        }
+
+        if (class_exists(EventLifecycleCommand::class)) {
+            \WP_CLI::add_command('bso-survival lifecycle', EventLifecycleCommand::class);
         }
     }
 
@@ -192,6 +243,19 @@ class Plugin {
         return new DashboardWidgetAdminPage($eventService, $layoutService);
     }
 
+    private function buildEventLifecycleAdminPage(): EventLifecycleAdminPage {
+        $eventService = new EventService(new EventRepository());
+        $publicationService = new EventPublicationService(new EventPublicationRepository());
+
+        return new EventLifecycleAdminPage($eventService, $publicationService);
+    }
+
+    private function buildEmailTemplateAdminPage(): EmailTemplateAdminPage {
+        return new EmailTemplateAdminPage(
+            new EmailTemplateService(new EmailTemplateRepository())
+        );
+    }
+
     private function buildDashboardWidgetLayoutRestController(): DashboardWidgetLayoutRestController {
         $layoutService = new DashboardWidgetLayoutService(new DashboardWidgetLayoutRepository());
 
@@ -202,8 +266,23 @@ class Plugin {
         $eventService = new EventService(new EventRepository());
         $certificateService = new CertificateService(new CertificateRepository());
         $auditLogService = new AuditLogService(new AuditLogRepository());
-        $closeoutService = new EventCloseoutService($eventService, $certificateService, $auditLogService);
+        $notificationService = $this->buildPublicationNotificationService();
+        $publicationService = new EventPublicationService(new EventPublicationRepository());
+        $closeoutService = new EventCloseoutService($eventService, $certificateService, $auditLogService, $notificationService, $publicationService);
 
-        return new EventCloseoutRestController($closeoutService);
+        return new EventCloseoutRestController($closeoutService, $publicationService);
+    }
+
+    private function buildPublicationNotificationService(): PublicationNotificationService {
+        $templateService = new EmailTemplateService(new EmailTemplateRepository());
+        $outboxService = new EmailOutboxService(new EmailOutboxRepository());
+        $processorService = $this->buildOutboxProcessorService($outboxService);
+
+        return new PublicationNotificationService($templateService, $outboxService, $processorService);
+    }
+
+    private function buildOutboxProcessorService(EmailOutboxService $outboxService = null): OutboxProcessorService {
+        $outbox = $outboxService ?? new EmailOutboxService(new EmailOutboxRepository());
+        return new OutboxProcessorService($outbox, new WpMailer());
     }
 }

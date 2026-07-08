@@ -58,6 +58,37 @@ class DashboardWidgetRegistryTest extends TestCase {
     /**
      * @test
      */
+    public function it_uses_persisted_publication_results_for_team_ranking_widget(): void {
+        DashboardWidgetRegistry::initDefaults();
+
+        $overview = [
+            'event' => (object) ['id' => 7, 'name' => 'Published Event'],
+            'parts' => [],
+            'teams' => [
+                (object) ['name' => 'Fallback Team 1'],
+                (object) ['name' => 'Fallback Team 2'],
+            ],
+            'publication' => [
+                'final_standings' => [
+                    ['rank' => 1, 'team_name' => 'Team Rood', 'points' => 98.5],
+                    ['rank' => 2, 'team_name' => 'Team Blauw', 'points' => 95.25],
+                    ['rank' => 3, 'team_name' => 'Team Groen', 'points' => 92.0],
+                ],
+            ],
+            'counts' => ['parts' => 0, 'teams' => 2],
+            'status' => ['has_parts' => false],
+        ];
+
+        $html = DashboardWidgetRegistry::renderSection('main', $overview);
+
+        $this->assertStringContainsString('#1 Team Rood (98.50 pt)', $html);
+        $this->assertStringContainsString('#2 Team Blauw (95.25 pt)', $html);
+        $this->assertStringNotContainsString('Fallback Team 1', $html);
+    }
+
+    /**
+     * @test
+     */
     public function it_aggregates_widget_dependencies_per_section(): void {
         DashboardWidgetRegistry::initDefaults();
 

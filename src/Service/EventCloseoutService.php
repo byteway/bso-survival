@@ -14,10 +14,18 @@ class EventCloseoutService {
     /** @var AuditLogService */
     private $auditLogs;
 
-    public function __construct(EventService $events, CertificateService $certificates, AuditLogService $auditLogs) {
+    /** @var PublicationNotificationService|null */
+    private $publicationNotifications;
+
+    /** @var EventPublicationService|null */
+    private $publicationResults;
+
+    public function __construct(EventService $events, CertificateService $certificates, AuditLogService $auditLogs, PublicationNotificationService $publicationNotifications = null, EventPublicationService $publicationResults = null) {
         $this->events = $events;
         $this->certificates = $certificates;
         $this->auditLogs = $auditLogs;
+        $this->publicationNotifications = $publicationNotifications;
+        $this->publicationResults = $publicationResults;
     }
 
     /**
@@ -97,11 +105,24 @@ class EventCloseoutService {
             throw new InvalidArgumentException(sprintf('Event %d not found.', $eventId));
         }
 
+        $publication = $this->buildPublicationPayload($publicationData);
+
         if (function_exists('do_action')) {
-            do_action('bso_survival_before_event_publication', $eventId, $changedBy, $publicationData, $event);
+            do_action('bso_survival_before_event_publication', $eventId, $changedBy, $publication, $event);
         }
 
         $this->events->updateStatus($eventId, 'gepubliceerd');
+
+        $persistedPublication = null;
+        if ($this->publicationResults !== null) {
+            $this->publicationResults->saveForEvent($eventId, $publication, $changedBy);
+            $persistedPublication = $this->publicationResults->getForEvent($eventId);
+        }
+
+        $notifications = null;
+        if ($this->publicationNotifications !== null) {
+            $notifications = $this->publicationNotifications->sendPublicationNotifications($eventId, $publication, $changedBy);
+        }
 
         $auditLog = $this->auditLogs->log(
             $eventId,
@@ -109,15 +130,17 @@ class EventCloseoutService {
             $eventId,
             'publication_completed',
             ['status' => $event->status ?? null],
-            ['status' => 'gepubliceerd', 'publication' => $publicationData],
+            ['status' => 'gepubliceerd', 'publication' => $publication, 'publication_persisted' => $persistedPublication, 'notifications' => $notifications],
             $changedBy,
-            ['publication' => $publicationData]
+            ['publication' => $publication, 'publication_persisted' => $persistedPublication, 'notifications' => $notifications]
         );
 
         $result = [
             'event_id' => $eventId,
             'status' => 'gepubliceerd',
-            'publication' => $publicationData,
+            'publication' => $publication,
+            'publication_persisted' => $persistedPublication,
+            'notifications' => $notifications,
             'audit_log' => $auditLog,
         ];
 
@@ -126,5 +149,73 @@ class EventCloseoutService {
         }
 
         return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $publicationData
+     * @return array<string, mixed>
+     */
+    private function buildPublicationPayload(array $publicationData): array {
+        $headline = trim((string) ($publicationData['headline'] ?? ''));
+        $publishedAt = trim((string) ($publicationData['published_at'] ?? ''));
+        $standingsSource = [];
+
+        if (isset($publicationData['final_standings']) && is_array($publicationData['final_standings'])) {
+            $standingsSource = $publicationData['final_standings'];
+        } elseif (isset($publicationData['standings']) && is_array($publicationData['standings'])) {
+            $standingsSource = $publicationData['standings'];
+        }
+
+        $finalStandings = $this->normalizeStandings($standingsSource);
+        $topThree = array_slice($finalStandings, 0, 3);
+
+        return [
+            'headline' => $headline,
+            'published_at' => $publishedAt !== '' ? $publishedAt : gmdate('c'),
+            'top_3' => $topThree,
+            'final_standings' => $finalStandings,
+            'recipients' => isset($publicationData['recipients']) && is_array($publicationData['recipients'])
+                ? $publicationData['recipients']
+                : [],
+        ];
+    }
+
+    /**
+     * @param array<int, mixed> $standingsSource
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalizeStandings(array $standingsSource): array {
+        $normalized = [];
+        $fallbackRank = 1;
+
+        foreach ($standingsSource as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $rank = isset($entry['rank']) ? (int) $entry['rank'] : $fallbackRank;
+            if ($rank <= 0) {
+                $rank = $fallbackRank;
+            }
+
+            $normalized[] = [
+                'rank' => $rank,
+                'team_id' => isset($entry['team_id']) ? (int) $entry['team_id'] : 0,
+                'team_name' => (string) ($entry['team_name'] ?? ''),
+                'points' => isset($entry['points']) ? (float) $entry['points'] : 0.0,
+            ];
+
+            $fallbackRank++;
+        }
+
+        usort($normalized, static function (array $a, array $b): int {
+            if ($a['rank'] === $b['rank']) {
+                return $b['points'] <=> $a['points'];
+            }
+
+            return $a['rank'] <=> $b['rank'];
+        });
+
+        return $normalized;
     }
 }

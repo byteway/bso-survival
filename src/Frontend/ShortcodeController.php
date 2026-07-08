@@ -3,10 +3,12 @@
 namespace BSO\Survival\Frontend;
 
 use BSO\Survival\Database\Repository\EventRepository;
+use BSO\Survival\Database\Repository\EventPublicationRepository;
 use BSO\Survival\Database\Repository\PartRepository;
 use BSO\Survival\Database\Repository\TeamRepository;
 use BSO\Survival\Service\DashboardOverviewService;
 use BSO\Survival\Service\EventService;
+use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Service\PartService;
 use BSO\Survival\Service\TeamService;
 
@@ -76,9 +78,10 @@ class ShortcodeController {
         $eventService = new EventService($eventRepository);
         $partService = new PartService($partRepository);
         $teamService = new TeamService($teamRepository);
+        $publicationService = new EventPublicationService(new EventPublicationRepository());
 
         return new DashboardController(
-            new DashboardOverviewService($eventService, $partService, $teamService)
+            new DashboardOverviewService($eventService, $partService, $teamService, $publicationService)
         );
     }
 
@@ -110,9 +113,10 @@ class ShortcodeController {
         $eventService = new EventService($eventRepository);
         $partService = new PartService($partRepository);
         $teamService = new TeamService($teamRepository);
+        $publicationService = new EventPublicationService(new EventPublicationRepository());
 
         return new EventOverviewController(
-            new DashboardOverviewService($eventService, $partService, $teamService)
+            new DashboardOverviewService($eventService, $partService, $teamService, $publicationService)
         );
     }
 
@@ -124,9 +128,10 @@ class ShortcodeController {
         $eventService = new EventService($eventRepository);
         $partService = new PartService($partRepository);
         $teamService = new TeamService($teamRepository);
+        $publicationService = new EventPublicationService(new EventPublicationRepository());
 
         return new EventSummaryController(
-            new DashboardOverviewService($eventService, $partService, $teamService)
+            new DashboardOverviewService($eventService, $partService, $teamService, $publicationService)
         );
     }
 }

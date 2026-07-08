@@ -2,7 +2,7 @@
 
 BSO Survival v2 is de schone, uitbreidbare basis voor de volgende ontwikkelfase van de plugin.
 
-Laatste documentatie-update: 7 juli 2026.
+Laatste documentatie-update: 8 juli 2026.
 
 ## Status
 
@@ -15,8 +15,9 @@ De codebase staat nu in een vroeg maar werkend v2-fundament:
 - read-only frontend shortcodes zijn beschikbaar (dashboard, onderdelen, teams, gecombineerde varianten)
 - scoremethode-architectuur voor Fase 2 is opgezet (interface, registry, defaults)
 - dashboard widget-architectuur voor Fase 3 is gestart (interface, registry, sectioning, default widgets)
+- dagafsluitingsflow is operationeel (closeout/publicatie via REST, admin en CLI)
 
-De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet later aansluiten op de bestaande services en repositories, zodat de eindstand, certificaten en read-only afsluiting vanuit een stabiele basis worden opgebouwd.
+De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en kan verder worden uitgebreid met geavanceerde ranking- en communicatielagen.
 
 ## Huidige onderdelen
 
@@ -45,7 +46,10 @@ De dagafsluiting wordt hier bewust nog niet functioneel uitgewerkt. Die moet lat
 - Regressietests: [tests/Support](tests/Support) en [tests/Service](tests/Service)
 - Dagafsluitingsvoorbereiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluiting_Voorbereiding.md)
 - Hooks en shortcodes: [docs/hooks-and-filters.md](docs/hooks-and-filters.md)
-- Dagafsluitingsflow in opbouw: [src/Service/EventCloseoutService.php](src/Service/EventCloseoutService.php)
+- Dagafsluitingsservice: [src/Service/EventCloseoutService.php](src/Service/EventCloseoutService.php)
+- Dagafsluiting adminpagina: [src/Admin/EventLifecycleAdminPage.php](src/Admin/EventLifecycleAdminPage.php)
+- Dagafsluiting CLI-command: [src/Core/Cli/EventLifecycleCommand.php](src/Core/Cli/EventLifecycleCommand.php)
+- Publicatienotificatieservice: [src/Service/PublicationNotificationService.php](src/Service/PublicationNotificationService.php)
 
 ## Frontend shortcodes (actueel)
 
@@ -84,11 +88,9 @@ Een compacte index van de belangrijkste actions en filters staat ook in [docs/ho
 
 ## Wat nog niet is uitgewerkt
 
-- dagafsluiting-workflow
-- certificaatgeneratie voor eindverwerking
-- podium- en eindstandlogica als eindproces
-- publicatie- of afsluitstatus na de survivaldag
-- dagafsluiting wordt nu alleen voorbereid, niet definitief gemaakt
+- automatische eindstandberekening direct vanuit rankingservice (zonder handmatige standings-input)
+- template-gestuurde communicatieflow (admin templatebeheer, outbox/retry)
+- operationele rapportage op notificatiedelivery en foutpercentages
 
 ## REST API (dashboard layout)
 
@@ -111,7 +113,48 @@ Adminpagina gebruikt dezelfde endpoint voor realtime opslaan zonder page reload 
 - POST `/wp-json/bso-survival/v1/event-closeout/{event_id}`
 - POST `/wp-json/bso-survival/v1/event-closeout/{event_id}/publish`
 
-De closeout-route zet een event op `afgesloten`, registreert certificaatrecords en schrijft auditlog. De publish-route zet het event daarna op `gepubliceerd` en markeert de frontend-overzichten als gepubliceerd/read-only.
+De closeout-route zet een event op `afgesloten`, registreert certificaatrecords en schrijft auditlog. De publish-route zet het event daarna op `gepubliceerd`, normaliseert publicatiepayload naar `top_3` en `final_standings`, en kan notificaties versturen op basis van recipients.
+
+## Admin Quickstart (dagafsluiting)
+
+1. Open `BSO Rules -> Event Lifecycle` in de WordPress admin.
+2. Kies event, vul `Changed by`, en laad eventueel `Voorbeeld closeout`.
+3. Klik `JSON valideren` en daarna `Event afsluiten (closeout)`.
+4. Vul/controleer publicatievelden, laad eventueel `Voorbeeld publicatie`, controleer preview.
+5. Klik `Event publiceren` en controleer `Laatste response` op `top_3`, `final_standings` en `notifications`.
+
+Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluiting_Voorbereiding.md)
+
+## CLI Quickstart (dagafsluiting)
+
+- `wp bso-survival lifecycle --phase=closeout --event_id=14 --changed_by=wedstrijdleiding --certificates='[{"team_id":5,"file_path":"/tmp/team-5.pdf"}]'`
+- `wp bso-survival lifecycle --phase=publish --event_id=14 --changed_by=wedstrijdleiding --publication='{"headline":"Uitslag gepubliceerd","standings":[{"rank":1,"team_id":11,"team_name":"Team Rood","points":98.5}],"recipients":["coach@example.test"]}'`
+
+## Release notes 0.5.x
+
+### 0.5.0 - Lifecycle basis operationeel
+
+- Event closeout/publicatie routes actief en gekoppeld aan service-orchestratie.
+- Frontend read-only/publicatiegedrag na statusovergang bevestigd.
+- Audit logging op closeout en publicatie volledig gekoppeld.
+
+### 0.5.1 - Bedieningslaag toegevoegd
+
+- Nieuwe adminpagina `Event Lifecycle` toegevoegd voor closeout/publicatie-acties.
+- Nieuwe CLI command `wp bso-survival lifecycle` toegevoegd voor beheer/automation.
+- Realtime response feedback in admin voor snellere operationele controle.
+
+### 0.5.2 - Publicatiecontract geconcretiseerd
+
+- Publicatiepayload gestandaardiseerd met `headline`, `published_at`, `top_3`, `final_standings`, `recipients`.
+- Top-3 en volledige eindstand komen nu uniform terug in publicatieresponse.
+- Tests uitgebreid op payload-structuur en publicatieresultaat.
+
+### 0.5.3 - Notificatiebasis na publicatie
+
+- Publicatienotificatieservice toegevoegd met recipient-normalisatie.
+- Verzendsamenvatting (`sent_count`, `failed_count`, `sent_to`, `failed_to`) opgenomen in result payload.
+- Hooks voor notificatiefase toegevoegd voor verdere uitbouw (templates/outbox/retry).
 
 ## Ontwikkelcommando's
 
@@ -124,4 +167,4 @@ De closeout-route zet een event op `afgesloten`, registreert certificaatrecords 
 - ./vendor/bin/phpunit tests/Service/PartRuleConfiguratorServiceTest.php
 - ./vendor/bin/phpunit tests/Service/PartRuleScoringFlowTest.php
 
-Huidige teststatus: 104/104 groen.
+Huidige teststatus: 112/112 groen.
