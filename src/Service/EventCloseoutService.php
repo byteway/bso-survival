@@ -209,11 +209,23 @@ class EventCloseoutService {
         }
 
         usort($normalized, static function (array $a, array $b): int {
-            if ($a['rank'] === $b['rank']) {
-                return $b['points'] <=> $a['points'];
+            // Tie policy: rank asc, points desc, team_name asc (case-insensitive), team_id asc.
+            $byRank = $a['rank'] <=> $b['rank'];
+            if ($byRank !== 0) {
+                return $byRank;
             }
 
-            return $a['rank'] <=> $b['rank'];
+            $byPoints = $b['points'] <=> $a['points'];
+            if ($byPoints !== 0) {
+                return $byPoints;
+            }
+
+            $byName = strcasecmp((string) $a['team_name'], (string) $b['team_name']);
+            if ($byName !== 0) {
+                return $byName;
+            }
+
+            return $a['team_id'] <=> $b['team_id'];
         });
 
         return $normalized;

@@ -120,6 +120,40 @@ class EventCloseoutServiceTest extends TestCase {
         $this->assertSame(5, $notificationCalls[0][0]);
         $this->assertSame('wedstrijdleiding', $notificationCalls[0][3]);
     }
+
+    /**
+     * @test
+     */
+    public function it_applies_explicit_tie_policy_for_equal_rank_and_points(): void {
+        $service = new EventCloseoutService(
+            new EventService(new CloseoutEventRepository()),
+            new CertificateService(new CloseoutCertificateRepository()),
+            new AuditLogService(new CloseoutAuditLogRepository()),
+            new PublicationNotificationService(),
+            new EventPublicationService(new CloseoutPublicationRepository())
+        );
+
+        $result = $service->publishEvent(5, 'wedstrijdleiding', [
+            'headline' => 'Tie-break controle',
+            'standings' => [
+                ['rank' => 1, 'team_id' => 21, 'team_name' => 'zebra', 'points' => 100],
+                ['rank' => 1, 'team_id' => 19, 'team_name' => 'Alfa', 'points' => 100],
+                ['rank' => 1, 'team_id' => 18, 'team_name' => 'alfa', 'points' => 100],
+                ['rank' => 1, 'team_id' => 22, 'team_name' => 'Bravo', 'points' => 100],
+            ],
+        ]);
+
+        $orderedNames = array_map(static function (array $item): string {
+            return (string) $item['team_name'];
+        }, $result['publication']['final_standings']);
+
+        $orderedIds = array_map(static function (array $item): int {
+            return (int) $item['team_id'];
+        }, $result['publication']['final_standings']);
+
+        $this->assertSame(['alfa', 'Alfa', 'Bravo', 'zebra'], $orderedNames);
+        $this->assertSame([18, 19, 22, 21], $orderedIds);
+    }
 }
 
 class CloseoutEventRepository implements EventRepositoryInterface {

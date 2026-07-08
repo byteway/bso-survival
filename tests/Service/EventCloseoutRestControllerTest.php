@@ -99,6 +99,20 @@ class EventCloseoutRestControllerTest extends TestCase {
         $this->assertCount(3, $response['publication']['top_3']);
     }
 
+    /**
+     * @test
+     */
+    public function it_returns_null_when_no_persisted_publication_is_available(): void {
+        $controller = $this->buildController();
+
+        $response = $controller->getPublicationResult(new EventCloseoutFakeRestRequest([
+            'event_id' => 14,
+        ]));
+
+        $this->assertSame(14, $response['event_id']);
+        $this->assertNull($response['publication']);
+    }
+
     private function buildController(EventPublicationService $publications = null): EventCloseoutRestController {
         return new EventCloseoutRestController(
             new EventCloseoutService(
