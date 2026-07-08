@@ -32,13 +32,18 @@ class PartRuleAdminPage {
 
         add_menu_page(
             __('BSO Survival Rules', 'bso-survival'),
-            __('BSO Rules', 'bso-survival'),
+            __('Survival', 'bso-survival'),
             'manage_options',
             'bso-survival-rules',
             [$this, 'renderPage'],
             'dashicons-editor-ol',
             58
         );
+
+        global $submenu;
+        if (isset($submenu['bso-survival-rules'][0][0])) {
+            $submenu['bso-survival-rules'][0][0] = __('obstacle-specific rules', 'bso-survival');
+        }
     }
 
     public function handleSave(): void {
@@ -96,7 +101,7 @@ class PartRuleAdminPage {
         $methods = ScoringMethodRegistry::all();
 
         echo '<div class="wrap">';
-        echo '<h1>' . esc_html__('BSO Survival Part Rules', 'bso-survival') . '</h1>';
+        echo '<h1>' . esc_html__('Survival - obstacle-specific rules', 'bso-survival') . '</h1>';
 
         if (isset($_GET['saved']) && (int) $_GET['saved'] === 1) {
             echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Regel opgeslagen.', 'bso-survival') . '</p></div>';
