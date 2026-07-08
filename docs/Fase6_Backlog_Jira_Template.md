@@ -107,7 +107,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 ### Acceptatiecriteria
 - [x] Er is een expliciete architectuurbeslissing met rationale.
 - [x] Runtime schema en documentatie tonen hetzelfde model.
-- [ ] Migratiepad voor bestaande data is beschreven en uitgevoerd op dev.
+- [x] Migratiepad voor bestaande data is beschreven en uitgevoerd op dev.
 
 ### Testcriteria
 - Unit: schema-validatie test aanwezig.
@@ -125,7 +125,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - [x] Analyse huidige modelvarianten
 - [x] Beslissing vastleggen
 - [x] Schema/documentatie synchroniseren
-- [ ] Migratiecheck uitvoeren
+- [x] Migratiecheck uitvoeren
 - [ ] Review
 
 ---

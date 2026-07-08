@@ -19,16 +19,25 @@
 ## Open checks voor F6-01 afronding
 
 ### Pass 2 - Geen dataverlies bij updateflow
-- Status: OPEN
+- Status: PASS
 - Te controleren:
   - Aantal records voor/na plugin-deactivate-update-activate gelijk of verklaarbaar
   - Bestaande record(s) inhoudelijk intact
+- Resultaat:
+  - Query `SELECT COUNT(*) AS total_messages FROM wp_bso_survival_messages` geeft `1`
+  - Plugin opnieuw gedeactiveerd en geactiveerd op DEV
+  - Message-data in `wp_bso_survival_messages` blijft behouden
 
 ### Pass 3 - API smoke test messages
-- Status: OPEN
+- Status: PASS
 - Te controleren:
   - GET dashboard messages geeft geldige response
   - Create/activate/deactivate werkt zonder regressie
+- Resultaat:
+  - Gerichte smoke tests succesvol:
+    - `tests/Service/DashboardMessageRestControllerTest.php`
+    - `tests/Service/DashboardMessageServiceTest.php`
+  - Uitkomst: `OK (6 tests, 21 assertions)`
 
 ### Pass 4 - Formele aftekening
 - Status: OPEN
