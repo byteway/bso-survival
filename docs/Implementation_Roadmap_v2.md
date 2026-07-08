@@ -964,6 +964,12 @@ Maak REST API toekomstvast met versioning en filtering.
 
 ### Subfase 6.1: Admin score-invoer en direct bewerken
 
+Statusupdate 8 juli 2026:
+- admin submenu Score Invoer toegevoegd onder Survival
+- admin REST endpoints toegevoegd: `POST /scores/entries` en `PATCH /scores/entries/{score_entry_id}`
+- service-orkestratie toegevoegd voor validatie, read-only blokkade, auditlog en ranking-refresh
+- score repository uitgebreid met find/update voor correctiestroom
+
 Doel:
 - Beheerders kunnen direct scores invoeren en corrigeren vanuit de adminomgeving.
 
@@ -990,14 +996,20 @@ UI-plaatsing:
 - inline validatiefeedback en opslaan zonder full reload
 
 Validatiechecklist 6.1:
-- [ ] Adminformulier kan nieuwe score opslaan
-- [ ] Adminformulier kan bestaande score bewerken
-- [ ] Hooks `bso_survival_before_score_validation` en `bso_survival_score_recorded` worden afgevuurd
-- [ ] Ranking update wordt aangeroepen na scorewijziging
-- [ ] Audit log bevat score create/update acties
-- [ ] Permission + nonce checks aanwezig
+- [x] Adminformulier kan nieuwe score opslaan
+- [x] Adminformulier kan bestaande score bewerken
+- [x] Hooks `bso_survival_before_score_validation` en `bso_survival_score_recorded` worden afgevuurd
+- [x] Ranking update wordt aangeroepen na scorewijziging
+- [x] Audit log bevat score create/update acties
+- [x] Permission + nonce checks aanwezig
 
 #### 6.1.A Beheer-meldingen voor centraal dashboard
+
+Statusupdate 8 juli 2026:
+- admin submenu Dashboard Meldingen toegevoegd onder Survival
+- DashboardMessageService en repository toegevoegd met create + statuswissel
+- MessageWidget leest nu actieve event-meldingen met fallback op statische tekst
+- datamodel gebruikt voorlopig bestaande tabel `bso_survival_messages` (verdere velduitbreiding blijft open)
 
 Doel:
 - Beheerders kunnen zelf meldingen plaatsen, plannen en intrekken voor het centrale dashboard.
@@ -1047,10 +1059,10 @@ Integratie met widgets:
 
 Validatiechecklist 6.1.A:
 - [ ] Admin kan melding aanmaken met titel, body en severity
-- [ ] Admin kan melding aan/uit zetten zonder verwijderen
+- [x] Admin kan melding aan/uit zetten zonder verwijderen
 - [ ] Event-specifieke en globale meldingen worden correct gefilterd
 - [ ] MessageWidget toont prioriteit-volgorde correct
-- [ ] Read-only eventstatus blokkeert score-invoer, maar niet message-beheer in admin
+- [x] Read-only eventstatus blokkeert score-invoer, maar niet message-beheer in admin
 - [ ] PHPUnit dekt repository/service/controller paden voor messages
 
 #### 6.1.B Vrijwilliger-aanmeldscherm + teaminschrijving
@@ -1269,6 +1281,9 @@ Bestaande versioning/response-standaardisatie blijft relevant en wordt na 6.1/6.
 
 ### Stap 6.3: API Versioning Plan
 
+Statusupdate 8 juli 2026:
+- `docs/api-versioning.md` toegevoegd als eerste versie van het versioning-plan
+
 **File:** `docs/api-versioning.md`
 
 ```markdown
@@ -1307,6 +1322,10 @@ Versioning is onderdeel van URL:
 ```
 
 ### Stap 6.4: Standard REST response wrapper
+
+Statusupdate 8 juli 2026:
+- `src/Support/ApiResponse.php` toegevoegd als centrale success/error helper
+- nieuwe admin score REST endpoints gebruiken de wrapper
 
 **File:** `src/Support/ApiResponse.php`
 
@@ -1347,8 +1366,8 @@ class ApiResponse {
 ```
 
 ### Validatiechecklist:
-- [ ] Versioning plan gedocumenteerd
-- [ ] ApiResponse-klasse geschreven
+- [x] Versioning plan gedocumenteerd
+- [x] ApiResponse-klasse geschreven
 - [ ] Alle endpoints consistent response-formaat gebruiken
 - [ ] Paginering werkend op list endpoints
 - [ ] Filtering examples in docs

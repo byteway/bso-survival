@@ -3,10 +3,13 @@
 namespace BSO\Survival\Core;
 
 use BSO\Survival\Admin\DashboardWidgetAdminPage;
+use BSO\Survival\Admin\DashboardMessageAdminPage;
 use BSO\Survival\Admin\EmailTemplateAdminPage;
 use BSO\Survival\Admin\EventLifecycleAdminPage;
 use BSO\Survival\Admin\PartRuleAdminPage;
 use BSO\Survival\Admin\RegistrationAdminPage;
+use BSO\Survival\Admin\ScoreEntryAdminPage;
+use BSO\Survival\Api\AdminScoreRestController;
 use BSO\Survival\Api\DashboardWidgetLayoutRestController;
 use BSO\Survival\Api\EventCloseoutRestController;
 use BSO\Survival\Api\FrontendScoreRestController;
@@ -16,6 +19,7 @@ use BSO\Survival\Core\Cli\EventLifecycleCommand;
 use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
 use BSO\Survival\Database\Repository\AuditLogRepository;
 use BSO\Survival\Database\Repository\CertificateRepository;
+use BSO\Survival\Database\Repository\DashboardMessageRepository;
 use BSO\Survival\Database\Repository\DashboardWidgetLayoutRepository;
 use BSO\Survival\Database\Repository\EmailOutboxRepository;
 use BSO\Survival\Database\Repository\EmailTemplateRepository;
@@ -29,6 +33,8 @@ use BSO\Survival\Database\Repository\TeamMemberRepository;
 use BSO\Survival\Database\Repository\TeamRepository;
 use BSO\Survival\Frontend\ShortcodeController;
 use BSO\Survival\Service\AuditLogService;
+use BSO\Survival\Service\AdminScoreService;
+use BSO\Survival\Service\DashboardMessageService;
 use BSO\Survival\Service\CertificateService;
 use BSO\Survival\Service\DashboardOverviewService;
 use BSO\Survival\Service\DashboardWidgetLayoutService;
@@ -51,6 +57,7 @@ use BSO\Survival\Service\TeamService;
 use BSO\Survival\Service\TeamRegistrationService;
 use BSO\Survival\Service\WpMailer;
 use BSO\Survival\Service\RegistrationWindowService;
+use BSO\Survival\Service\RankingService;
 
 class Plugin {
     private const DASHBOARD_NOTICE_TRANSIENT = 'bso_survival_dashboard_admin_notice';
@@ -67,6 +74,10 @@ class Plugin {
         add_action('admin_post_bso_survival_save_part_rule', [$this, 'handle_part_rule_save']);
         add_action('admin_post_bso_survival_save_dashboard_widgets', [$this, 'handle_dashboard_widget_save']);
         add_action('admin_post_bso_survival_save_email_template', [$this, 'handle_email_template_save']);
+        add_action('admin_post_bso_survival_admin_score_create', [$this, 'handle_admin_score_create']);
+        add_action('admin_post_bso_survival_admin_score_update', [$this, 'handle_admin_score_update']);
+        add_action('admin_post_bso_survival_dashboard_message_create', [$this, 'handle_dashboard_message_create']);
+        add_action('admin_post_bso_survival_dashboard_message_toggle', [$this, 'handle_dashboard_message_toggle']);
         add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('init', [$this, 'schedule_email_outbox_processing']);
         add_action('bso_survival_process_email_outbox', [$this, 'process_email_outbox']);
@@ -105,6 +116,8 @@ class Plugin {
         $this->buildPartRuleAdminPage()->registerMenu();
         $this->buildDashboardWidgetAdminPage()->registerMenu();
         $this->buildRegistrationAdminPage()->registerMenu();
+        $this->buildScoreEntryAdminPage()->registerMenu();
+        $this->buildDashboardMessageAdminPage()->registerMenu();
         $this->buildEventLifecycleAdminPage()->registerMenu();
         $this->buildEmailTemplateAdminPage()->registerMenu();
     }
@@ -119,6 +132,22 @@ class Plugin {
 
     public function handle_email_template_save(): void {
         $this->buildEmailTemplateAdminPage()->handleSave();
+    }
+
+    public function handle_admin_score_create(): void {
+        $this->buildScoreEntryAdminPage()->handleCreate();
+    }
+
+    public function handle_admin_score_update(): void {
+        $this->buildScoreEntryAdminPage()->handleUpdate();
+    }
+
+    public function handle_dashboard_message_create(): void {
+        $this->buildDashboardMessageAdminPage()->handleCreate();
+    }
+
+    public function handle_dashboard_message_toggle(): void {
+        $this->buildDashboardMessageAdminPage()->handleToggle();
     }
 
     public function register_assets(): void {
@@ -204,6 +233,7 @@ class Plugin {
         $this->buildEventCloseoutRestController()->registerRoutes();
         $this->buildTeamRegistrationRestController()->registerRoutes();
         $this->buildFrontendScoreRestController()->registerRoutes();
+        $this->buildAdminScoreRestController()->registerRoutes();
     }
 
     public function schedule_email_outbox_processing(): void {
@@ -289,6 +319,26 @@ class Plugin {
         return new RegistrationAdminPage($eventService, $teamService, $windowService);
     }
 
+    private function buildScoreEntryAdminPage(): ScoreEntryAdminPage {
+        $eventService = new EventService(new EventRepository());
+
+        return new ScoreEntryAdminPage(
+            $eventService,
+            new AssignmentRepository(),
+            $this->buildAdminScoreService()
+        );
+    }
+
+    private function buildDashboardMessageAdminPage(): DashboardMessageAdminPage {
+        $eventService = new EventService(new EventRepository());
+        $messages = new DashboardMessageService(
+            new DashboardMessageRepository(),
+            new AuditLogService(new AuditLogRepository())
+        );
+
+        return new DashboardMessageAdminPage($eventService, $messages);
+    }
+
     private function buildEventLifecycleAdminPage(): EventLifecycleAdminPage {
         $eventService = new EventService(new EventRepository());
         $publicationService = new EventPublicationService(new EventPublicationRepository());
@@ -371,5 +421,31 @@ class Plugin {
         );
 
         return new FrontendScoreRestController($scoreService);
+    }
+
+    private function buildAdminScoreRestController(): AdminScoreRestController {
+        return new AdminScoreRestController($this->buildAdminScoreService());
+    }
+
+    private function buildAdminScoreService(): AdminScoreService {
+        $eventService = new EventService(new EventRepository());
+        $partService = new PartService(new PartRepository());
+        $teamService = new TeamService(new TeamRepository());
+        $publicationService = new EventPublicationService(new EventPublicationRepository());
+        $overviewService = new DashboardOverviewService($eventService, $partService, $teamService, $publicationService);
+        $entries = new ScoreEntryRepository();
+        $scoring = new ScoreComputationService(new PartRuleRepository());
+        $scoreEntryService = new ScoreEntryService($entries, $scoring);
+        $ranking = new RankingService($scoring);
+        $audit = new AuditLogService(new AuditLogRepository());
+
+        return new AdminScoreService(
+            $overviewService,
+            new AssignmentRepository(),
+            $entries,
+            $scoreEntryService,
+            $ranking,
+            $audit
+        );
     }
 }

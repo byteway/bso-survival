@@ -66,6 +66,55 @@ class ScoreEntryService {
 
     /**
      * @param mixed $rawValue
+     * @param array<string, mixed> $context
+     * @return object
+     */
+    public function updateEntry(int $scoreEntryId, int $partId, int $assignmentId, $rawValue, string $enteredByRole, array $context = []) {
+        if ($scoreEntryId <= 0) {
+            throw new InvalidArgumentException('score_entry_id must be a positive integer.');
+        }
+
+        $existing = $this->entries->findById($scoreEntryId);
+        if ($existing === null) {
+            throw new InvalidArgumentException(sprintf('score entry %d not found.', $scoreEntryId));
+        }
+
+        $entry = [
+            'id' => $scoreEntryId,
+            'part_id' => $partId,
+            'assignment_id' => $assignmentId,
+            'raw_value' => $rawValue,
+            'entered_by_role' => $enteredByRole,
+            'context' => $context,
+        ];
+
+        if (function_exists('do_action')) {
+            do_action('bso_survival_before_score_validation', $entry);
+        }
+
+        $this->validateSubmission($partId, $assignmentId, $rawValue, $enteredByRole);
+
+        $normalizedPoints = $this->scoring->normalizeRawValueForPart($partId, $rawValue);
+        $updated = $this->entries->updateById($scoreEntryId, [
+            'raw_value' => $rawValue,
+            'normalized_points' => $normalizedPoints,
+            'entered_by_role' => $enteredByRole,
+            'updated_at' => gmdate('Y-m-d H:i:s'),
+        ]);
+
+        if ($updated === null) {
+            throw new RuntimeException('Failed to update score entry.');
+        }
+
+        if (function_exists('do_action')) {
+            do_action('bso_survival_score_recorded', $scoreEntryId, $assignmentId, $rawValue, $updated);
+        }
+
+        return $updated;
+    }
+
+    /**
+     * @param mixed $rawValue
      */
     private function validateSubmission(int $partId, int $assignmentId, $rawValue, string $enteredByRole): void {
         if ($partId <= 0) {

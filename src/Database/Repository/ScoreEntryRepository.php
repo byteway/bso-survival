@@ -18,6 +18,16 @@ class ScoreEntryRepository implements ScoreEntryRepositoryInterface {
     }
 
     /**
+     * @return object|null
+     */
+    public function findById(int $id) {
+        $table = $this->tableName();
+        $sql = $this->wpdb->prepare("SELECT * FROM {$table} WHERE id = %d LIMIT 1", $id);
+
+        return $this->wpdb->get_row($sql) ?: null;
+    }
+
+    /**
      * @param array<string, mixed> $data
      * @return object|null
      */
@@ -35,6 +45,21 @@ class ScoreEntryRepository implements ScoreEntryRepositoryInterface {
         }
 
         return (object) array_merge(['id' => $id], $data);
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return object|null
+     */
+    public function updateById(int $id, array $data) {
+        $table = $this->tableName();
+        $updated = $this->wpdb->update($table, $data, ['id' => $id]);
+
+        if ($updated === false) {
+            return null;
+        }
+
+        return $this->findById($id);
     }
 
     private function tableName(): string {

@@ -123,6 +123,10 @@ class InMemoryScoreEntryRepository implements ScoreEntryRepositoryInterface {
     /** @var array<int, object> */
     private $entries = [];
 
+    public function findById(int $id) {
+        return $this->entries[$id] ?? null;
+    }
+
     /**
      * @param array<string, mixed> $data
      * @return object|null
@@ -133,5 +137,14 @@ class InMemoryScoreEntryRepository implements ScoreEntryRepositoryInterface {
         $this->entries[$id] = $entry;
 
         return $entry;
+    }
+
+    public function updateById(int $id, array $data) {
+        if (!isset($this->entries[$id])) {
+            return null;
+        }
+
+        $this->entries[$id] = (object) array_merge((array) $this->entries[$id], $data);
+        return $this->entries[$id];
     }
 }
