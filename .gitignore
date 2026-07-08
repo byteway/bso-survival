@@ -1,2 +1,9 @@
 vendor/
 .phpunit.cache/
+
+# Local development secrets (never commit)
+.dev/*.env
+.dev/*.local
+
+# Optional machine-local VS Code overrides
+.vscode/settings.local.json

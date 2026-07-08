@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "WP Runtime Smoke: Shortcodes",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/wp-runtime-shortcode-smoke.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "WP Runtime Smoke: F6-03 Visibility",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/wp-runtime-f6-03-smoke.sh",
+      "problemMatcher": []
+    },
+    {
+      "label": "Auto WP Runtime Smoke on Folder Open",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/wp-runtime-shortcode-smoke.sh",
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "panel": "dedicated",
+        "clear": true
+      }
+    }
+  ]
+}

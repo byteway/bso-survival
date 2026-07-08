@@ -9,6 +9,7 @@ Snelle controle op randmomenten voor message-zichtbaarheid met `visible_from` en
 ## Script
 
 - [tests/manual/f6-03-smoke.sh](../tests/manual/f6-03-smoke.sh)
+- Wrapper met lokale secrets: [scripts/wp-runtime-f6-03-smoke.sh](../scripts/wp-runtime-f6-03-smoke.sh)
 
 ## Voorwaarden
 
@@ -27,6 +28,20 @@ of
 ```bash
 BSO_EVENT_ID=<event_id> ./tests/manual/f6-03-smoke.sh
 ```
+
+Met lokale `.dev` configuratie (aanbevolen in Code Server):
+
+```bash
+./scripts/wp-runtime-f6-03-smoke.sh
+```
+
+Standaard event_id voor wrapper:
+
+- `BSO_SMOKE_EVENT_ID` in `.dev/wp-dev.env` (default `2` in het example-bestand)
+
+VS Code task:
+
+- `WP Runtime Smoke: F6-03 Visibility`
 
 ## Wat wordt gecontroleerd
 

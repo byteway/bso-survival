@@ -20,12 +20,8 @@ trap 'rm -f "$PHP_FILE"' EXIT
 cat > "$PHP_FILE" <<'PHP'
 <?php
 
-declare(strict_types=1);
-
 use BSO\Survival\Database\Repository\DashboardMessageRepository;
 use BSO\Survival\Service\DashboardMessageService;
-use InvalidArgumentException;
-use Throwable;
 
 $eventId = (int) getenv('BSO_EVENT_ID');
 $runId = (string) getenv('BSO_RUN_ID');
@@ -104,7 +100,7 @@ try {
             'visible_from' => $fmt($now->modify('+10 minutes')),
             'visible_until' => $fmt($now->modify('+1 minute')),
         ]);
-    } catch (InvalidArgumentException $exception) {
+    } catch (\InvalidArgumentException $exception) {
         $invalidRejected = true;
     }
 
@@ -114,7 +110,7 @@ try {
     $assert(!$isVisible($activeRows, 'expired-window', $runId), 'verlopen visible_until is niet zichtbaar');
     $assert($isVisible($activeRows, 'current-window', $runId), 'huidig zichtvenster is zichtbaar');
     $assert($invalidRejected, 'ongeldige tijdcombinatie wordt geweigerd');
-} catch (Throwable $exception) {
+} catch (\Throwable $exception) {
     $errors[] = 'Onverwachte fout: ' . $exception->getMessage();
     fwrite(STDERR, "ERROR: {$exception->getMessage()}\n");
 } finally {
@@ -125,7 +121,7 @@ try {
 
         try {
             $service->delete($messageId, $eventId, 'smoke-f6-03');
-        } catch (Throwable $cleanupException) {
+        } catch (\Throwable $cleanupException) {
             fwrite(STDOUT, "WARN: cleanup mislukt voor message_id={$messageId}: {$cleanupException->getMessage()}\n");
         }
     }
@@ -144,4 +140,8 @@ exit(0);
 PHP
 
 echo "Running F6-03 smoke checks voor event_id=$EVENT_ID (run_id=$RUN_ID)"
-BSO_EVENT_ID="$EVENT_ID" BSO_RUN_ID="$RUN_ID" wp eval-file "$PHP_FILE"
+if [[ -n "${WORDPRESS_PATH:-}" ]]; then
+    BSO_EVENT_ID="$EVENT_ID" BSO_RUN_ID="$RUN_ID" wp --path="$WORDPRESS_PATH" eval-file "$PHP_FILE"
+else
+    BSO_EVENT_ID="$EVENT_ID" BSO_RUN_ID="$RUN_ID" wp eval-file "$PHP_FILE"
+fi

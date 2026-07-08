@@ -140,6 +140,23 @@ Of:
 BSO_EVENT_ID=<event_id> ./tests/manual/f6-03-smoke.sh
 ```
 
+## Runtime smoke automation (Code Server)
+
+- Lokale secrets (niet committen): `.dev/wp-dev.env`
+- Voorbeeldbestand: [ .dev/wp-dev.env.example ](.dev/wp-dev.env.example)
+- Runtime shortcode smoke runner: [scripts/wp-runtime-shortcode-smoke.sh](scripts/wp-runtime-shortcode-smoke.sh)
+- Runtime F6-03 visibility smoke runner: [scripts/wp-runtime-f6-03-smoke.sh](scripts/wp-runtime-f6-03-smoke.sh)
+- VS Code tasks: [ .vscode/tasks.json ](.vscode/tasks.json)
+
+Handmatig uitvoeren:
+
+```bash
+./scripts/wp-runtime-shortcode-smoke.sh
+./scripts/wp-runtime-f6-03-smoke.sh
+```
+
+De task `Auto WP Runtime Smoke on Folder Open` draait automatisch bij openen van de projectmap (na toestaan van auto-tasks in VS Code).
+
 ## REST API (dagafsluiting)
 
 - POST `/wp-json/bso-survival/v1/event-closeout/{event_id}`
