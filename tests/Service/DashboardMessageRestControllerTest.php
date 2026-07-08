@@ -70,6 +70,26 @@ class DashboardMessageRestControllerTest extends TestCase {
     }
 
     /** @test */
+    public function it_passes_meta_data_when_creating_message_via_rest(): void {
+        $service = new FakeDashboardMessageService();
+        $controller = new DashboardMessageRestController($service);
+
+        $response = $controller->createMessage(new FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'type' => 'info',
+            'text' => 'Let op metadata',
+            'scope' => 'event',
+            'status' => 'actief',
+            'meta_data' => [
+                'channel' => 'operations',
+            ],
+        ]));
+
+        $this->assertTrue($response['success']);
+        $this->assertSame(['channel' => 'operations'], $service->lastCreateMetaData);
+    }
+
+    /** @test */
     public function it_supports_activate_endpoint(): void {
         $service = new FakeDashboardMessageService();
         $controller = new DashboardMessageRestController($service);
@@ -107,6 +127,9 @@ class FakeDashboardMessageService extends DashboardMessageService {
     /** @var string */
     public $lastSetStatus = '';
 
+    /** @var array<string, mixed> */
+    public $lastCreateMetaData = [];
+
     /** @var int */
     public $lastListPage = 1;
 
@@ -140,6 +163,7 @@ class FakeDashboardMessageService extends DashboardMessageService {
 
     public function create(array $payload) {
         $this->lastCreateScope = (string) ($payload['scope'] ?? 'event');
+        $this->lastCreateMetaData = is_array($payload['meta_data'] ?? null) ? $payload['meta_data'] : [];
         if ((string) ($payload['text'] ?? '') === '') {
             throw new InvalidArgumentException('text is verplicht.');
         }

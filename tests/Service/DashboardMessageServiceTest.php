@@ -27,6 +27,27 @@ class DashboardMessageServiceTest extends TestCase {
     }
 
     /** @test */
+    public function it_persists_message_meta_data_as_json(): void {
+        $repo = new InMemoryDashboardMessageRepository();
+        $service = new DashboardMessageService($repo);
+
+        $created = $service->create([
+            'event_id' => 8,
+            'type' => 'info',
+            'text' => 'Met metadata',
+            'scope' => 'event',
+            'status' => 'actief',
+            'meta_data' => [
+                'channel' => 'operations',
+                'sticky' => true,
+            ],
+        ]);
+
+        $this->assertIsString($created->meta_data);
+        $this->assertSame('{"channel":"operations","sticky":true}', $created->meta_data);
+    }
+
+    /** @test */
     public function it_forwards_scope_to_repository_when_listing(): void {
         $repo = new InMemoryDashboardMessageRepository();
         $service = new DashboardMessageService($repo);
@@ -94,6 +115,21 @@ class DashboardMessageServiceTest extends TestCase {
             'text' => 'abc',
             'scope' => 'unknown',
             'status' => 'actief',
+        ]);
+    }
+
+    /** @test */
+    public function it_rejects_invalid_message_meta_data(): void {
+        $service = new DashboardMessageService(new InMemoryDashboardMessageRepository());
+
+        $this->expectException(InvalidArgumentException::class);
+        $service->create([
+            'event_id' => 8,
+            'type' => 'info',
+            'text' => 'abc',
+            'scope' => 'event',
+            'status' => 'actief',
+            'meta_data' => '{invalid',
         ]);
     }
 }

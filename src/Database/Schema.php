@@ -369,6 +369,7 @@ class Schema {
                     'text' => 'LONGTEXT NOT NULL',
                     'visibility' => "VARCHAR(32) NOT NULL DEFAULT 'intern'",
                     'status' => "VARCHAR(32) NOT NULL DEFAULT 'actief'",
+                    'meta_data' => "LONGTEXT NULL DEFAULT NULL",
                     'created_at' => 'DATETIME NOT NULL',
                     'updated_at' => 'DATETIME NOT NULL',
                 ],

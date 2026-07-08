@@ -12,6 +12,7 @@ class AdminScoreRestController {
     private const NAMESPACE = 'bso-survival/v1';
     private const CREATE_ROUTE = '/scores/entries';
     private const UPDATE_ROUTE = '/scores/entries/(?P<score_entry_id>\d+)';
+    private const RECALCULATE_ROUTE = '/scores/recalculate';
 
     /** @var AdminScoreService */
     private $scores;
@@ -34,6 +35,12 @@ class AdminScoreRestController {
         register_rest_route(self::NAMESPACE, self::UPDATE_ROUTE, [[
             'methods' => 'PATCH',
             'callback' => [$this, 'updateEntry'],
+            'permission_callback' => [$this, 'canManage'],
+        ]]);
+
+        register_rest_route(self::NAMESPACE, self::RECALCULATE_ROUTE, [[
+            'methods' => 'POST',
+            'callback' => [$this, 'recalculatePart'],
             'permission_callback' => [$this, 'canManage'],
         ]]);
     }
@@ -110,6 +117,29 @@ class AdminScoreRestController {
             return ApiResponse::error('score_update_blocked', $exception->getMessage(), 409);
         } catch (Throwable $exception) {
             return ApiResponse::error('score_update_failed', 'Score kon niet worden bijgewerkt.', 500);
+        }
+    }
+
+    /**
+     * @param mixed $request
+     * @return mixed
+     */
+    public function recalculatePart($request) {
+        $payload = [
+            'event_id' => $this->extractIntParam($request, 'event_id'),
+            'part_id' => $this->extractIntParam($request, 'part_id'),
+            'changed_by' => $this->extractStringParam($request, 'changed_by'),
+        ];
+
+        try {
+            $result = $this->scores->recalculate($payload);
+            return ApiResponse::success(['result' => $result]);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_recalculate_input', $exception->getMessage(), 400);
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error('recalculate_blocked', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('recalculate_failed', 'Herberekening kon niet worden uitgevoerd.', 500);
         }
     }
 

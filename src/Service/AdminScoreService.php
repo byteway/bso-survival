@@ -157,6 +157,46 @@ class AdminScoreService {
     }
 
     /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function recalculate(array $payload): array {
+        $eventId = (int) ($payload['event_id'] ?? 0);
+        $partId = (int) ($payload['part_id'] ?? 0);
+        $changedBy = trim((string) ($payload['changed_by'] ?? 'admin'));
+
+        if ($eventId <= 0) {
+            throw new InvalidArgumentException('event_id must be a positive integer.');
+        }
+
+        if ($partId <= 0) {
+            throw new InvalidArgumentException('part_id must be a positive integer.');
+        }
+
+        $teamRawValues = $this->entries->findLatestRawValuesByPart($eventId, $partId);
+        $positions = $this->ranking->refreshForPart($partId, $teamRawValues);
+
+        $this->audit->log(
+            $eventId,
+            'ranking',
+            $partId,
+            'recalculated',
+            null,
+            [
+                'team_count' => count($teamRawValues),
+            ],
+            $changedBy === '' ? 'admin' : $changedBy
+        );
+
+        return [
+            'event_id' => $eventId,
+            'part_id' => $partId,
+            'team_count' => count($teamRawValues),
+            'positions' => $positions,
+        ];
+    }
+
+    /**
      * @param mixed $rawValue
      * @return object
      */

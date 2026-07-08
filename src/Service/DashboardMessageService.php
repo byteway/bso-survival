@@ -78,6 +78,7 @@ class DashboardMessageService {
         $scope = trim((string) ($payload['scope'] ?? 'event'));
         $status = trim((string) ($payload['status'] ?? 'actief'));
         $changedBy = trim((string) ($payload['changed_by'] ?? 'admin'));
+        $metaData = $payload['meta_data'] ?? null;
 
         if ($eventId <= 0) {
             throw new InvalidArgumentException('event_id must be a positive integer.');
@@ -103,6 +104,8 @@ class DashboardMessageService {
             throw new InvalidArgumentException('scope moet event of global zijn.');
         }
 
+        $metaDataJson = $this->normalizeMetaData($metaData);
+
         if ($scope === 'global') {
             $visibility = 'global';
         }
@@ -114,6 +117,7 @@ class DashboardMessageService {
             'text' => $text,
             'visibility' => $visibility,
             'status' => $status,
+            'meta_data' => $metaDataJson,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
@@ -139,6 +143,35 @@ class DashboardMessageService {
         }
 
         return $created;
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private function normalizeMetaData($value): ?string {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (!is_array($decoded)) {
+                throw new InvalidArgumentException('meta_data moet geldige JSON zijn.');
+            }
+
+            return json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+
+        if (!is_array($value)) {
+            throw new InvalidArgumentException('meta_data moet een array of JSON-string zijn.');
+        }
+
+        $encoded = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($encoded === false) {
+            throw new InvalidArgumentException('meta_data kon niet worden gecodeerd.');
+        }
+
+        return $encoded;
     }
 
     public function setStatus(int $messageId, int $eventId, string $status, string $changedBy = 'admin') {

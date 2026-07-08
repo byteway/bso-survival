@@ -62,6 +62,46 @@ class ScoreEntryRepository implements ScoreEntryRepositoryInterface {
         return $this->findById($id);
     }
 
+    /**
+     * @return array<int, float>
+     */
+    public function findLatestRawValuesByPart(int $eventId, int $partId): array {
+        if ($eventId <= 0 || $partId <= 0) {
+            return [];
+        }
+
+        $scoreTable = $this->tableName();
+        $assignmentTable = $this->wpdb->prefix . 'bso_survival_assignments';
+
+        $sql = $this->wpdb->prepare(
+            "SELECT a.team_id, se.raw_value
+             FROM {$scoreTable} se
+             INNER JOIN {$assignmentTable} a ON a.id = se.assignment_id
+             INNER JOIN (
+                 SELECT assignment_id, MAX(id) AS latest_id
+                 FROM {$scoreTable}
+                 GROUP BY assignment_id
+             ) latest ON latest.latest_id = se.id
+             WHERE a.event_id = %d
+               AND a.part_id = %d",
+            $eventId,
+            $partId
+        );
+
+        $rows = $this->wpdb->get_results($sql) ?: [];
+        $values = [];
+        foreach ($rows as $row) {
+            $teamId = (int) ($row->team_id ?? 0);
+            if ($teamId <= 0) {
+                continue;
+            }
+
+            $values[$teamId] = (float) ($row->raw_value ?? 0);
+        }
+
+        return $values;
+    }
+
     private function tableName(): string {
         return $this->wpdb->prefix . 'bso_survival_score_entries';
     }

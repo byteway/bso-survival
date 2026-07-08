@@ -19,4 +19,9 @@ interface ScoreEntryRepositoryInterface {
      * @return object|null
      */
     public function updateById(int $id, array $data);
+
+    /**
+     * @return array<int, float>
+     */
+    public function findLatestRawValuesByPart(int $eventId, int $partId): array;
 }

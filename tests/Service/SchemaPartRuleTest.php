@@ -22,4 +22,13 @@ class SchemaPartRuleTest extends TestCase {
         $this->assertArrayHasKey('unit', $columns);
         $this->assertArrayHasKey('tiebreaker_mode', $columns);
     }
+
+    /** @test */
+    public function messages_schema_contains_meta_data_column(): void {
+        $tables = Schema::tables();
+
+        $this->assertArrayHasKey('messages', $tables);
+        $this->assertArrayHasKey('columns', $tables['messages']);
+        $this->assertArrayHasKey('meta_data', $tables['messages']['columns']);
+    }
 }

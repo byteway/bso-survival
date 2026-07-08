@@ -1334,6 +1334,9 @@ Statusupdate 9 juli 2026:
 - REST controllers voor teamregistratie, event-closeout/publicatie, dashboard-layout en frontend score submit omgezet naar de centrale ApiResponse-wrapper
 - paginering toegevoegd op `GET /bso-survival/v1/dashboard/messages` met `page` en `per_page` (plus legacy `limit` fallback)
 - PHPUnit uitgebreid voor response-envelope en paginering
+- filtering-voorbeelden toegevoegd in `docs/api-versioning.md`
+- recalculate endpoint toegevoegd: `POST /bso-survival/v1/scores/recalculate`
+- datamodel-upgrade messages: `meta_data` kolom toegevoegd aan schema + serviceondersteuning
 
 **File:** `src/Support/ApiResponse.php`
 
@@ -1378,7 +1381,7 @@ class ApiResponse {
 - [x] ApiResponse-klasse geschreven
 - [x] Alle endpoints consistent response-formaat gebruiken
 - [x] Paginering werkend op list endpoints
-- [ ] Filtering examples in docs
+- [x] Filtering examples in docs
 
 ---
 

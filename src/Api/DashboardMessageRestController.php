@@ -141,6 +141,7 @@ class DashboardMessageRestController {
             'status' => $this->extractStringParam($request, 'status'),
             'scope' => $this->extractStringParam($request, 'scope'),
             'changed_by' => $this->extractStringParam($request, 'changed_by'),
+            'meta_data' => $this->extractArrayParam($request, 'meta_data'),
         ];
 
         try {
@@ -232,5 +233,22 @@ class DashboardMessageRestController {
         }
 
         return '';
+    }
+
+    /**
+     * @param mixed $request
+     * @return array<int|string, mixed>
+     */
+    private function extractArrayParam($request, string $key): array {
+        if (is_object($request) && method_exists($request, 'get_param')) {
+            $value = $request->get_param($key);
+            return is_array($value) ? $value : [];
+        }
+
+        if (is_array($request) && isset($request[$key]) && is_array($request[$key])) {
+            return $request[$key];
+        }
+
+        return [];
     }
 }

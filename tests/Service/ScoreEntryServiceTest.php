@@ -147,4 +147,8 @@ class InMemoryScoreEntryRepository implements ScoreEntryRepositoryInterface {
         $this->entries[$id] = (object) array_merge((array) $this->entries[$id], $data);
         return $this->entries[$id];
     }
+
+    public function findLatestRawValuesByPart(int $eventId, int $partId): array {
+        return [];
+    }
 }
