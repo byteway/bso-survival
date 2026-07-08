@@ -1233,6 +1233,13 @@ Statusupdate 8 juli 2026:
 
 ### Subfase 6.2: Frontend scoreformulier (operationele invoer)
 
+Statusupdate 8 juli 2026:
+- frontend shortcode `bso_survival_score_form` toegevoegd met mobiele score-invoer
+- REST endpoint `POST /bso-survival/v1/score-entries` toegevoegd voor frontend submit-flow
+- read-only/publicatiestatus wordt server-side en client-side afgedwongen
+- foutafhandeling verduidelijkt met valideerbare REST error-codes en gebruikersmeldingen
+- PHPUnit unit coverage toegevoegd voor service- en REST-laag van score-invoer
+
 Doel:
 - Leiding/jury kan tijdens event scores invoeren via frontend/mobile zonder adminscherm.
 
@@ -1248,10 +1255,10 @@ Technische ingangen:
 - statuscheck via `DashboardOverviewService` flags (`is_read_only`, `is_published`)
 
 Validatiechecklist 6.2:
-- [ ] Frontendformulier kan score invoeren voor geautoriseerde gebruiker
-- [ ] Frontendformulier weigert invoer bij read-only/publicatiestatus
-- [ ] Foutmeldingen zijn begrijpelijk bij invalid input
-- [ ] Ranking/dashboardweergave wordt na invoer consistent geactualiseerd
+- [x] Frontendformulier kan score invoeren voor geautoriseerde gebruiker
+- [x] Frontendformulier weigert invoer bij read-only/publicatiestatus
+- [x] Foutmeldingen zijn begrijpelijk bij invalid input
+- [x] Ranking/dashboardweergave wordt na invoer consistent geactualiseerd
 - [ ] E2E test dekt volledige frontend submit-flow
 
 ### Relatie met bestaande Phase 6 API-taken

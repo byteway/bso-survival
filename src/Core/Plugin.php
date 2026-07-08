@@ -9,7 +9,9 @@ use BSO\Survival\Admin\PartRuleAdminPage;
 use BSO\Survival\Admin\RegistrationAdminPage;
 use BSO\Survival\Api\DashboardWidgetLayoutRestController;
 use BSO\Survival\Api\EventCloseoutRestController;
+use BSO\Survival\Api\FrontendScoreRestController;
 use BSO\Survival\Api\TeamRegistrationRestController;
+use BSO\Survival\Database\Repository\AssignmentRepository;
 use BSO\Survival\Core\Cli\EventLifecycleCommand;
 use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
 use BSO\Survival\Database\Repository\AuditLogRepository;
@@ -19,13 +21,16 @@ use BSO\Survival\Database\Repository\EmailOutboxRepository;
 use BSO\Survival\Database\Repository\EmailTemplateRepository;
 use BSO\Survival\Database\Repository\EventPublicationRepository;
 use BSO\Survival\Database\Repository\EventRepository;
+use BSO\Survival\Database\Repository\PartRepository;
 use BSO\Survival\Database\Repository\PartRuleRepository;
 use BSO\Survival\Database\Repository\RegistrationWindowRepository;
+use BSO\Survival\Database\Repository\ScoreEntryRepository;
 use BSO\Survival\Database\Repository\TeamMemberRepository;
 use BSO\Survival\Database\Repository\TeamRepository;
 use BSO\Survival\Frontend\ShortcodeController;
 use BSO\Survival\Service\AuditLogService;
 use BSO\Survival\Service\CertificateService;
+use BSO\Survival\Service\DashboardOverviewService;
 use BSO\Survival\Service\DashboardWidgetLayoutService;
 use BSO\Survival\Service\DashboardWidgetRegistry;
 use BSO\Survival\Service\EmailOutboxService;
@@ -33,11 +38,15 @@ use BSO\Survival\Service\EmailTemplateService;
 use BSO\Survival\Service\EventCloseoutService;
 use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Service\EventService;
+use BSO\Survival\Service\FrontendScoreSubmissionService;
 use BSO\Survival\Service\OutboxProcessorService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
+use BSO\Survival\Service\PartService;
 use BSO\Survival\Service\PublicationNotificationService;
 use BSO\Survival\Service\RegistrationConfirmationService;
 use BSO\Survival\Service\ScoringMethodRegistry;
+use BSO\Survival\Service\ScoreComputationService;
+use BSO\Survival\Service\ScoreEntryService;
 use BSO\Survival\Service\TeamService;
 use BSO\Survival\Service\TeamRegistrationService;
 use BSO\Survival\Service\WpMailer;
@@ -67,6 +76,7 @@ class Plugin {
         add_action('bso_survival_teams_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
         add_action('bso_survival_event_overview_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
         add_action('bso_survival_event_summary_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
+        add_action('bso_survival_score_form_render_error', [$this, 'capture_dashboard_render_error'], 10, 2);
 
         $this->register_cli_commands();
     }
@@ -150,6 +160,14 @@ class Plugin {
             true
         );
 
+        wp_register_script(
+            'bso-survival-frontend-score',
+            plugins_url('assets/js/bso-survival-frontend-score.js', __DIR__ . '/../../bso-survival.php'),
+            ['bso-survival-frontend'],
+            '2.0.0',
+            true
+        );
+
         wp_register_style(
             'bso-survival-admin-dashboard-widgets',
             plugins_url('assets/css/bso-survival-admin-dashboard-widgets.css', __DIR__ . '/../../bso-survival.php'),
@@ -185,6 +203,7 @@ class Plugin {
         $this->buildDashboardWidgetLayoutRestController()->registerRoutes();
         $this->buildEventCloseoutRestController()->registerRoutes();
         $this->buildTeamRegistrationRestController()->registerRoutes();
+        $this->buildFrontendScoreRestController()->registerRoutes();
     }
 
     public function schedule_email_outbox_processing(): void {
@@ -333,5 +352,24 @@ class Plugin {
         );
 
         return new TeamRegistrationRestController($registrationService);
+    }
+
+    private function buildFrontendScoreRestController(): FrontendScoreRestController {
+        $eventService = new EventService(new EventRepository());
+        $partService = new PartService(new PartRepository());
+        $teamService = new TeamService(new TeamRepository());
+        $publicationService = new EventPublicationService(new EventPublicationRepository());
+        $overviewService = new DashboardOverviewService($eventService, $partService, $teamService, $publicationService);
+
+        $scoreService = new FrontendScoreSubmissionService(
+            $overviewService,
+            new AssignmentRepository(),
+            new ScoreEntryService(
+                new ScoreEntryRepository(),
+                new ScoreComputationService(new PartRuleRepository())
+            )
+        );
+
+        return new FrontendScoreRestController($scoreService);
     }
 }

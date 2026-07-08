@@ -9,6 +9,7 @@ use BSO\Survival\Database\Repository\TeamRepository;
 use BSO\Survival\Service\DashboardOverviewService;
 use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\EventPublicationService;
+use BSO\Survival\Database\Repository\AssignmentRepository;
 use BSO\Survival\Service\PartService;
 use BSO\Survival\Service\TeamService;
 
@@ -19,6 +20,7 @@ class ShortcodeController {
     public const OVERVIEW_TAG = 'bso_survival_event_overview';
     public const SUMMARY_TAG = 'bso_survival_event_summary';
     public const TEAM_REGISTRATION_TAG = 'bso_survival_team_registration';
+    public const SCORE_FORM_TAG = 'bso_survival_score_form';
 
     /** @var DashboardController */
     private $dashboardController;
@@ -38,13 +40,17 @@ class ShortcodeController {
     /** @var TeamRegistrationController */
     private $teamRegistrationController;
 
-    public function __construct(DashboardController $dashboardController = null, PartsController $partsController = null, TeamsController $teamsController = null, EventOverviewController $eventOverviewController = null, EventSummaryController $eventSummaryController = null, TeamRegistrationController $teamRegistrationController = null) {
+    /** @var ScoreFormController */
+    private $scoreFormController;
+
+    public function __construct(DashboardController $dashboardController = null, PartsController $partsController = null, TeamsController $teamsController = null, EventOverviewController $eventOverviewController = null, EventSummaryController $eventSummaryController = null, TeamRegistrationController $teamRegistrationController = null, ScoreFormController $scoreFormController = null) {
         $this->dashboardController = $dashboardController ?? $this->buildDashboardController();
         $this->partsController = $partsController ?? $this->buildPartsController();
         $this->teamsController = $teamsController ?? $this->buildTeamsController();
         $this->eventOverviewController = $eventOverviewController ?? $this->buildEventOverviewController();
         $this->eventSummaryController = $eventSummaryController ?? $this->buildEventSummaryController();
         $this->teamRegistrationController = $teamRegistrationController ?? $this->buildTeamRegistrationController();
+        $this->scoreFormController = $scoreFormController ?? $this->buildScoreFormController();
     }
 
     public function register(): void {
@@ -54,6 +60,7 @@ class ShortcodeController {
         add_shortcode(self::OVERVIEW_TAG, [$this, 'render_event_overview']);
         add_shortcode(self::SUMMARY_TAG, [$this, 'render_event_summary']);
         add_shortcode(self::TEAM_REGISTRATION_TAG, [$this, 'render_team_registration']);
+        add_shortcode(self::SCORE_FORM_TAG, [$this, 'render_score_form']);
     }
 
     public function render(array $atts = []): string {
@@ -78,6 +85,10 @@ class ShortcodeController {
 
     public function render_team_registration(array $atts = []): string {
         return $this->teamRegistrationController->render($atts);
+    }
+
+    public function render_score_form(array $atts = []): string {
+        return $this->scoreFormController->render($atts);
     }
 
     private function buildDashboardController(): DashboardController {
@@ -150,5 +161,19 @@ class ShortcodeController {
         $eventService = new EventService($eventRepository);
 
         return new TeamRegistrationController($eventService);
+    }
+
+    private function buildScoreFormController(): ScoreFormController {
+        $eventRepository = new EventRepository();
+        $partRepository = new PartRepository();
+        $teamRepository = new TeamRepository();
+
+        $eventService = new EventService($eventRepository);
+        $partService = new PartService($partRepository);
+        $teamService = new TeamService($teamRepository);
+        $publicationService = new EventPublicationService(new EventPublicationRepository());
+        $overviewService = new DashboardOverviewService($eventService, $partService, $teamService, $publicationService);
+
+        return new ScoreFormController($eventService, $overviewService, new AssignmentRepository());
     }
 }
