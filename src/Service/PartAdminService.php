@@ -8,6 +8,8 @@ use InvalidArgumentException;
 use RuntimeException;
 
 class PartAdminService {
+    private const SORTABLE_COLUMNS = ['id', 'name', 'status', 'event_id'];
+
     /** @var PartAdminRepositoryInterface */
     private $parts;
 
@@ -24,6 +26,33 @@ class PartAdminService {
         return array_values(array_filter($this->parts->findAll(), static function ($part): bool {
             return (string) ($part->status ?? '') !== 'verwijderd';
         }));
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function listPartsSorted(string $sortBy = 'name', string $sortDirection = 'asc'): array {
+        return $this->listPartsFilteredSorted('', $sortBy, $sortDirection);
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function listPartsFilteredSorted(string $search = '', string $sortBy = 'name', string $sortDirection = 'asc'): array {
+        $parts = $this->filterPartsBySearch($this->listParts(), $search);
+        $column = $this->normalizeSortColumn($sortBy);
+        $direction = $this->normalizeSortDirection($sortDirection);
+
+        usort($parts, function ($left, $right) use ($column, $direction): int {
+            $result = $this->comparePartsByColumn($left, $right, $column);
+            if ($result === 0) {
+                $result = $this->comparePartsByColumn($left, $right, 'id');
+            }
+
+            return $direction === 'desc' ? ($result * -1) : $result;
+        });
+
+        return $parts;
     }
 
     /** @return object|null */
@@ -119,7 +148,8 @@ class PartAdminService {
         if ($eventId > 0) {
             $event = $this->events->findById($eventId);
             $status = $event !== null ? (string) ($event->status ?? '') : '';
-            if (!in_array($status, ['afgesloten', 'gepubliceerd', 'verwijderd'], true)) {
+            $normalizedStatus = function_exists('mb_strtolower') ? mb_strtolower(trim($status)) : strtolower(trim($status));
+            if (!in_array($normalizedStatus, ['afgesloten', 'gesloten', 'closed', 'gepubliceerd', 'verwijderd'], true)) {
                 throw new RuntimeException('Onderdeel kan niet verwijderd worden zolang het nog aan een actief event gekoppeld is.');
             }
         }
@@ -254,5 +284,65 @@ class PartAdminService {
                 throw new InvalidArgumentException('Onderdeelnaam bestaat al: ' . $name . '.');
             }
         }
+    }
+
+    private function normalizeSortColumn(string $sortBy): string {
+        $candidate = trim($sortBy);
+        if (!in_array($candidate, self::SORTABLE_COLUMNS, true)) {
+            return 'name';
+        }
+
+        return $candidate;
+    }
+
+    private function normalizeSortDirection(string $sortDirection): string {
+        return strtolower(trim($sortDirection)) === 'desc' ? 'desc' : 'asc';
+    }
+
+    /**
+     * @param array<int, object> $parts
+     * @return array<int, object>
+     */
+    private function filterPartsBySearch(array $parts, string $search): array {
+        $needle = trim($search);
+        if ($needle === '') {
+            return $parts;
+        }
+
+        $needle = function_exists('mb_strtolower') ? mb_strtolower($needle) : strtolower($needle);
+
+        return array_values(array_filter($parts, static function ($part) use ($needle): bool {
+            $name = (string) ($part->name ?? '');
+            $status = (string) ($part->status ?? '');
+            $eventId = (string) ((int) ($part->event_id ?? 0));
+            $id = (string) ((int) ($part->id ?? 0));
+
+            $haystack = [
+                function_exists('mb_strtolower') ? mb_strtolower($name) : strtolower($name),
+                function_exists('mb_strtolower') ? mb_strtolower($status) : strtolower($status),
+                $eventId,
+                $id,
+            ];
+
+            foreach ($haystack as $value) {
+                if (strpos($value, $needle) !== false) {
+                    return true;
+                }
+            }
+
+            return false;
+        }));
+    }
+
+    /** @param object $left @param object $right */
+    private function comparePartsByColumn($left, $right, string $column): int {
+        if ($column === 'id' || $column === 'event_id') {
+            return ((int) ($left->{$column} ?? 0)) <=> ((int) ($right->{$column} ?? 0));
+        }
+
+        return strcmp(
+            (string) ($left->{$column} ?? ''),
+            (string) ($right->{$column} ?? '')
+        );
     }
 }

@@ -321,6 +321,44 @@ class EventAdminService {
         return $eligible;
     }
 
+    /**
+     * @return array<int, object>
+     */
+    public function listAssignedPartsForEvent(int $eventId, string $search = ''): array {
+        $event = $this->events->findById($eventId);
+        if ($event === null) {
+            throw new InvalidArgumentException(sprintf('Event %d niet gevonden.', $eventId));
+        }
+
+        $query = $this->normalizePartName(trim($search));
+        $assigned = [];
+        foreach ($this->parts->findByEventId($eventId) as $part) {
+            if ((string) ($part->status ?? '') === 'verwijderd') {
+                continue;
+            }
+
+            if ($query !== '') {
+                $name = $this->normalizePartName(trim((string) ($part->name ?? '')));
+                if (strpos($name, $query) === false) {
+                    continue;
+                }
+            }
+
+            $assigned[] = $part;
+        }
+
+        usort($assigned, static function ($left, $right): int {
+            $nameCompare = strcmp((string) ($left->name ?? ''), (string) ($right->name ?? ''));
+            if ($nameCompare !== 0) {
+                return $nameCompare;
+            }
+
+            return ((int) ($left->id ?? 0)) <=> ((int) ($right->id ?? 0));
+        });
+
+        return $assigned;
+    }
+
     /** @return object */
     private function requireEditableEvent(int $eventId) {
         if ($eventId <= 0) {
@@ -341,7 +379,8 @@ class EventAdminService {
     }
 
     private function isClosedLikeStatus(string $status): bool {
-        return in_array($status, ['afgesloten', 'gepubliceerd'], true);
+        $normalized = function_exists('mb_strtolower') ? mb_strtolower(trim($status)) : strtolower(trim($status));
+        return in_array($normalized, ['afgesloten', 'gesloten', 'closed', 'gepubliceerd'], true);
     }
 
     private function normalizePartName(string $name): string {

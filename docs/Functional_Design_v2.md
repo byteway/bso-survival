@@ -131,6 +131,7 @@ Acceptatiecriteria:
 - Voor events met status gesloten/read-only zijn mutaties geblokkeerd.
 - Alleen de samenvatting/eindresultaat van gesloten events blijft beschikbaar voor raadpleging.
 - Details over opbouw (parts, tussenstanden, scoredetails) hoeven na samenvatting niet meer wijzigbaar of leidend te zijn.
+- In admin `obstacle-specific rules` geeft laden van een gesloten/read-only event een expliciete melding en read-only schermgedrag.
 
 **US-B1c - Event verwijderen zonder part-verlies**
 

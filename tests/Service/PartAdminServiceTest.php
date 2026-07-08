@@ -99,6 +99,51 @@ class PartAdminServiceTest extends TestCase {
         $this->expectException(InvalidArgumentException::class);
         $service->importParts('[{"name":"Klimwand"},{"name":"Klimwand"}]');
     }
+
+    /** @test */
+    public function it_sorts_parts_by_requested_admin_column(): void {
+        $parts = new PartAdminInMemoryPartRepository();
+        $parts->seed((object) ['id' => 7, 'name' => 'Tokkelbaan', 'status' => 'inactief', 'event_id' => 15]);
+        $parts->seed((object) ['id' => 3, 'name' => 'Boogschieten', 'status' => 'actief', 'event_id' => null]);
+        $parts->seed((object) ['id' => 9, 'name' => 'Kanovaren', 'status' => 'actief', 'event_id' => 4]);
+
+        $service = new PartAdminService($parts, new PartAdminInMemoryEventRepository());
+
+        $byId = array_map(static function ($part): int {
+            return (int) ($part->id ?? 0);
+        }, $service->listPartsSorted('id', 'asc'));
+        $this->assertSame([3, 7, 9], $byId);
+
+        $byNameDesc = array_map(static function ($part): string {
+            return (string) ($part->name ?? '');
+        }, $service->listPartsSorted('name', 'desc'));
+        $this->assertSame(['Tokkelbaan', 'Kanovaren', 'Boogschieten'], $byNameDesc);
+
+        $byEvent = array_map(static function ($part): int {
+            return (int) ($part->event_id ?? 0);
+        }, $service->listPartsSorted('event_id', 'asc'));
+        $this->assertSame([0, 4, 15], $byEvent);
+    }
+
+    /** @test */
+    public function it_filters_parts_by_search_term_before_sorting(): void {
+        $parts = new PartAdminInMemoryPartRepository();
+        $parts->seed((object) ['id' => 12, 'name' => 'Kanovaren', 'status' => 'actief', 'event_id' => 8]);
+        $parts->seed((object) ['id' => 4, 'name' => 'Klimwand', 'status' => 'inactief', 'event_id' => null]);
+        $parts->seed((object) ['id' => 21, 'name' => 'Touwbrug', 'status' => 'actief', 'event_id' => 18]);
+
+        $service = new PartAdminService($parts, new PartAdminInMemoryEventRepository());
+
+        $byName = array_map(static function ($part): string {
+            return (string) ($part->name ?? '');
+        }, $service->listPartsFilteredSorted('k', 'name', 'asc'));
+        $this->assertSame(['Kanovaren', 'Klimwand'], $byName);
+
+        $byEventId = array_map(static function ($part): int {
+            return (int) ($part->id ?? 0);
+        }, $service->listPartsFilteredSorted('18', 'id', 'asc'));
+        $this->assertSame([21], $byEventId);
+    }
 }
 
 class PartAdminInMemoryEventRepository implements EventRepositoryInterface {

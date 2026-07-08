@@ -173,6 +173,14 @@ De task `Auto WP Runtime Smoke on Folder Open` draait automatisch bij openen van
 5. Gesloten/gepubliceerde events zijn read-only voor inhoudelijke mutaties.
 6. Verwijderen van event koppelt parts los maar verwijdert parts niet.
 
+## Admin Quickstart (obstacle-specific rules)
+
+1. Open `Survival -> obstacle-specific rules`.
+2. Kies het event en klik `Laden`.
+3. Voor actieve events zijn onderdeelregels bewerkbaar.
+4. Voor gesloten/gepubliceerde/verwijderde events draait de pagina in read-only modus.
+5. In read-only modus toont de pagina een nette melding en de beschikbare eventsamenvatting (headline, top-3, eindstand).
+
 ## Admin Quickstart (onderdelenbeheer)
 
 1. Open `Survival -> Onderdelen`.

@@ -78,6 +78,27 @@ class EventAdminServiceTest extends TestCase {
     }
 
     /** @test */
+    public function it_rejects_linking_parts_for_gesloten_alias_status(): void {
+        $events = new InMemoryEventReadRepository();
+        $events->seed((object) [
+            'id' => 16,
+            'name' => 'Event 16',
+            'status' => 'gesloten',
+        ]);
+
+        $eventAdmin = new InMemoryEventAdminRepository($events);
+        $parts = new InMemoryPartAdminRepository();
+        $parts->seed((object) ['id' => 601, 'name' => 'Bandensprint', 'event_id' => null]);
+
+        $publications = new InMemoryEventPublicationRepository();
+
+        $service = new EventAdminService($events, $eventAdmin, $parts, $publications);
+
+        $this->expectException(\RuntimeException::class);
+        $service->linkPartsToEvent(16, [601]);
+    }
+
+    /** @test */
     public function it_rejects_linking_duplicate_part_names_to_same_event(): void {
         $events = new InMemoryEventReadRepository();
         $events->seed((object) [
@@ -220,6 +241,35 @@ class EventAdminServiceTest extends TestCase {
         $filtered = $service->listEligiblePartsForEvent(21, 'tok');
         $this->assertCount(1, $filtered);
         $this->assertSame(505, (int) ($filtered[0]->id ?? 0));
+    }
+
+    /** @test */
+    public function it_lists_assigned_parts_for_read_only_event_views(): void {
+        $events = new InMemoryEventReadRepository();
+        $events->seed((object) ['id' => 31, 'name' => 'Read only event', 'status' => 'gesloten']);
+
+        $parts = new InMemoryPartAdminRepository();
+        $parts->seed((object) ['id' => 701, 'name' => 'Vlotbouwen', 'event_id' => 31, 'status' => 'actief']);
+        $parts->seed((object) ['id' => 702, 'name' => 'Klimnet', 'event_id' => 31, 'status' => 'inactief']);
+        $parts->seed((object) ['id' => 703, 'name' => 'Niet zichtbaar', 'event_id' => 31, 'status' => 'verwijderd']);
+        $parts->seed((object) ['id' => 704, 'name' => 'Ander event', 'event_id' => 32, 'status' => 'actief']);
+
+        $service = new EventAdminService(
+            $events,
+            new InMemoryEventAdminRepository($events),
+            $parts,
+            new InMemoryEventPublicationRepository()
+        );
+
+        $all = $service->listAssignedPartsForEvent(31);
+        $allIds = array_map(static function ($part): int {
+            return (int) ($part->id ?? 0);
+        }, $all);
+        $this->assertSame([702, 701], $allIds);
+
+        $filtered = $service->listAssignedPartsForEvent(31, 'vlot');
+        $this->assertCount(1, $filtered);
+        $this->assertSame(701, (int) ($filtered[0]->id ?? 0));
     }
 }
 

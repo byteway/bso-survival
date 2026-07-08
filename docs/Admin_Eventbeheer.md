@@ -11,6 +11,7 @@ Beheerders kunnen via Admin events aanmaken en bewerken, alleen geldig koppelbar
 Menu:
 - Survival -> Onderdelen
 - Survival -> Events
+- Survival -> obstacle-specific rules
 
 Functionaliteit:
 - Nieuw onderdeel aanmaken, bestaand onderdeel bewerken en veilig verwijderen/deactiveren
@@ -19,6 +20,7 @@ Functionaliteit:
 - Bestaand event bewerken (naam, datum, max teams)
 - Bestaande parts koppelen/ontkoppelen aan geselecteerd event met zoekfilter
 - Event verwijderen uit actieve administratie zonder part-verlies
+- obstacle-specific rules: bij gesloten/gepubliceerde/verwijderde events read-only weergave met samenvatting van publicatie
 
 ## Belangrijke regels
 
@@ -31,6 +33,8 @@ Functionaliteit:
 - Parts die nog aan een actief ander event hangen zijn niet selecteerbaar voor het huidige event.
 - Verwijderen van een onderdeel faalt veilig zolang dat onderdeel nog aan een actief event hangt.
 - Import weigert ongeldige JSON-records en dubbele partnamen.
+- obstacle-specific rules blokkeert opslaan bij gesloten/gepubliceerde/verwijderde events en toont een duidelijke read-only melding.
+- Bij gesloten/gepubliceerde/verwijderde events wordt de eventsamenvatting (headline, top-3, eindstand) getoond indien beschikbaar.
 
 ## Verwacht gedrag bij verwijderen
 
