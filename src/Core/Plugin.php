@@ -11,6 +11,7 @@ use BSO\Survival\Admin\RegistrationAdminPage;
 use BSO\Survival\Admin\ScoreEntryAdminPage;
 use BSO\Survival\Api\AdminScoreRestController;
 use BSO\Survival\Api\DashboardMessageRestController;
+use BSO\Survival\Api\DashboardMessageV2RestController;
 use BSO\Survival\Api\DashboardWidgetLayoutRestController;
 use BSO\Survival\Api\EventCloseoutRestController;
 use BSO\Survival\Api\FrontendScoreRestController;
@@ -248,6 +249,7 @@ class Plugin {
         $this->buildFrontendScoreRestController()->registerRoutes();
         $this->buildAdminScoreRestController()->registerRoutes();
         $this->buildDashboardMessageRestController()->registerRoutes();
+        $this->buildDashboardMessageV2RestController()->registerRoutes();
     }
 
     public function schedule_email_outbox_processing(): void {
@@ -448,6 +450,15 @@ class Plugin {
         );
 
         return new DashboardMessageRestController($messages);
+    }
+
+    private function buildDashboardMessageV2RestController(): DashboardMessageV2RestController {
+        $messages = new DashboardMessageService(
+            new DashboardMessageRepository(),
+            new AuditLogService(new AuditLogRepository())
+        );
+
+        return new DashboardMessageV2RestController($messages);
     }
 
     private function buildAdminScoreService(): AdminScoreService {

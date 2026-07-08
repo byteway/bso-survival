@@ -138,6 +138,36 @@ class RepositoryTest extends TestCase {
         $this->assertStringContainsString('visible_from IS NULL OR visible_from <=', $wpdb->lastVarQuery);
         $this->assertStringContainsString('visible_until IS NULL OR visible_until >=', $wpdb->lastVarQuery);
     }
+
+    /**
+     * @test
+     */
+    public function dashboard_message_repository_applies_advanced_filter_clauses(): void {
+        $wpdb = new FakeWpdb('wp_');
+        $repository = new DashboardMessageRepository($wpdb);
+
+        $filters = [
+            'scope' => 'global',
+            'status' => 'actief',
+            'type' => 'warning',
+            'visible_at' => '2026-07-08 10:00:00',
+            'search' => 'briefing',
+        ];
+
+        $repository->findByAdvancedFilters(12, $filters, 10, 20);
+        $this->assertStringContainsString("visibility = 'global'", $wpdb->lastResultsQuery);
+        $this->assertStringContainsString("status = 'actief'", $wpdb->lastResultsQuery);
+        $this->assertStringContainsString("type = 'warning'", $wpdb->lastResultsQuery);
+        $this->assertStringContainsString("text LIKE '%briefing%'", $wpdb->lastResultsQuery);
+        $this->assertStringContainsString('visible_from IS NULL OR visible_from <=', $wpdb->lastResultsQuery);
+        $this->assertStringContainsString('visible_until IS NULL OR visible_until >=', $wpdb->lastResultsQuery);
+
+        $repository->countByAdvancedFilters(12, $filters);
+        $this->assertStringContainsString("visibility = 'global'", $wpdb->lastVarQuery);
+        $this->assertStringContainsString("status = 'actief'", $wpdb->lastVarQuery);
+        $this->assertStringContainsString("type = 'warning'", $wpdb->lastVarQuery);
+        $this->assertStringContainsString("text LIKE '%briefing%'", $wpdb->lastVarQuery);
+    }
 }
 
 class FakeWpdb {

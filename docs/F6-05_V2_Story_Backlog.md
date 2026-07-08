@@ -18,11 +18,19 @@ Van strategische v2-thema's naar sprintklare stories met API-contract, foutcodes
 
 | Story Key | Titel | Prioriteit | Estimate | Afhankelijkheden |
 |---|---|---|---|---|
-| F6-05-S1 | v2 geavanceerde message filtering | P1 | M | F6-03 |
+| F6-05-S1 | v2 geavanceerde message filtering | P1 | M | F6-03 | 
 | F6-05-S2 | v2 bulk status updates messages | P1 | M | F6-02, F6-04 |
 | F6-05-S3 | v2 bulk delete messages met safeguards | P1 | M | F6-02, F6-04 |
 | F6-05-S4 | v2 gestandaardiseerd metadata-contract | P2 | M | F6-01 |
 | F6-05-S5 | v2 contract governance + compat matrix | P2 | S | F6-05-S1..S4 |
+
+Statusupdate:
+
+- [x] F6-05-S1 geïmplementeerd in runtime (`/wp-json/bso-survival/v2/dashboard/messages`)
+- [ ] F6-05-S2
+- [ ] F6-05-S3
+- [ ] F6-05-S4
+- [ ] F6-05-S5
 
 ---
 
@@ -201,7 +209,7 @@ Van strategische v2-thema's naar sprintklare stories met API-contract, foutcodes
 
 ## Sprintvoorstel
 
-1. Sprint C.1: S1 + S2
+1. Sprint C.1: S1 afgerond, start S2
 2. Sprint C.2: S3 + S4
 3. Sprint C.3: S5 en release-gates
 

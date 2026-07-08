@@ -105,6 +105,43 @@ class DashboardMessageServiceTest extends TestCase {
     }
 
     /** @test */
+    public function it_lists_advanced_paginated_messages_with_normalized_filters(): void {
+        $repo = new InMemoryDashboardMessageRepository();
+        $repo->setCountByAdvancedFilters(12);
+        $service = new DashboardMessageService($repo);
+
+        $result = $service->listAdvancedPageForEvent(5, [
+            'scope' => 'global',
+            'status' => 'actief',
+            'type' => 'warning',
+            'visible_at' => '2026-07-08T10:15',
+            'search' => 'briefing',
+        ], 2, 15);
+
+        $this->assertSame(5, $repo->lastAdvancedEventId);
+        $this->assertSame(15, $repo->lastAdvancedLimit);
+        $this->assertSame(15, $repo->lastAdvancedOffset);
+        $this->assertSame('global', $repo->lastAdvancedFilters['scope']);
+        $this->assertSame('actief', $repo->lastAdvancedFilters['status']);
+        $this->assertSame('warning', $repo->lastAdvancedFilters['type']);
+        $this->assertSame('briefing', $repo->lastAdvancedFilters['search']);
+        $this->assertSame('2026-07-08 10:15:00', $repo->lastAdvancedFilters['visible_at']);
+        $this->assertSame(12, $result['total']);
+        $this->assertSame(2, $result['page']);
+        $this->assertSame(15, $result['per_page']);
+    }
+
+    /** @test */
+    public function it_rejects_invalid_advanced_filter_values(): void {
+        $service = new DashboardMessageService(new InMemoryDashboardMessageRepository());
+
+        $this->expectException(InvalidArgumentException::class);
+        $service->listAdvancedPageForEvent(5, [
+            'scope' => 'invalid-scope',
+        ], 1, 20);
+    }
+
+    /** @test */
     public function it_updates_global_message_status_without_event_constraint(): void {
         $repo = new InMemoryDashboardMessageRepository();
         $repo->seed((object) [
@@ -257,6 +294,21 @@ class InMemoryDashboardMessageRepository implements DashboardMessageRepositoryIn
     /** @var int */
     private $countByScope = 0;
 
+    /** @var int */
+    public $lastAdvancedEventId = 0;
+
+    /** @var array<string, mixed> */
+    public $lastAdvancedFilters = [];
+
+    /** @var int */
+    public $lastAdvancedLimit = 0;
+
+    /** @var int */
+    public $lastAdvancedOffset = 0;
+
+    /** @var int */
+    private $countByAdvancedFilters = 0;
+
     public function findByEventId(int $eventId, int $limit = 20): array {
         return $this->findByScope($eventId, 'all', false, $limit);
     }
@@ -277,6 +329,22 @@ class InMemoryDashboardMessageRepository implements DashboardMessageRepositoryIn
         $this->lastFindActiveOnly = $activeOnly;
 
         return $this->countByScope;
+    }
+
+    public function findByAdvancedFilters(int $eventId, array $filters, int $limit = 20, int $offset = 0): array {
+        $this->lastAdvancedEventId = $eventId;
+        $this->lastAdvancedFilters = $filters;
+        $this->lastAdvancedLimit = $limit;
+        $this->lastAdvancedOffset = $offset;
+
+        return [];
+    }
+
+    public function countByAdvancedFilters(int $eventId, array $filters): int {
+        $this->lastAdvancedEventId = $eventId;
+        $this->lastAdvancedFilters = $filters;
+
+        return $this->countByAdvancedFilters;
     }
 
     public function findActiveByEventId(int $eventId, int $limit = 5): array {
@@ -367,5 +435,9 @@ class InMemoryDashboardMessageRepository implements DashboardMessageRepositoryIn
 
     public function setCountByScope(int $count): void {
         $this->countByScope = $count;
+    }
+
+    public function setCountByAdvancedFilters(int $count): void {
+        $this->countByAdvancedFilters = $count;
     }
 }

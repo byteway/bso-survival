@@ -16,6 +16,17 @@ interface DashboardMessageRepositoryInterface {
     public function countByScope(int $eventId, string $scope = 'all', bool $activeOnly = false): int;
 
     /**
+     * @param array<string, mixed> $filters
+     * @return array<int, object>
+     */
+    public function findByAdvancedFilters(int $eventId, array $filters, int $limit = 20, int $offset = 0): array;
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    public function countByAdvancedFilters(int $eventId, array $filters): int;
+
+    /**
      * @return array<int, object>
      */
     public function findActiveByEventId(int $eventId, int $limit = 5): array;

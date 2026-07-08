@@ -56,6 +56,65 @@ class DashboardMessageService {
     }
 
     /**
+     * @param array<string, mixed> $filters
+     * @return array{items: array<int, object>, total: int, page: int, per_page: int, filters: array<string, mixed>}
+     */
+    public function listAdvancedPageForEvent(int $eventId, array $filters = [], int $page = 1, int $perPage = 20): array {
+        if ($eventId <= 0) {
+            throw new InvalidArgumentException('event_id must be a positive integer.');
+        }
+
+        if ($page <= 0) {
+            throw new InvalidArgumentException('page must be a positive integer.');
+        }
+
+        if ($perPage <= 0 || $perPage > 100) {
+            throw new InvalidArgumentException('per_page must be between 1 and 100.');
+        }
+
+        $scope = trim((string) ($filters['scope'] ?? 'all'));
+        if (!in_array($scope, ['all', 'event', 'global'], true)) {
+            throw new InvalidArgumentException('scope must be all, event or global.');
+        }
+
+        $status = trim((string) ($filters['status'] ?? ''));
+        if ($status !== '' && !in_array($status, ['actief', 'inactief'], true)) {
+            throw new InvalidArgumentException('status must be actief or inactief.');
+        }
+
+        $type = trim((string) ($filters['type'] ?? ''));
+        if ($type !== '' && !in_array($type, ['info', 'warning', 'success', 'urgent'], true)) {
+            throw new InvalidArgumentException('type must be info, warning, success or urgent.');
+        }
+
+        $search = trim((string) ($filters['search'] ?? ''));
+        if (strlen($search) > 120) {
+            throw new InvalidArgumentException('search may contain up to 120 characters.');
+        }
+
+        $visibleAtRaw = trim((string) ($filters['visible_at'] ?? ''));
+        $visibleAt = $visibleAtRaw === '' ? gmdate('Y-m-d H:i:s') : $this->normalizeDateTime($visibleAtRaw, 'visible_at');
+
+        $normalizedFilters = [
+            'scope' => $scope,
+            'status' => $status,
+            'type' => $type,
+            'search' => $search,
+            'visible_at' => $visibleAt,
+        ];
+
+        $offset = ($page - 1) * $perPage;
+
+        return [
+            'items' => $this->messages->findByAdvancedFilters($eventId, $normalizedFilters, $perPage, $offset),
+            'total' => $this->messages->countByAdvancedFilters($eventId, $normalizedFilters),
+            'page' => $page,
+            'per_page' => $perPage,
+            'filters' => $normalizedFilters,
+        ];
+    }
+
+    /**
      * @return array<int, object>
      */
     public function listActiveForEvent(int $eventId, int $limit = 5, string $scope = 'all'): array {

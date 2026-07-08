@@ -86,6 +86,42 @@ class DashboardMessageRepository implements DashboardMessageRepositoryInterface 
         return (int) $this->wpdb->get_var($sql);
     }
 
+    public function findByAdvancedFilters(int $eventId, array $filters, int $limit = 20, int $offset = 0): array {
+        $table = $this->tableName();
+        $limit = max(1, $limit);
+        $offset = max(0, $offset);
+
+        [$whereSql, $args] = $this->buildAdvancedFilterClause($eventId, $filters);
+
+        $orderClause = " ORDER BY
+            CASE type
+                WHEN 'urgent' THEN 400
+                WHEN 'warning' THEN 300
+                WHEN 'info' THEN 200
+                WHEN 'success' THEN 100
+                ELSE 50
+            END DESC,
+            updated_at DESC,
+            id DESC";
+
+        $sql = "SELECT * FROM {$table} WHERE {$whereSql}{$orderClause} LIMIT %d OFFSET %d";
+        $args[] = $limit;
+        $args[] = $offset;
+
+        $prepared = $this->wpdb->prepare($sql, ...$args);
+        return $this->wpdb->get_results($prepared) ?: [];
+    }
+
+    public function countByAdvancedFilters(int $eventId, array $filters): int {
+        $table = $this->tableName();
+        [$whereSql, $args] = $this->buildAdvancedFilterClause($eventId, $filters);
+
+        $sql = "SELECT COUNT(*) FROM {$table} WHERE {$whereSql}";
+        $prepared = $this->wpdb->prepare($sql, ...$args);
+
+        return (int) $this->wpdb->get_var($prepared);
+    }
+
     public function findActiveByEventId(int $eventId, int $limit = 5): array {
         return $this->findByScope($eventId, 'all', true, $limit);
     }
@@ -186,6 +222,55 @@ class DashboardMessageRepository implements DashboardMessageRepositoryInterface 
             default:
                 return "(event_id = %d OR visibility = 'global')";
         }
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return array{0: string, 1: array<int, mixed>}
+     */
+    private function buildAdvancedFilterClause(int $eventId, array $filters): array {
+        $scope = (string) ($filters['scope'] ?? 'all');
+        $status = trim((string) ($filters['status'] ?? ''));
+        $type = trim((string) ($filters['type'] ?? ''));
+        $visibleAt = trim((string) ($filters['visible_at'] ?? ''));
+        $search = trim((string) ($filters['search'] ?? ''));
+
+        $clauses = [];
+        $args = [];
+
+        if ($scope === 'global') {
+            $clauses[] = "visibility = 'global'";
+        } elseif ($scope === 'event') {
+            $clauses[] = 'event_id = %d';
+            $args[] = $eventId;
+        } else {
+            $clauses[] = '(event_id = %d OR visibility = \'global\')';
+            $args[] = $eventId;
+        }
+
+        if ($status !== '') {
+            $clauses[] = 'status = %s';
+            $args[] = $status;
+        }
+
+        if ($type !== '') {
+            $clauses[] = 'type = %s';
+            $args[] = $type;
+        }
+
+        if ($visibleAt !== '') {
+            $clauses[] = '(visible_from IS NULL OR visible_from <= %s)';
+            $args[] = $visibleAt;
+            $clauses[] = '(visible_until IS NULL OR visible_until >= %s)';
+            $args[] = $visibleAt;
+        }
+
+        if ($search !== '') {
+            $clauses[] = 'text LIKE %s';
+            $args[] = '%' . $search . '%';
+        }
+
+        return [implode(' AND ', $clauses), $args];
     }
 
     private function tableName(): string {

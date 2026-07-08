@@ -70,6 +70,29 @@ Concretisering naar stories staat in `docs/F6-05_V2_Story_Backlog.md`:
 - F6-05-S4: metadata-contract standaardisatie
 - F6-05-S5: contract governance en compat matrix
 
+## v2 Implemented (S1)
+
+Endpoint:
+
+```http
+GET /wp-json/bso-survival/v2/dashboard/messages
+```
+
+Ondersteunde query-parameters:
+- `event_id` (verplicht, int)
+- `scope` (`all`, `event`, `global`)
+- `status` (`actief`, `inactief`)
+- `type` (`info`, `warning`, `success`, `urgent`)
+- `visible_at` (datetime, default `now`)
+- `search` (max 120 chars)
+- `page` (default `1`)
+- `per_page` (default `20`, max `100`)
+
+Foutcodes:
+- `invalid_filter` (400)
+- `invalid_pagination` (400)
+- `message_list_failed` (500)
+
 ## Filtering Examples (v1)
 
 Voorbeeld: dashboardmeldingen ophalen voor een event met scope-filter en paginering.

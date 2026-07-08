@@ -341,9 +341,9 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Werkdocument met sprintklare stories: `docs/F6-05_V2_Story_Backlog.md`.
 
 ### Acceptatiecriteria
-- [ ] Geprioriteerde v2 backlog is opgesteld.
-- [ ] Elke story heeft API-contract en acceptatiecriteria.
-- [ ] Elke story heeft testaanpak en afhankelijkheden.
+- [x] Geprioriteerde v2 backlog is opgesteld.
+- [x] Elke story heeft API-contract en acceptatiecriteria.
+- [x] Elke story heeft testaanpak en afhankelijkheden.
 - [ ] Backlog is klaar voor sprintplanning zonder extra analyse.
 
 ### Testcriteria
@@ -361,7 +361,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 ### Subtasks
 - [x] Thema's opsplitsen
 - [x] Contracten uitwerken
-- [ ] AC en testplan toevoegen
+- [x] AC en testplan toevoegen
 - [ ] Schatting en prioriteit bepalen
 - [ ] Review met team
 
