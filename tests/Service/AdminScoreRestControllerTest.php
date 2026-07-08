@@ -49,12 +49,34 @@ class AdminScoreRestControllerTest extends TestCase {
     }
 
     /** @test */
-    public function it_requires_manage_permission_and_valid_nonce(): void {
-        set_test_current_user_caps(['manage_options' => false]);
+    public function it_requires_score_capability_or_admin_fallback_and_valid_nonce(): void {
+        set_test_current_user_caps([
+            'manage_survival_scores' => false,
+            'manage_options' => false,
+        ]);
         $controller = new AdminScoreRestController(new FakeAdminScoreService());
         $this->assertFalse($controller->canManage(new FakeAdminScoreRestRequest([])));
 
-        set_test_current_user_caps(['manage_options' => true]);
+        set_test_current_user_caps([
+            'manage_survival_scores' => true,
+            'manage_options' => false,
+        ]);
+        $this->assertTrue($controller->canManage(new FakeAdminScoreRestRequest([
+            '_header_nonce' => 'ok',
+        ])));
+
+        set_test_current_user_caps([
+            'manage_survival_scores' => false,
+            'manage_options' => true,
+        ]);
+        $this->assertTrue($controller->canManage(new FakeAdminScoreRestRequest([
+            '_header_nonce' => 'ok',
+        ])));
+
+        set_test_current_user_caps([
+            'manage_survival_scores' => true,
+            'manage_options' => false,
+        ]);
         set_test_nonce_verification_result(false);
 
         $this->assertFalse($controller->canManage(new FakeAdminScoreRestRequest([

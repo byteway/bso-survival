@@ -4,6 +4,7 @@ namespace BSO\Survival\Admin;
 
 use BSO\Survival\Service\DashboardMessageService;
 use BSO\Survival\Service\EventService;
+use BSO\Survival\Support\Capabilities;
 
 class DashboardMessageAdminPage {
     private const CREATE_NONCE_ACTION = 'bso_survival_dashboard_message_create';
@@ -35,7 +36,7 @@ class DashboardMessageAdminPage {
             'bso-survival-rules',
             __('Dashboard Meldingen', 'bso-survival'),
             __('Dashboard Meldingen', 'bso-survival'),
-            'manage_options',
+            Capabilities::MANAGE_MESSAGES,
             'bso-survival-dashboard-messages',
             [$this, 'renderPage']
         );
@@ -356,7 +357,7 @@ class DashboardMessageAdminPage {
     }
 
     private function assertAdminPermissions(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageMessages()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
     }

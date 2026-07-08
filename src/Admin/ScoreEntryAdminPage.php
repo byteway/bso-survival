@@ -5,6 +5,7 @@ namespace BSO\Survival\Admin;
 use BSO\Survival\Database\Repository\AssignmentRepositoryInterface;
 use BSO\Survival\Service\AdminScoreService;
 use BSO\Survival\Service\EventService;
+use BSO\Survival\Support\Capabilities;
 
 class ScoreEntryAdminPage {
     private const SAVE_NONCE_ACTION = 'bso_survival_admin_score_save';
@@ -36,7 +37,7 @@ class ScoreEntryAdminPage {
             'bso-survival-rules',
             __('Score Invoer', 'bso-survival'),
             __('Score Invoer', 'bso-survival'),
-            'manage_options',
+            Capabilities::MANAGE_SCORES,
             'bso-survival-score-entry',
             [$this, 'renderPage']
         );
@@ -179,7 +180,7 @@ class ScoreEntryAdminPage {
     }
 
     private function assertAdminPermissions(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageScores()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
     }

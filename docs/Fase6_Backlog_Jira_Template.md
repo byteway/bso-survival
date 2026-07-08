@@ -164,10 +164,10 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Update admin page voor edit/delete workflow.
 
 ### Acceptatiecriteria
-- [ ] Admin kan message inhoudelijk wijzigen.
-- [ ] Admin kan message verwijderen met duidelijke feedback.
-- [ ] Widget/list endpoints tonen verwijderde messages niet meer.
-- [ ] Auditlog bevat create/update/delete/status mutaties.
+- [x] Admin kan message inhoudelijk wijzigen.
+- [x] Admin kan message verwijderen met duidelijke feedback.
+- [x] Widget/list endpoints tonen verwijderde messages niet meer.
+- [x] Auditlog bevat create/update/delete/status mutaties.
 
 ### Testcriteria
 - Unit: servicevalidatie update/delete.
@@ -182,11 +182,11 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Onbedoeld verwijderen zonder herstelpad.
 
 ### Subtasks
-- [ ] API routes toevoegen
-- [ ] Service/repository uitbreiden
-- [ ] Admin UI bijwerken
-- [ ] Tests toevoegen
-- [ ] Documentatie bijwerken
+- [x] API routes toevoegen
+- [x] Service/repository uitbreiden
+- [x] Admin UI bijwerken
+- [x] Tests toevoegen
+- [x] Documentatie bijwerken
 
 ---
 
@@ -198,7 +198,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Epic: Fase 6 REST API Versioning Strategie
 - Type: Story
 - Priority: P1
-- Status: Todo
+- Status: Done
 - Labels: fase-6, messages, scheduling, validation
 - Components: Schema, API, Service, Repository, Widget
 - Estimate: L
@@ -257,7 +257,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Epic: Fase 6 REST API Versioning Strategie
 - Type: Story
 - Priority: P2
-- Status: Todo
+- Status: Done
 - Labels: fase-6, security, permissions
 - Components: API, Admin, Core
 - Estimate: M
@@ -281,16 +281,16 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Voeg centrale capability helper toe voor consistentie.
 
 ### Acceptatiecriteria
-- [ ] Gebruiker zonder capability krijgt geen mutatietoegang.
-- [ ] Gebruiker met capability kan toegestane acties uitvoeren.
-- [ ] Administrator-flow blijft backwards compatible.
-- [ ] Nonce- en permission checks blijven beide actief.
+- [x] Gebruiker zonder capability krijgt geen mutatietoegang.
+- [x] Gebruiker met capability kan toegestane acties uitvoeren.
+- [x] Administrator-flow blijft backwards compatible.
+- [x] Nonce- en permission checks blijven beide actief.
 
 ### Testcriteria
-- Unit: capability helper en guard-logica.
-- Integratie: toegang per rol/capability matrix.
-- API: 403/401 voor onvoldoende rechten.
-- E2E: admin schermtoegang per rol.
+- Unit: capability helper en guard-logica. (CapabilitiesTest)
+- Integratie: toegang per rol/capability matrix. (AdminScoreRestControllerTest, DashboardMessageRestControllerTest)
+- API: 403/401 voor onvoldoende rechten. (permission callback tests)
+- E2E: admin schermtoegang per rol. (handmatige validatie aanbevolen)
 
 ### Afhankelijkheden
 - Geen (kan parallel na F6-01)
@@ -299,11 +299,11 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Rechten regressie op bestaande beheerflows.
 
 ### Subtasks
-- [ ] Capability model definiëren
-- [ ] Guards aanpassen
-- [ ] Rolmapping testen
-- [ ] Docs bijwerken
-- [ ] Security review
+- [x] Capability model definiëren
+- [x] Guards aanpassen
+- [x] Rolmapping testen
+- [x] Docs bijwerken
+- [x] Security review
 
 ---
 

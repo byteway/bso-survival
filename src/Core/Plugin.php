@@ -59,6 +59,7 @@ use BSO\Survival\Service\TeamRegistrationService;
 use BSO\Survival\Service\WpMailer;
 use BSO\Survival\Service\RegistrationWindowService;
 use BSO\Survival\Service\RankingService;
+use BSO\Survival\Support\Capabilities;
 
 class Plugin {
     private const DASHBOARD_NOTICE_TRANSIENT = 'bso_survival_dashboard_admin_notice';
@@ -67,6 +68,7 @@ class Plugin {
         add_action('plugins_loaded', [$this, 'load_textdomain']);
         add_action('plugins_loaded', [$this, 'boot_scoring_methods'], 20);
         add_action('plugins_loaded', [$this, 'boot_dashboard_widgets'], 25);
+        add_action('init', [Capabilities::class, 'ensureRoleMappings'], 5);
         add_action('init', [$this, 'register_shortcodes']);
         add_action('init', [$this, 'register_assets']);
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
