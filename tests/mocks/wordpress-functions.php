@@ -125,6 +125,15 @@ if (!function_exists('esc_html')) {
     }
 }
 
+if (!function_exists('esc_attr')) {
+    /**
+     * Escape attribute values for output.
+     */
+    function esc_attr($text) {
+        return htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
+    }
+}
+
 if (!function_exists('esc_html_e')) {
     /**
      * Escape and echo translation.

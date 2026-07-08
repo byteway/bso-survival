@@ -1259,7 +1259,7 @@ Validatiechecklist 6.2:
 - [x] Frontendformulier weigert invoer bij read-only/publicatiestatus
 - [x] Foutmeldingen zijn begrijpelijk bij invalid input
 - [x] Ranking/dashboardweergave wordt na invoer consistent geactualiseerd
-- [ ] E2E test dekt volledige frontend submit-flow
+- [x] E2E test dekt volledige frontend submit-flow
 
 ### Relatie met bestaande Phase 6 API-taken
 
