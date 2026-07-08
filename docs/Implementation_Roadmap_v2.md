@@ -1061,11 +1061,11 @@ Doel:
 - Dashboard toont een teller zodra inschrijvingen volledig zijn.
 
 Controle huidige codebasis (feitelijke status):
-- Er is momenteel geen frontend aanmeldscherm met submit-flow voor vrijwilligers.
-- `TeamsController` en template tonen alleen read-only teamlijsten.
-- Teamlaag (`TeamService`, `TeamRepository`) ondersteunt nu read/list/count, geen create/update voor inschrijving.
-- `registration_windows` bestaat in schema, maar er is nog geen actieve controller/service-flow voor open/gesloten inschrijving.
-- Dashboard toont wel team-count, maar nog geen `x / max_teams` registratievoortgang.
+- Frontend aanmeldscherm is aanwezig via shortcode `bso_survival_team_registration`.
+- Registratie-submit loopt via `POST /wp-json/bso-survival/v1/registrations`.
+- Teamlaag ondersteunt registratie-opslag inclusief teamleden (`TeamRegistrationService` + repositories).
+- Open/gesloten registratie-window wordt afgedwongen via `RegistrationWindowService`.
+- Dashboard en admin tonen registratievoortgang (`x / max_teams`) inclusief VOL-status.
 
 Technisch ontwerp 6.1.B:
 
@@ -1092,8 +1092,8 @@ REST-contract registratie:
 
 Service/repository uitbreidingen:
 - `TeamRepositoryInterface` uitbreiden met:
-    - `create(array $teamData): int`
-    - `setStatus(int $teamId, string $status): bool`
+    - `create(array $teamData)`
+    - `findByEventIdAndName(int $eventId, string $name)`
 - nieuwe `TeamMemberRepository` voor bulk insert teamleden
 - nieuwe `RegistrationWindowService` voor open/gesloten periode check
 - nieuwe `TeamRegistrationService` die volledige flow orkestreert
@@ -1149,7 +1149,7 @@ Datamodel:
 - nieuwe tabel `bso_email_templates`
     - `id`, `template_key`, `subject`, `html_body`, `is_active`, `updated_by`, `updated_at`
 - nieuwe tabel `bso_email_outbox`
-    - `id`, `event_id`, `team_id`, `recipient`, `template_key`, `subject_snapshot`, `body_snapshot`, `status`, `attempt_count`, `last_error`, `scheduled_at`, `sent_at`, `created_at`, `updated_at`
+    - `id`, `event_id`, `recipient`, `template_key`, `subject_snapshot`, `body_snapshot`, `status`, `attempt_count`, `next_attempt_at`, `last_error`, `dedupe_key`, `sent_at`, `created_at`, `updated_at`
 
 Template veldcodes (MVP):
 - `{vrijwilliger_naam}`
@@ -1169,7 +1169,7 @@ Mail pipeline (robuust):
 - registratieflow plaatst bericht in `bso_email_outbox` (geen directe hard-fail op wp_mail)
 - worker/cron verwerkt outbox batchgewijs
 - retries met backoff (bijv. 1m, 5m, 30m, 2h)
-- idempotency: unieke sleutel op (`template_key`, `team_id`, `recipient`) voor eenmalige bevestiging
+- idempotency: `dedupe_key` bevat (`template_key`, `team_id`, `recipient`) voor eenmalige bevestiging
 - volledige logging in audit/outbox voor support en herverzending
 
 Interface-laag (toekomstvast):
