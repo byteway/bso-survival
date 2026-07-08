@@ -220,4 +220,156 @@ class DashboardMessageService {
 
         return $updated;
     }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return object
+     */
+    public function update(int $messageId, int $eventId, array $payload, string $changedBy = 'admin') {
+        if ($messageId <= 0) {
+            throw new InvalidArgumentException('message_id must be a positive integer.');
+        }
+
+        if ($eventId <= 0) {
+            throw new InvalidArgumentException('event_id must be a positive integer.');
+        }
+
+        $existing = $this->messages->findById($messageId);
+        if ($existing === null) {
+            throw new InvalidArgumentException(sprintf('message %d not found.', $messageId));
+        }
+
+        if ((int) ($existing->event_id ?? 0) !== $eventId) {
+            throw new InvalidArgumentException('message hoort niet bij dit event_id.');
+        }
+
+        $type = trim((string) ($payload['type'] ?? (string) ($existing->type ?? 'info')));
+        if ($type === '') {
+            $type = 'info';
+        }
+
+        $text = trim((string) ($payload['text'] ?? (string) ($existing->text ?? '')));
+        if ($text === '') {
+            throw new InvalidArgumentException('text is verplicht.');
+        }
+
+        $status = trim((string) ($payload['status'] ?? (string) ($existing->status ?? 'actief')));
+        if (!in_array($status, ['actief', 'inactief'], true)) {
+            throw new InvalidArgumentException('status moet actief of inactief zijn.');
+        }
+
+        $scope = trim((string) ($payload['scope'] ?? ''));
+        if ($scope !== '' && !in_array($scope, ['event', 'global'], true)) {
+            throw new InvalidArgumentException('scope moet event of global zijn.');
+        }
+
+        $visibility = trim((string) ($payload['visibility'] ?? (string) ($existing->visibility ?? 'intern')));
+        if ($visibility === '') {
+            $visibility = 'intern';
+        }
+
+        if ($scope === 'global') {
+            $visibility = 'global';
+        } elseif ($scope === 'event' && $visibility === 'global') {
+            $visibility = 'intern';
+        }
+
+        $metaDataPayload = array_key_exists('meta_data', $payload)
+            ? $payload['meta_data']
+            : (string) ($existing->meta_data ?? '');
+        $metaDataJson = $this->normalizeMetaData($metaDataPayload);
+
+        $data = [
+            'type' => $type,
+            'text' => $text,
+            'visibility' => $visibility,
+            'status' => $status,
+            'meta_data' => $metaDataJson,
+            'updated_at' => gmdate('Y-m-d H:i:s'),
+        ];
+
+        if ((string) ($existing->visibility ?? '') === 'global') {
+            $updated = $this->messages->updateByIdForEvent($messageId, 0, $data);
+        } else {
+            $updated = $this->messages->updateByIdForEvent($messageId, $eventId, $data);
+        }
+
+        if ($updated === null) {
+            throw new RuntimeException('Melding kon niet worden bijgewerkt.');
+        }
+
+        if ($this->audit !== null) {
+            $this->audit->log(
+                $eventId,
+                'dashboard_message',
+                $messageId,
+                'updated',
+                [
+                    'type' => (string) ($existing->type ?? ''),
+                    'text' => (string) ($existing->text ?? ''),
+                    'visibility' => (string) ($existing->visibility ?? ''),
+                    'status' => (string) ($existing->status ?? ''),
+                    'meta_data' => (string) ($existing->meta_data ?? ''),
+                ],
+                [
+                    'type' => $type,
+                    'text' => $text,
+                    'visibility' => $visibility,
+                    'status' => $status,
+                    'meta_data' => $metaDataJson,
+                ],
+                trim($changedBy) === '' ? 'admin' : $changedBy
+            );
+        }
+
+        return $updated;
+    }
+
+    public function delete(int $messageId, int $eventId, string $changedBy = 'admin'): bool {
+        if ($messageId <= 0) {
+            throw new InvalidArgumentException('message_id must be a positive integer.');
+        }
+
+        if ($eventId <= 0) {
+            throw new InvalidArgumentException('event_id must be a positive integer.');
+        }
+
+        $existing = $this->messages->findById($messageId);
+        if ($existing === null) {
+            throw new InvalidArgumentException(sprintf('message %d not found.', $messageId));
+        }
+
+        if ((int) ($existing->event_id ?? 0) !== $eventId) {
+            throw new InvalidArgumentException('message hoort niet bij dit event_id.');
+        }
+
+        if ((string) ($existing->visibility ?? '') === 'global') {
+            $deleted = $this->messages->deleteByIdForEvent($messageId, 0);
+        } else {
+            $deleted = $this->messages->deleteByIdForEvent($messageId, $eventId);
+        }
+
+        if (!$deleted) {
+            throw new RuntimeException('Melding kon niet worden verwijderd.');
+        }
+
+        if ($this->audit !== null) {
+            $this->audit->log(
+                $eventId,
+                'dashboard_message',
+                $messageId,
+                'deleted',
+                [
+                    'type' => (string) ($existing->type ?? ''),
+                    'text' => (string) ($existing->text ?? ''),
+                    'visibility' => (string) ($existing->visibility ?? ''),
+                    'status' => (string) ($existing->status ?? ''),
+                ],
+                null,
+                trim($changedBy) === '' ? 'admin' : $changedBy
+            );
+        }
+
+        return true;
+    }
 }

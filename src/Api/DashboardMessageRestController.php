@@ -44,6 +44,10 @@ class DashboardMessageRestController {
             'methods' => 'PATCH',
             'callback' => [$this, 'updateMessage'],
             'permission_callback' => [$this, 'canManage'],
+        ], [
+            'methods' => 'DELETE',
+            'callback' => [$this, 'deleteMessage'],
+            'permission_callback' => [$this, 'canManage'],
         ]]);
 
         register_rest_route(self::NAMESPACE, self::ACTIVATE_ROUTE, [[
@@ -163,11 +167,41 @@ class DashboardMessageRestController {
     public function updateMessage($request) {
         $messageId = $this->extractIntParam($request, 'message_id');
         $eventId = $this->extractIntParam($request, 'event_id');
-        $status = $this->extractStringParam($request, 'status');
         $changedBy = $this->extractStringParam($request, 'changed_by');
+        $payload = [];
+
+        $type = $this->extractOptionalStringParam($request, 'type');
+        if ($type !== null) {
+            $payload['type'] = $type;
+        }
+
+        $text = $this->extractOptionalStringParam($request, 'text');
+        if ($text !== null) {
+            $payload['text'] = $text;
+        }
+
+        $visibility = $this->extractOptionalStringParam($request, 'visibility');
+        if ($visibility !== null) {
+            $payload['visibility'] = $visibility;
+        }
+
+        $status = $this->extractOptionalStringParam($request, 'status');
+        if ($status !== null) {
+            $payload['status'] = $status;
+        }
+
+        $scope = $this->extractOptionalStringParam($request, 'scope');
+        if ($scope !== null) {
+            $payload['scope'] = $scope;
+        }
+
+        $metaData = $this->extractOptionalArrayParam($request, 'meta_data');
+        if ($metaData !== null) {
+            $payload['meta_data'] = $metaData;
+        }
 
         try {
-            $row = $this->messages->setStatus($messageId, $eventId, $status, $changedBy);
+            $row = $this->messages->update($messageId, $eventId, $payload, $changedBy);
             return ApiResponse::success(['item' => $row]);
         } catch (InvalidArgumentException $exception) {
             return ApiResponse::error('invalid_message_payload', $exception->getMessage(), 400);
@@ -175,6 +209,30 @@ class DashboardMessageRestController {
             return ApiResponse::error('message_update_failed', $exception->getMessage(), 409);
         } catch (Throwable $exception) {
             return ApiResponse::error('message_update_failed', 'Melding kon niet worden bijgewerkt.', 500);
+        }
+    }
+
+    /**
+     * @param mixed $request
+     * @return mixed
+     */
+    public function deleteMessage($request) {
+        $messageId = $this->extractIntParam($request, 'message_id');
+        $eventId = $this->extractIntParam($request, 'event_id');
+        $changedBy = $this->extractStringParam($request, 'changed_by');
+
+        try {
+            $deleted = $this->messages->delete($messageId, $eventId, $changedBy);
+            return ApiResponse::success([
+                'deleted' => $deleted,
+                'message_id' => $messageId,
+            ]);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_message_payload', $exception->getMessage(), 400);
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error('message_delete_failed', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('message_delete_failed', 'Melding kon niet worden verwijderd.', 500);
         }
     }
 
@@ -250,5 +308,40 @@ class DashboardMessageRestController {
         }
 
         return [];
+    }
+
+    /** @param mixed $request */
+    private function extractOptionalStringParam($request, string $key): ?string {
+        if (is_object($request) && method_exists($request, 'get_param')) {
+            $value = $request->get_param($key);
+            return $value === null ? null : trim((string) $value);
+        }
+
+        if (is_array($request) && array_key_exists($key, $request)) {
+            return trim((string) $request[$key]);
+        }
+
+        return null;
+    }
+
+    /**
+     * @param mixed $request
+     * @return array<int|string, mixed>|null
+     */
+    private function extractOptionalArrayParam($request, string $key): ?array {
+        if (is_object($request) && method_exists($request, 'get_param')) {
+            $value = $request->get_param($key);
+            if ($value === null) {
+                return null;
+            }
+
+            return is_array($value) ? $value : [];
+        }
+
+        if (is_array($request) && array_key_exists($key, $request)) {
+            return is_array($request[$key]) ? $request[$key] : [];
+        }
+
+        return null;
     }
 }

@@ -105,6 +105,53 @@ class DashboardMessageServiceTest extends TestCase {
     }
 
     /** @test */
+    public function it_updates_message_content_and_status(): void {
+        $repo = new InMemoryDashboardMessageRepository();
+        $repo->seed((object) [
+            'id' => 11,
+            'event_id' => 3,
+            'type' => 'info',
+            'text' => 'Oud',
+            'visibility' => 'intern',
+            'status' => 'actief',
+            'meta_data' => null,
+        ]);
+
+        $service = new DashboardMessageService($repo);
+        $updated = $service->update(11, 3, [
+            'type' => 'warning',
+            'text' => 'Nieuw bericht',
+            'status' => 'inactief',
+            'scope' => 'event',
+        ], 'beheer');
+
+        $this->assertSame('warning', $updated->type);
+        $this->assertSame('Nieuw bericht', $updated->text);
+        $this->assertSame('inactief', $updated->status);
+        $this->assertSame(3, $repo->lastUpdateEventId);
+    }
+
+    /** @test */
+    public function it_deletes_message_for_event(): void {
+        $repo = new InMemoryDashboardMessageRepository();
+        $repo->seed((object) [
+            'id' => 12,
+            'event_id' => 3,
+            'type' => 'info',
+            'text' => 'Delete me',
+            'visibility' => 'intern',
+            'status' => 'actief',
+        ]);
+
+        $service = new DashboardMessageService($repo);
+        $deleted = $service->delete(12, 3, 'beheer');
+
+        $this->assertTrue($deleted);
+        $this->assertSame(12, $repo->lastDeletedId);
+        $this->assertSame(3, $repo->lastDeleteEventId);
+    }
+
+    /** @test */
     public function it_rejects_invalid_scope_value(): void {
         $service = new DashboardMessageService(new InMemoryDashboardMessageRepository());
 
@@ -158,6 +205,15 @@ class InMemoryDashboardMessageRepository implements DashboardMessageRepositoryIn
 
     /** @var int */
     public $lastStatusEventId = -1;
+
+    /** @var int */
+    public $lastUpdateEventId = -1;
+
+    /** @var int */
+    public $lastDeleteEventId = -1;
+
+    /** @var int */
+    public $lastDeletedId = 0;
 
     /** @var int */
     private $countByScope = 0;
@@ -216,6 +272,45 @@ class InMemoryDashboardMessageRepository implements DashboardMessageRepositoryIn
 
         $this->rows[$id]->status = $status;
         return $this->rows[$id];
+    }
+
+    public function updateById(int $id, array $data) {
+        return $this->updateByIdForEvent($id, 0, $data);
+    }
+
+    public function updateByIdForEvent(int $id, int $eventId, array $data) {
+        $this->lastUpdateEventId = $eventId;
+
+        if (!isset($this->rows[$id])) {
+            return null;
+        }
+
+        if ($eventId > 0 && (int) ($this->rows[$id]->event_id ?? 0) !== $eventId) {
+            return null;
+        }
+
+        $this->rows[$id] = (object) array_merge((array) $this->rows[$id], $data);
+        return $this->rows[$id];
+    }
+
+    public function deleteById(int $id): bool {
+        return $this->deleteByIdForEvent($id, 0);
+    }
+
+    public function deleteByIdForEvent(int $id, int $eventId): bool {
+        $this->lastDeletedId = $id;
+        $this->lastDeleteEventId = $eventId;
+
+        if (!isset($this->rows[$id])) {
+            return false;
+        }
+
+        if ($eventId > 0 && (int) ($this->rows[$id]->event_id ?? 0) !== $eventId) {
+            return false;
+        }
+
+        unset($this->rows[$id]);
+        return true;
     }
 
     public function seed(object $row): void {

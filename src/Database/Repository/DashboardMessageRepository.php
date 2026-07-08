@@ -115,6 +115,45 @@ class DashboardMessageRepository implements DashboardMessageRepositoryInterface 
         return $this->findById($id);
     }
 
+    public function updateById(int $id, array $data) {
+        return $this->updateByIdForEvent($id, 0, $data);
+    }
+
+    public function updateByIdForEvent(int $id, int $eventId, array $data) {
+        $table = $this->tableName();
+
+        if ($data === []) {
+            return $this->findById($id);
+        }
+
+        $where = ['id' => $id];
+        if ($eventId > 0) {
+            $where['event_id'] = $eventId;
+        }
+
+        $updated = $this->wpdb->update($table, $data, $where);
+        if ($updated === false) {
+            return null;
+        }
+
+        return $this->findById($id);
+    }
+
+    public function deleteById(int $id): bool {
+        return $this->deleteByIdForEvent($id, 0);
+    }
+
+    public function deleteByIdForEvent(int $id, int $eventId): bool {
+        $table = $this->tableName();
+        $where = ['id' => $id];
+        if ($eventId > 0) {
+            $where['event_id'] = $eventId;
+        }
+
+        $deleted = $this->wpdb->delete($table, $where);
+        return $deleted !== false && (int) $deleted > 0;
+    }
+
     private function buildScopeWhereClause(string $scope): string {
         switch ($scope) {
             case 'event':

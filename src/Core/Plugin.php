@@ -78,7 +78,9 @@ class Plugin {
         add_action('admin_post_bso_survival_admin_score_create', [$this, 'handle_admin_score_create']);
         add_action('admin_post_bso_survival_admin_score_update', [$this, 'handle_admin_score_update']);
         add_action('admin_post_bso_survival_dashboard_message_create', [$this, 'handle_dashboard_message_create']);
+        add_action('admin_post_bso_survival_dashboard_message_update', [$this, 'handle_dashboard_message_update']);
         add_action('admin_post_bso_survival_dashboard_message_toggle', [$this, 'handle_dashboard_message_toggle']);
+        add_action('admin_post_bso_survival_dashboard_message_delete', [$this, 'handle_dashboard_message_delete']);
         add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('init', [$this, 'schedule_email_outbox_processing']);
         add_action('bso_survival_process_email_outbox', [$this, 'process_email_outbox']);
@@ -147,8 +149,16 @@ class Plugin {
         $this->buildDashboardMessageAdminPage()->handleCreate();
     }
 
+    public function handle_dashboard_message_update(): void {
+        $this->buildDashboardMessageAdminPage()->handleUpdate();
+    }
+
     public function handle_dashboard_message_toggle(): void {
         $this->buildDashboardMessageAdminPage()->handleToggle();
+    }
+
+    public function handle_dashboard_message_delete(): void {
+        $this->buildDashboardMessageAdminPage()->handleDelete();
     }
 
     public function register_assets(): void {

@@ -8,8 +8,12 @@ use BSO\Survival\Service\EventService;
 class DashboardMessageAdminPage {
     private const CREATE_NONCE_ACTION = 'bso_survival_dashboard_message_create';
     private const CREATE_NONCE_FIELD = 'bso_survival_dashboard_message_create_nonce';
+    private const UPDATE_NONCE_ACTION = 'bso_survival_dashboard_message_update';
+    private const UPDATE_NONCE_FIELD = 'bso_survival_dashboard_message_update_nonce';
     private const TOGGLE_NONCE_ACTION = 'bso_survival_dashboard_message_toggle';
     private const TOGGLE_NONCE_FIELD = 'bso_survival_dashboard_message_toggle_nonce';
+    private const DELETE_NONCE_ACTION = 'bso_survival_dashboard_message_delete';
+    private const DELETE_NONCE_FIELD = 'bso_survival_dashboard_message_delete_nonce';
 
     /** @var EventService */
     private $events;
@@ -63,6 +67,36 @@ class DashboardMessageAdminPage {
         }
     }
 
+    public function handleUpdate(): void {
+        $this->assertAdminPermissions();
+
+        if (!isset($_POST[self::UPDATE_NONCE_FIELD]) || !wp_verify_nonce((string) $_POST[self::UPDATE_NONCE_FIELD], self::UPDATE_NONCE_ACTION)) {
+            wp_die(__('Ongeldige aanvraag (nonce).', 'bso-survival'));
+        }
+
+        $eventId = isset($_POST['event_id']) ? (int) $_POST['event_id'] : 0;
+        $messageId = isset($_POST['message_id']) ? (int) $_POST['message_id'] : 0;
+
+        try {
+            $this->messages->update(
+                $messageId,
+                $eventId,
+                [
+                    'type' => isset($_POST['type']) ? sanitize_key(wp_unslash((string) $_POST['type'])) : '',
+                    'text' => isset($_POST['text']) ? sanitize_textarea_field(wp_unslash((string) $_POST['text'])) : '',
+                    'visibility' => isset($_POST['visibility']) ? sanitize_key(wp_unslash((string) $_POST['visibility'])) : '',
+                    'status' => isset($_POST['status']) ? sanitize_key(wp_unslash((string) $_POST['status'])) : '',
+                    'scope' => isset($_POST['scope']) ? sanitize_key(wp_unslash((string) $_POST['scope'])) : '',
+                ],
+                isset($_POST['changed_by']) ? sanitize_text_field(wp_unslash((string) $_POST['changed_by'])) : 'admin'
+            );
+
+            $this->redirectWithStatus($eventId, 'updated');
+        } catch (\Throwable $exception) {
+            $this->redirectWithStatus($eventId, 'error', $exception->getMessage());
+        }
+    }
+
     public function handleToggle(): void {
         $this->assertAdminPermissions();
 
@@ -83,6 +117,29 @@ class DashboardMessageAdminPage {
             );
 
             $this->redirectWithStatus($eventId, 'updated');
+        } catch (\Throwable $exception) {
+            $this->redirectWithStatus($eventId, 'error', $exception->getMessage());
+        }
+    }
+
+    public function handleDelete(): void {
+        $this->assertAdminPermissions();
+
+        if (!isset($_POST[self::DELETE_NONCE_FIELD]) || !wp_verify_nonce((string) $_POST[self::DELETE_NONCE_FIELD], self::DELETE_NONCE_ACTION)) {
+            wp_die(__('Ongeldige aanvraag (nonce).', 'bso-survival'));
+        }
+
+        $eventId = isset($_POST['event_id']) ? (int) $_POST['event_id'] : 0;
+        $messageId = isset($_POST['message_id']) ? (int) $_POST['message_id'] : 0;
+
+        try {
+            $this->messages->delete(
+                $messageId,
+                $eventId,
+                isset($_POST['changed_by']) ? sanitize_text_field(wp_unslash((string) $_POST['changed_by'])) : 'admin'
+            );
+
+            $this->redirectWithStatus($eventId, 'deleted');
         } catch (\Throwable $exception) {
             $this->redirectWithStatus($eventId, 'error', $exception->getMessage());
         }
@@ -111,7 +168,11 @@ class DashboardMessageAdminPage {
         }
 
         if (isset($_GET['saved']) && $_GET['saved'] === 'updated') {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Meldingstatus bijgewerkt.', 'bso-survival') . '</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Melding bijgewerkt.', 'bso-survival') . '</p></div>';
+        }
+
+        if (isset($_GET['saved']) && $_GET['saved'] === 'deleted') {
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Melding verwijderd.', 'bso-survival') . '</p></div>';
         }
 
         if (isset($_GET['saved']) && $_GET['saved'] === 'error') {
@@ -215,15 +276,59 @@ class DashboardMessageAdminPage {
             echo '<td>' . esc_html((string) ($row->text ?? '')) . '</td>';
             echo '<td>' . esc_html($currentStatus) . '</td>';
             echo '<td>';
-            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="margin-bottom:8px;">';
+            echo '<input type="hidden" name="action" value="bso_survival_dashboard_message_update" />';
+            echo '<input type="hidden" name="event_id" value="' . (int) $eventId . '" />';
+            echo '<input type="hidden" name="message_id" value="' . (int) ($row->id ?? 0) . '" />';
+            echo '<input type="hidden" name="changed_by" value="admin" />';
+            echo '<label>' . esc_html__('Type', 'bso-survival') . ' ';
+            echo '<select name="type">';
+            echo '<option value="info" ' . selected($type, 'info', false) . '>info</option>';
+            echo '<option value="warning" ' . selected($type, 'warning', false) . '>warning</option>';
+            echo '<option value="success" ' . selected($type, 'success', false) . '>success</option>';
+            echo '<option value="urgent" ' . selected($type, 'urgent', false) . '>urgent</option>';
+            echo '</select></label><br />';
+
+            echo '<label>' . esc_html__('Scope', 'bso-survival') . ' ';
+            echo '<select name="scope">';
+            echo '<option value="event" ' . selected($rowScope, 'event', false) . '>event</option>';
+            echo '<option value="global" ' . selected($rowScope, 'global', false) . '>global</option>';
+            echo '</select></label><br />';
+
+            echo '<label>' . esc_html__('Status', 'bso-survival') . ' ';
+            echo '<select name="status">';
+            echo '<option value="actief" ' . selected($currentStatus, 'actief', false) . '>actief</option>';
+            echo '<option value="inactief" ' . selected($currentStatus, 'inactief', false) . '>inactief</option>';
+            echo '</select></label><br />';
+
+            echo '<label>' . esc_html__('Tekst', 'bso-survival') . '<br />';
+            echo '<textarea name="text" rows="2" class="large-text">' . esc_textarea((string) ($row->text ?? '')) . '</textarea>';
+            echo '</label><br />';
+
+            wp_nonce_field(self::UPDATE_NONCE_ACTION, self::UPDATE_NONCE_FIELD);
+            echo '<button class="button button-small button-primary" type="submit">' . esc_html__('Opslaan', 'bso-survival') . '</button>';
+            echo '</form>';
+
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="display:inline-block; margin-right:8px;">';
             echo '<input type="hidden" name="action" value="bso_survival_dashboard_message_toggle" />';
             echo '<input type="hidden" name="event_id" value="' . (int) $eventId . '" />';
             echo '<input type="hidden" name="message_id" value="' . (int) ($row->id ?? 0) . '" />';
             echo '<input type="hidden" name="status" value="' . esc_attr($nextStatus) . '" />';
             echo '<input type="hidden" name="changed_by" value="admin" />';
             wp_nonce_field(self::TOGGLE_NONCE_ACTION, self::TOGGLE_NONCE_FIELD);
-            echo '<button class="button button-small">' . esc_html($nextStatus === 'actief' ? __('Activeren', 'bso-survival') : __('Deactiveren', 'bso-survival')) . '</button>';
+            echo '<button class="button button-small" type="submit">' . esc_html($nextStatus === 'actief' ? __('Activeren', 'bso-survival') : __('Deactiveren', 'bso-survival')) . '</button>';
             echo '</form>';
+
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="display:inline-block;">';
+            echo '<input type="hidden" name="action" value="bso_survival_dashboard_message_delete" />';
+            echo '<input type="hidden" name="event_id" value="' . (int) $eventId . '" />';
+            echo '<input type="hidden" name="message_id" value="' . (int) ($row->id ?? 0) . '" />';
+            echo '<input type="hidden" name="changed_by" value="admin" />';
+            wp_nonce_field(self::DELETE_NONCE_ACTION, self::DELETE_NONCE_FIELD);
+            echo '<button class="button button-small" type="submit">' . esc_html__('Verwijderen', 'bso-survival') . '</button>';
+            echo '</form>';
+
             echo '</td>';
             echo '</tr>';
         }

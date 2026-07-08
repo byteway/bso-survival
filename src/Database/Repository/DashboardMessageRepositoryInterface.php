@@ -40,4 +40,20 @@ interface DashboardMessageRepositoryInterface {
      * @return object|null
      */
     public function updateStatusForEvent(int $id, int $eventId, string $status);
+
+    /**
+     * @param array<string, mixed> $data
+     * @return object|null
+     */
+    public function updateById(int $id, array $data);
+
+    /**
+     * @param array<string, mixed> $data
+     * @return object|null
+     */
+    public function updateByIdForEvent(int $id, int $eventId, array $data);
+
+    public function deleteById(int $id): bool;
+
+    public function deleteByIdForEvent(int $id, int $eventId): bool;
 }

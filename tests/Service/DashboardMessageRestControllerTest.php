@@ -102,7 +102,41 @@ class DashboardMessageRestControllerTest extends TestCase {
 
         $this->assertTrue($response['success']);
         $this->assertSame('actief', $response['data']['item']->status);
-        $this->assertSame('actief', $service->lastSetStatus);
+        $this->assertSame('actief', $service->lastUpdateStatus);
+    }
+
+    /** @test */
+    public function it_updates_message_via_patch_endpoint(): void {
+        $service = new FakeDashboardMessageService();
+        $controller = new DashboardMessageRestController($service);
+
+        $response = $controller->updateMessage(new FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'message_id' => 11,
+            'type' => 'warning',
+            'text' => 'Bijgewerkt bericht',
+            'status' => 'inactief',
+            'scope' => 'event',
+        ]));
+
+        $this->assertTrue($response['success']);
+        $this->assertSame('Bijgewerkt bericht', $response['data']['item']->text);
+        $this->assertSame('warning', $service->lastUpdateType);
+    }
+
+    /** @test */
+    public function it_deletes_message_via_delete_endpoint(): void {
+        $service = new FakeDashboardMessageService();
+        $controller = new DashboardMessageRestController($service);
+
+        $response = $controller->deleteMessage(new FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'message_id' => 11,
+        ]));
+
+        $this->assertTrue($response['success']);
+        $this->assertTrue($response['data']['deleted']);
+        $this->assertSame(11, $service->lastDeletedMessageId);
     }
 
     /** @test */
@@ -125,7 +159,13 @@ class FakeDashboardMessageService extends DashboardMessageService {
     public $lastCreateScope = 'event';
 
     /** @var string */
-    public $lastSetStatus = '';
+    public $lastUpdateStatus = '';
+
+    /** @var string */
+    public $lastUpdateType = '';
+
+    /** @var int */
+    public $lastDeletedMessageId = 0;
 
     /** @var array<string, mixed> */
     public $lastCreateMetaData = [];
@@ -179,13 +219,31 @@ class FakeDashboardMessageService extends DashboardMessageService {
     }
 
     public function setStatus(int $messageId, int $eventId, string $status, string $changedBy = 'admin') {
-        $this->lastSetStatus = $status;
+        $this->lastUpdateStatus = $status;
 
         return (object) [
             'id' => $messageId,
             'event_id' => $eventId,
             'status' => $status,
         ];
+    }
+
+    public function update(int $messageId, int $eventId, array $payload, string $changedBy = 'admin') {
+        $this->lastUpdateType = (string) ($payload['type'] ?? '');
+        $this->lastUpdateStatus = (string) ($payload['status'] ?? '');
+
+        return (object) [
+            'id' => $messageId,
+            'event_id' => $eventId,
+            'type' => (string) ($payload['type'] ?? 'info'),
+            'text' => (string) ($payload['text'] ?? 'Melding'),
+            'status' => (string) ($payload['status'] ?? 'actief'),
+        ];
+    }
+
+    public function delete(int $messageId, int $eventId, string $changedBy = 'admin'): bool {
+        $this->lastDeletedMessageId = $messageId;
+        return true;
     }
 }
 
