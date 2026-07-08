@@ -1,7 +1,7 @@
 # F6-05 V2 Story Backlog
 
 Laatste update: 8 juli 2026.
-Status: In Progress.
+Status: Done.
 
 ## Doel
 
@@ -30,7 +30,7 @@ Statusupdate:
 - [x] F6-05-S2 geïmplementeerd in runtime (`/wp-json/bso-survival/v2/dashboard/messages/bulk-status`)
 - [x] F6-05-S3 geïmplementeerd in runtime (`/wp-json/bso-survival/v2/dashboard/messages/bulk-delete`)
 - [x] F6-05-S4 geïmplementeerd in runtime (`/wp-json/bso-survival/v2/dashboard/messages`, `/wp-json/bso-survival/v2/scores/entries`)
-- [ ] F6-05-S5
+- [x] F6-05-S5 opgeleverd in docs (`docs/V2_Contract_Governance_Compat_Matrix.md`)
 
 ---
 

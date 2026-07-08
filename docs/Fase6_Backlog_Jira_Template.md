@@ -315,7 +315,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - Epic: Fase 6 REST API Versioning Strategie
 - Type: Task
 - Priority: P3
-- Status: In Progress
+- Status: Done
 - Labels: fase-6, planning, v2
 - Components: Docs, API
 - Estimate: M
@@ -364,6 +364,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - [x] AC en testplan toevoegen
 - [x] Schatting en prioriteit bepalen
 - [x] Review met team
+- [x] S5 governance + compat matrix afgerond
 
 ---
 

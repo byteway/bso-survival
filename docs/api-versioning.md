@@ -179,6 +179,20 @@ Backwards compatibility:
 Foutcodes:
 - `invalid_meta_block` (400)
 
+## v2 Implemented (S5)
+
+Governance deliverables zijn formeel vastgelegd in:
+
+- `docs/V2_Contract_Governance_Compat_Matrix.md`
+
+Inhoud:
+- v1/v2 compatibiliteitsmatrix per endpoint.
+- Deprecation-notes en migratiechecklist.
+- Release-gate checklist voor contract-review.
+
+Resultaat:
+- Team kan v2 wijzigingen plannen en releasen zonder aanvullende analyse.
+
 ## Filtering Examples (v1)
 
 Voorbeeld: dashboardmeldingen ophalen voor een event met scope-filter en paginering.
