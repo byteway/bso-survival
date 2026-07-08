@@ -6,6 +6,7 @@ use BSO\Survival\Contracts\DashboardWidgetInterface;
 use BSO\Survival\Widgets\ContactFinderWidget;
 use BSO\Survival\Widgets\FallbackScoreWidget;
 use BSO\Survival\Widgets\MessageWidget;
+use BSO\Survival\Widgets\RegistrationCapacityWidget;
 use BSO\Survival\Widgets\ReportingStatusWidget;
 use BSO\Survival\Widgets\TeamRankingWidget;
 use BSO\Survival\Widgets\TimeslotProgressWidget;
@@ -97,6 +98,7 @@ class DashboardWidgetRegistry {
 
     public static function initDefaults(): void {
         self::register('main', new TimeslotProgressWidget());
+        self::register('main', new RegistrationCapacityWidget());
         self::register('main', new TeamRankingWidget());
         self::register('main', new ReportingStatusWidget());
         self::register('operations', new MessageWidget());

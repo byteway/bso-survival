@@ -25,7 +25,7 @@ class DashboardWidgetLayoutServiceTest extends TestCase {
 
         $layout = $service->getLayoutForEvent(5);
 
-        $this->assertSame(['timeslot_progress', 'team_ranking', 'reporting_status'], $layout['main']);
+        $this->assertSame(['timeslot_progress', 'registration_capacity', 'team_ranking', 'reporting_status'], $layout['main']);
         $this->assertSame(['message_widget', 'contact_finder', 'fallback_score'], $layout['operations']);
     }
 

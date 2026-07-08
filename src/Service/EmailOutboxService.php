@@ -65,6 +65,13 @@ class EmailOutboxService {
         return $this->outbox->markFailed($id, $attemptCount, $lastError);
     }
 
+    /**
+     * @return array<int, object>
+     */
+    public function recentMessages(int $limit = 20): array {
+        return $this->outbox->findRecent(max(1, $limit));
+    }
+
     private function retryDelaySeconds(int $attemptCount): int {
         if ($attemptCount <= 1) {
             return 60;

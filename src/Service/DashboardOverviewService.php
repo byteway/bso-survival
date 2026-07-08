@@ -42,6 +42,7 @@ class DashboardOverviewService {
         $partsCount = $this->parts->countPartsForEvent($eventId);
         $teamsCount = $this->teams->countTeamsForEvent($eventId);
         $eventStatus = (string) ($event->status ?? '');
+        $maxTeams = $this->extractMaxTeams((string) ($event->meta_data ?? ''));
         $isReadOnly = in_array($eventStatus, ['afgesloten', 'gepubliceerd'], true);
         $isPublished = $eventStatus === 'gepubliceerd';
         $publication = null;
@@ -58,6 +59,8 @@ class DashboardOverviewService {
             'counts' => [
                 'parts' => $partsCount,
                 'teams' => $teamsCount,
+                'registered_teams' => $teamsCount,
+                'max_teams' => $maxTeams,
                 'published_final_standings' => is_array($publication['final_standings'] ?? null)
                     ? count($publication['final_standings'])
                     : 0,
@@ -69,9 +72,24 @@ class DashboardOverviewService {
                 'is_ready_for_planning' => $partsCount > 0 && $teamsCount > 0,
                 'is_read_only' => $isReadOnly,
                 'is_published' => $isPublished,
+                'is_registration_full' => $maxTeams > 0 && $teamsCount >= $maxTeams,
                 'has_published_results' => is_array($publication['final_standings'] ?? null) && $publication['final_standings'] !== [],
             ],
         ];
+    }
+
+    private function extractMaxTeams(string $metaData): int {
+        if ($metaData === '') {
+            return 0;
+        }
+
+        $decoded = json_decode($metaData, true);
+        if (!is_array($decoded)) {
+            return 0;
+        }
+
+        $maxTeams = (int) ($decoded['max_teams'] ?? 0);
+        return $maxTeams > 0 ? $maxTeams : 0;
     }
 
     private function guardPositiveId(int $id, string $label): void {

@@ -6,8 +6,10 @@ use BSO\Survival\Admin\DashboardWidgetAdminPage;
 use BSO\Survival\Admin\EmailTemplateAdminPage;
 use BSO\Survival\Admin\EventLifecycleAdminPage;
 use BSO\Survival\Admin\PartRuleAdminPage;
+use BSO\Survival\Admin\RegistrationAdminPage;
 use BSO\Survival\Api\DashboardWidgetLayoutRestController;
 use BSO\Survival\Api\EventCloseoutRestController;
+use BSO\Survival\Api\TeamRegistrationRestController;
 use BSO\Survival\Core\Cli\EventLifecycleCommand;
 use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
 use BSO\Survival\Database\Repository\AuditLogRepository;
@@ -18,6 +20,9 @@ use BSO\Survival\Database\Repository\EmailTemplateRepository;
 use BSO\Survival\Database\Repository\EventPublicationRepository;
 use BSO\Survival\Database\Repository\EventRepository;
 use BSO\Survival\Database\Repository\PartRuleRepository;
+use BSO\Survival\Database\Repository\RegistrationWindowRepository;
+use BSO\Survival\Database\Repository\TeamMemberRepository;
+use BSO\Survival\Database\Repository\TeamRepository;
 use BSO\Survival\Frontend\ShortcodeController;
 use BSO\Survival\Service\AuditLogService;
 use BSO\Survival\Service\CertificateService;
@@ -31,8 +36,12 @@ use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\OutboxProcessorService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
 use BSO\Survival\Service\PublicationNotificationService;
+use BSO\Survival\Service\RegistrationConfirmationService;
 use BSO\Survival\Service\ScoringMethodRegistry;
+use BSO\Survival\Service\TeamService;
+use BSO\Survival\Service\TeamRegistrationService;
 use BSO\Survival\Service\WpMailer;
+use BSO\Survival\Service\RegistrationWindowService;
 
 class Plugin {
     private const DASHBOARD_NOTICE_TRANSIENT = 'bso_survival_dashboard_admin_notice';
@@ -85,6 +94,7 @@ class Plugin {
     public function register_admin_pages(): void {
         $this->buildPartRuleAdminPage()->registerMenu();
         $this->buildDashboardWidgetAdminPage()->registerMenu();
+        $this->buildRegistrationAdminPage()->registerMenu();
         $this->buildEventLifecycleAdminPage()->registerMenu();
         $this->buildEmailTemplateAdminPage()->registerMenu();
     }
@@ -132,6 +142,14 @@ class Plugin {
             true
         );
 
+        wp_register_script(
+            'bso-survival-team-registration',
+            plugins_url('assets/js/bso-survival-team-registration.js', __DIR__ . '/../../bso-survival.php'),
+            ['bso-survival-frontend'],
+            '2.0.0',
+            true
+        );
+
         wp_register_style(
             'bso-survival-admin-dashboard-widgets',
             plugins_url('assets/css/bso-survival-admin-dashboard-widgets.css', __DIR__ . '/../../bso-survival.php'),
@@ -166,6 +184,7 @@ class Plugin {
     public function register_rest_routes(): void {
         $this->buildDashboardWidgetLayoutRestController()->registerRoutes();
         $this->buildEventCloseoutRestController()->registerRoutes();
+        $this->buildTeamRegistrationRestController()->registerRoutes();
     }
 
     public function schedule_email_outbox_processing(): void {
@@ -243,6 +262,14 @@ class Plugin {
         return new DashboardWidgetAdminPage($eventService, $layoutService);
     }
 
+    private function buildRegistrationAdminPage(): RegistrationAdminPage {
+        $eventService = new EventService(new EventRepository());
+        $teamService = new TeamService(new TeamRepository());
+        $windowService = new RegistrationWindowService(new RegistrationWindowRepository());
+
+        return new RegistrationAdminPage($eventService, $teamService, $windowService);
+    }
+
     private function buildEventLifecycleAdminPage(): EventLifecycleAdminPage {
         $eventService = new EventService(new EventRepository());
         $publicationService = new EventPublicationService(new EventPublicationRepository());
@@ -252,7 +279,8 @@ class Plugin {
 
     private function buildEmailTemplateAdminPage(): EmailTemplateAdminPage {
         return new EmailTemplateAdminPage(
-            new EmailTemplateService(new EmailTemplateRepository())
+            new EmailTemplateService(new EmailTemplateRepository()),
+            new EmailOutboxService(new EmailOutboxRepository())
         );
     }
 
@@ -284,5 +312,26 @@ class Plugin {
     private function buildOutboxProcessorService(EmailOutboxService $outboxService = null): OutboxProcessorService {
         $outbox = $outboxService ?? new EmailOutboxService(new EmailOutboxRepository());
         return new OutboxProcessorService($outbox, new WpMailer());
+    }
+
+    private function buildTeamRegistrationRestController(): TeamRegistrationRestController {
+        $eventService = new EventService(new EventRepository());
+        $teamRepository = new TeamRepository();
+        $teamMemberRepository = new TeamMemberRepository();
+        $registrationWindows = new RegistrationWindowRepository();
+        $confirmationService = new RegistrationConfirmationService(
+            new EmailTemplateService(new EmailTemplateRepository()),
+            new EmailOutboxService(new EmailOutboxRepository())
+        );
+
+        $registrationService = new TeamRegistrationService(
+            $eventService,
+            $teamRepository,
+            $teamMemberRepository,
+            $registrationWindows,
+            $confirmationService
+        );
+
+        return new TeamRegistrationRestController($registrationService);
     }
 }

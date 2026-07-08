@@ -48,6 +48,38 @@ class TeamRepository implements TeamRepositoryInterface {
         return (int) $count;
     }
 
+    /** @return object|null */
+    public function findByEventIdAndName(int $eventId, string $name) {
+        $table = $this->tableName();
+        $sql = $this->wpdb->prepare(
+            "SELECT * FROM {$table} WHERE event_id = %d AND name = %s LIMIT 1",
+            $eventId,
+            $name
+        );
+
+        return $this->wpdb->get_row($sql) ?: null;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return object|null
+     */
+    public function create(array $data) {
+        $table = $this->tableName();
+        $inserted = $this->wpdb->insert($table, $data);
+
+        if ($inserted === false) {
+            return null;
+        }
+
+        $id = isset($this->wpdb->insert_id) ? (int) $this->wpdb->insert_id : 0;
+        if ($id <= 0) {
+            return null;
+        }
+
+        return $this->findById($id);
+    }
+
     private function tableName(): string {
         return $this->wpdb->prefix . 'bso_survival_teams';
     }

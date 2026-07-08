@@ -3,9 +3,11 @@
 namespace BSO\Survival\Service;
 
 use BSO\Survival\Database\Repository\EmailTemplateRepositoryInterface;
+use InvalidArgumentException;
 
 class EmailTemplateService {
     public const TEMPLATE_PUBLICATION_RESULT = 'publication_result';
+    public const TEMPLATE_REGISTRATION_CONFIRMATION = 'registration_confirmation';
 
     /** @var EmailTemplateRepositoryInterface */
     private $templates;
@@ -38,6 +40,8 @@ class EmailTemplateService {
     }
 
     public function saveTemplate(string $templateKey, string $subject, string $htmlBody, string $updatedBy): bool {
+        $this->validateTemplatePlaceholders($templateKey, $subject . "\n" . $htmlBody);
+
         $now = gmdate('Y-m-d H:i:s');
         $stored = $this->templates->upsertByKey($templateKey, [
             'subject' => $subject,
@@ -55,6 +59,15 @@ class EmailTemplateService {
      * @return array<string, mixed>
      */
     private function defaultTemplate(string $templateKey): array {
+        if ($templateKey === self::TEMPLATE_REGISTRATION_CONFIRMATION) {
+            return [
+                'template_key' => self::TEMPLATE_REGISTRATION_CONFIRMATION,
+                'subject' => 'Inschrijving ontvangen voor {team_naam}',
+                'html_body' => '<h2>Bedankt voor je inschrijving, {vrijwilliger_naam}</h2><p>Je team <strong>{team_naam}</strong> is ingeschreven voor {event_naam} op {event_datum}.</p><p>Aantal teamleden: {aantal_teamleden}</p><p>Registratie-ID: {inschrijf_id}</p>',
+                'is_active' => 1,
+            ];
+        }
+
         if ($templateKey !== self::TEMPLATE_PUBLICATION_RESULT) {
             return [
                 'template_key' => $templateKey,
@@ -86,5 +99,49 @@ class EmailTemplateService {
         }
 
         return $output;
+    }
+
+    private function validateTemplatePlaceholders(string $templateKey, string $content): void {
+        if (!preg_match_all('/\{([a-zA-Z0-9_]+)\}/', $content, $matches)) {
+            return;
+        }
+
+        $allowed = $this->allowedPlaceholders($templateKey);
+        $unknown = [];
+
+        foreach ($matches[1] as $token) {
+            if (!in_array($token, $allowed, true)) {
+                $unknown[] = $token;
+            }
+        }
+
+        $unknown = array_values(array_unique($unknown));
+        if ($unknown !== []) {
+            throw new InvalidArgumentException(
+                'Onbekende placeholders: ' . implode(', ', $unknown)
+            );
+        }
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function allowedPlaceholders(string $templateKey): array {
+        if ($templateKey === self::TEMPLATE_REGISTRATION_CONFIRMATION) {
+            return [
+                'vrijwilliger_naam',
+                'team_naam',
+                'event_naam',
+                'event_datum',
+                'aantal_teamleden',
+                'inschrijf_id',
+            ];
+        }
+
+        if ($templateKey === self::TEMPLATE_PUBLICATION_RESULT) {
+            return ['headline', 'event_id', 'published_at', 'top_3_html'];
+        }
+
+        return [];
     }
 }

@@ -24,9 +24,10 @@ class DashboardWidgetRegistryTest extends TestCase {
         $mainWidgets = DashboardWidgetRegistry::getSection('main');
         $operationsWidgets = DashboardWidgetRegistry::getSection('operations');
 
-        $this->assertCount(3, $mainWidgets);
+        $this->assertCount(4, $mainWidgets);
         $this->assertCount(3, $operationsWidgets);
         $this->assertNotNull(DashboardWidgetRegistry::get('main', 'timeslot_progress'));
+        $this->assertNotNull(DashboardWidgetRegistry::get('main', 'registration_capacity'));
         $this->assertNotNull(DashboardWidgetRegistry::get('main', 'team_ranking'));
         $this->assertNotNull(DashboardWidgetRegistry::get('main', 'reporting_status'));
         $this->assertNotNull(DashboardWidgetRegistry::get('operations', 'message_widget'));
@@ -51,6 +52,7 @@ class DashboardWidgetRegistryTest extends TestCase {
         $html = DashboardWidgetRegistry::renderSection('main', $overview);
 
         $this->assertStringContainsString('Tijdslot voortgang', $html);
+        $this->assertStringContainsString('Inschrijfcapaciteit', $html);
         $this->assertStringContainsString('Teampositieoverzicht', $html);
         $this->assertTrue(strpos($html, 'Tijdslot voortgang') < strpos($html, 'Teampositieoverzicht'));
     }

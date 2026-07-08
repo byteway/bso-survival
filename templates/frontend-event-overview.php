@@ -31,6 +31,7 @@
         <p><?php echo esc_html(sprintf('Status: %s', (string) ($overview['status']['event_status'] ?? 'onbekend'))); ?></p>
         <p><?php echo esc_html(sprintf('Onderdelen: %d', (int) $overview['counts']['parts'])); ?></p>
         <p><?php echo esc_html(sprintf('Teams: %d', (int) $overview['counts']['teams'])); ?></p>
+        <p><?php echo esc_html(sprintf('Inschrijving: %d / %s', (int) ($overview['counts']['registered_teams'] ?? 0), (int) ($overview['counts']['max_teams'] ?? 0) > 0 ? (string) (int) $overview['counts']['max_teams'] : '?')); ?></p>
         <p><?php echo esc_html(sprintf('Klaar voor planning: %s', $overview['status']['is_ready_for_planning'] ? 'ja' : 'nee')); ?></p>
     </div>
 

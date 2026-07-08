@@ -186,6 +186,15 @@ class InMemoryEmailOutboxRepository implements EmailOutboxRepositoryInterface {
 
         return true;
     }
+
+    public function findRecent(int $limit): array {
+        $records = array_values($this->records);
+        usort($records, static function ($a, $b): int {
+            return ((int) ($b->id ?? 0)) <=> ((int) ($a->id ?? 0));
+        });
+
+        return array_slice($records, 0, max(1, $limit));
+    }
 }
 
 class InMemoryMailer implements MailerInterface {

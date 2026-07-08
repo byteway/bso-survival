@@ -203,4 +203,12 @@ class FakeTeamRepository implements TeamRepositoryInterface {
     public function findById(int $id) {
         return (object) ['id' => 2, 'name' => 'Team002'];
     }
+
+    public function findByEventIdAndName(int $eventId, string $name) {
+        return null;
+    }
+
+    public function create(array $data) {
+        return null;
+    }
 }

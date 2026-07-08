@@ -107,6 +107,20 @@ class EmailOutboxRepository implements EmailOutboxRepositoryInterface {
         return $updated !== false;
     }
 
+    /**
+     * @return array<int, object>
+     */
+    public function findRecent(int $limit): array {
+        $table = $this->tableName();
+        $safeLimit = max(1, $limit);
+        $sql = $this->wpdb->prepare(
+            "SELECT * FROM {$table} ORDER BY created_at DESC, id DESC LIMIT %d",
+            $safeLimit
+        );
+
+        return $this->wpdb->get_results($sql) ?: [];
+    }
+
     private function tableName(): string {
         return $this->wpdb->prefix . 'bso_survival_email_outbox';
     }

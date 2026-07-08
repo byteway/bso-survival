@@ -18,6 +18,7 @@ class ShortcodeController {
     public const TEAMS_TAG = 'bso_survival_teams';
     public const OVERVIEW_TAG = 'bso_survival_event_overview';
     public const SUMMARY_TAG = 'bso_survival_event_summary';
+    public const TEAM_REGISTRATION_TAG = 'bso_survival_team_registration';
 
     /** @var DashboardController */
     private $dashboardController;
@@ -34,12 +35,16 @@ class ShortcodeController {
     /** @var EventSummaryController */
     private $eventSummaryController;
 
-    public function __construct(DashboardController $dashboardController = null, PartsController $partsController = null, TeamsController $teamsController = null, EventOverviewController $eventOverviewController = null, EventSummaryController $eventSummaryController = null) {
+    /** @var TeamRegistrationController */
+    private $teamRegistrationController;
+
+    public function __construct(DashboardController $dashboardController = null, PartsController $partsController = null, TeamsController $teamsController = null, EventOverviewController $eventOverviewController = null, EventSummaryController $eventSummaryController = null, TeamRegistrationController $teamRegistrationController = null) {
         $this->dashboardController = $dashboardController ?? $this->buildDashboardController();
         $this->partsController = $partsController ?? $this->buildPartsController();
         $this->teamsController = $teamsController ?? $this->buildTeamsController();
         $this->eventOverviewController = $eventOverviewController ?? $this->buildEventOverviewController();
         $this->eventSummaryController = $eventSummaryController ?? $this->buildEventSummaryController();
+        $this->teamRegistrationController = $teamRegistrationController ?? $this->buildTeamRegistrationController();
     }
 
     public function register(): void {
@@ -48,6 +53,7 @@ class ShortcodeController {
         add_shortcode(self::TEAMS_TAG, [$this, 'render_teams']);
         add_shortcode(self::OVERVIEW_TAG, [$this, 'render_event_overview']);
         add_shortcode(self::SUMMARY_TAG, [$this, 'render_event_summary']);
+        add_shortcode(self::TEAM_REGISTRATION_TAG, [$this, 'render_team_registration']);
     }
 
     public function render(array $atts = []): string {
@@ -68,6 +74,10 @@ class ShortcodeController {
 
     public function render_event_summary(array $atts = []): string {
         return $this->eventSummaryController->render($atts);
+    }
+
+    public function render_team_registration(array $atts = []): string {
+        return $this->teamRegistrationController->render($atts);
     }
 
     private function buildDashboardController(): DashboardController {
@@ -133,5 +143,12 @@ class ShortcodeController {
         return new EventSummaryController(
             new DashboardOverviewService($eventService, $partService, $teamService, $publicationService)
         );
+    }
+
+    private function buildTeamRegistrationController(): TeamRegistrationController {
+        $eventRepository = new EventRepository();
+        $eventService = new EventService($eventRepository);
+
+        return new TeamRegistrationController($eventService);
     }
 }

@@ -27,9 +27,12 @@ class DashboardOverviewServiceTest extends TestCase {
         $this->assertCount(3, $overview['teams']);
         $this->assertSame(12, $overview['counts']['parts']);
         $this->assertSame(22, $overview['counts']['teams']);
+        $this->assertSame(22, $overview['counts']['registered_teams']);
+        $this->assertSame(30, $overview['counts']['max_teams']);
         $this->assertTrue($overview['status']['has_parts']);
         $this->assertTrue($overview['status']['has_teams']);
         $this->assertTrue($overview['status']['is_ready_for_planning']);
+        $this->assertFalse($overview['status']['is_registration_full']);
     }
 
     /**
@@ -73,7 +76,7 @@ class DashboardFakeEventRepository implements EventRepositoryInterface {
 
     /** @return object|null */
     public function findById(int $id) {
-        return $id === 1 ? (object) ['id' => 1, 'status' => 'gepland'] : null;
+        return $id === 1 ? (object) ['id' => 1, 'status' => 'gepland', 'meta_data' => json_encode(['max_teams' => 30])] : null;
     }
 
     /** @return array<int, object> */
@@ -143,5 +146,13 @@ class DashboardFakeTeamRepository implements TeamRepositoryInterface {
 
     public function countByEventId(int $eventId): int {
         return 22;
+    }
+
+    public function findByEventIdAndName(int $eventId, string $name) {
+        return null;
+    }
+
+    public function create(array $data) {
+        return null;
     }
 }

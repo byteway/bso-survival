@@ -22,4 +22,9 @@ interface EmailOutboxRepositoryInterface {
     public function markForRetry(int $id, int $attemptCount, string $nextAttemptAtUtc, string $lastError): bool;
 
     public function markFailed(int $id, int $attemptCount, string $lastError): bool;
+
+    /**
+     * @return array<int, object>
+     */
+    public function findRecent(int $limit): array;
 }
