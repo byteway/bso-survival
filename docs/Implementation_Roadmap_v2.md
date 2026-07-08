@@ -988,7 +988,7 @@ Technische ingangen:
 Minimum endpointset:
 - `POST /scores/entries` (nieuwe score)
 - `PATCH /scores/entries/{score_entry_id}` (scorecorrectie)
-- `POST /scores/entries/{score_entry_id}/recalculate` (optioneel geforceerde herberekening)
+- `POST /scores/recalculate` (geforceerde herberekening voor part binnen event)
 
 UI-plaatsing:
 - submenu onder BSO Rules: "Score Invoer"
@@ -1330,7 +1330,7 @@ Statusupdate 8 juli 2026:
 - `src/Support/ApiResponse.php` toegevoegd als centrale success/error helper
 - nieuwe admin score REST endpoints gebruiken de wrapper
 
-Statusupdate 9 juli 2026:
+Statusupdate 8 juli 2026 (late update):
 - REST controllers voor teamregistratie, event-closeout/publicatie, dashboard-layout en frontend score submit omgezet naar de centrale ApiResponse-wrapper
 - paginering toegevoegd op `GET /bso-survival/v1/dashboard/messages` met `page` en `per_page` (plus legacy `limit` fallback)
 - PHPUnit uitgebreid voor response-envelope en paginering
@@ -1345,33 +1345,37 @@ Statusupdate 9 juli 2026:
 namespace BSO\Survival\Support;
 
 class ApiResponse {
-    public static function success($data, $message = '', $status = 200) {
-        return new \WP_REST_Response([
+    public static function success(array $data = [], int $status = 200) {
+        $payload = [
             'success' => true,
-            'message' => $message,
             'data' => $data
-        ], $status);
+        ];
+
+        $response = rest_ensure_response($payload);
+        $response->set_status($status);
+
+        return $response;
     }
     
-    public static function error($message, $data = [], $status = 400) {
-        return new \WP_REST_Response([
-            'success' => false,
-            'message' => $message,
-            'data' => $data
-        ], $status);
+    public static function error(string $code, string $message, int $status = 400, array $details = []) {
+        return new \WP_Error($code, $message, [
+            'status' => $status,
+            'details' => $details,
+        ]);
     }
     
-    public static function paginated($items, $total, $page = 1, $per_page = 20) {
-        return new \WP_REST_Response([
-            'success' => true,
-            'data' => $items,
+    public static function paginated(array $items, int $total, int $page, int $perPage, array $meta = []) {
+        $totalPages = $perPage > 0 ? (int) ceil($total / $perPage) : 0;
+
+        return self::success(array_merge($meta, [
+            'items' => $items,
             'pagination' => [
                 'page' => (int) $page,
-                'per_page' => (int) $per_page,
+                'per_page' => (int) $perPage,
                 'total' => (int) $total,
-                'total_pages' => ceil($total / $per_page)
+                'total_pages' => $totalPages
             ]
-        ], 200);
+        ]));
     }
 }
 ```

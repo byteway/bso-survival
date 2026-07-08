@@ -28,7 +28,21 @@ Nieuwe endpoints gebruiken een standaardwrapper:
 }
 ```
 
-Fouten gebruiken een uniforme error-structuur met code en status:
+Fouten gebruiken een uniforme code/message/status semantiek.
+In WordPress-runtime worden fouten als `WP_Error` teruggegeven met deze JSON-vorm:
+
+```json
+{
+  "code": "invalid_score_input",
+  "message": "raw_value must be numeric.",
+  "data": {
+    "status": 400,
+    "details": {}
+  }
+}
+```
+
+In non-WP testcontext (fallback) blijft de interne wrappervorm beschikbaar:
 
 ```json
 {
