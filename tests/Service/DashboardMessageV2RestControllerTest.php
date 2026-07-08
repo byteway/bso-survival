@@ -89,6 +89,67 @@ class DashboardMessageV2RestControllerTest extends TestCase {
     }
 
     /** @test */
+    public function it_creates_message_via_v2_endpoint_with_standardized_meta_block(): void {
+        $service = new V2FakeDashboardMessageService();
+        $controller = new DashboardMessageV2RestController($service);
+
+        $response = $controller->createMessage(new V2FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'type' => 'info',
+            'text' => 'Met v2 meta',
+            'scope' => 'event',
+            'status' => 'actief',
+            'meta' => [
+                'source' => 'admin',
+                'labels' => ['operations', 'urgent'],
+                'trace_id' => 'abc-123',
+            ],
+        ]));
+
+        $this->assertTrue($response['success']);
+        $this->assertSame('admin', $service->lastCreateMetaData['source']);
+        $this->assertSame(['operations', 'urgent'], $service->lastCreateMetaData['labels']);
+        $this->assertSame('abc-123', $service->lastCreateMetaData['trace_id']);
+    }
+
+    /** @test */
+    public function it_updates_message_via_v2_endpoint_with_legacy_meta_data_fallback(): void {
+        $service = new V2FakeDashboardMessageService();
+        $controller = new DashboardMessageV2RestController($service);
+
+        $response = $controller->updateMessage(new V2FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'message_id' => 11,
+            'text' => 'Bijgewerkt',
+            'meta_data' => [
+                'channel' => 'legacy',
+            ],
+        ]));
+
+        $this->assertTrue($response['success']);
+        $this->assertSame(['channel' => 'legacy'], $service->lastUpdateMetaData);
+    }
+
+    /** @test */
+    public function it_returns_invalid_meta_block_when_v2_meta_has_unknown_fields(): void {
+        $service = new V2FakeDashboardMessageService();
+        $controller = new DashboardMessageV2RestController($service);
+
+        $response = $controller->createMessage(new V2FakeDashboardMessageRequest([
+            'event_id' => 7,
+            'type' => 'info',
+            'text' => 'Meta fout',
+            'meta' => [
+                'unknown' => 'x',
+            ],
+        ]));
+
+        $this->assertFalse($response['success']);
+        $this->assertSame('invalid_meta_block', $response['error']['code']);
+        $this->assertSame(400, $response['error']['status']);
+    }
+
+    /** @test */
     public function it_returns_invalid_bulk_payload_when_message_ids_are_missing(): void {
         $service = new V2FakeDashboardMessageService();
         $controller = new DashboardMessageV2RestController($service);
@@ -227,6 +288,12 @@ class V2FakeDashboardMessageService extends DashboardMessageService {
     /** @var string */
     public $bulkDeleteMode = 'ok';
 
+    /** @var array<string, mixed> */
+    public $lastCreateMetaData = [];
+
+    /** @var array<string, mixed> */
+    public $lastUpdateMetaData = [];
+
     public function __construct() {
     }
 
@@ -256,6 +323,30 @@ class V2FakeDashboardMessageService extends DashboardMessageService {
             'page' => $page,
             'per_page' => $perPage,
             'filters' => $filters,
+        ];
+    }
+
+    public function create(array $payload) {
+        $this->lastCreateMetaData = is_array($payload['meta_data'] ?? null) ? $payload['meta_data'] : [];
+
+        return (object) [
+            'id' => 5,
+            'event_id' => (int) ($payload['event_id'] ?? 0),
+            'type' => (string) ($payload['type'] ?? 'info'),
+            'text' => (string) ($payload['text'] ?? ''),
+            'status' => (string) ($payload['status'] ?? 'actief'),
+        ];
+    }
+
+    public function update(int $messageId, int $eventId, array $payload, string $changedBy = 'admin') {
+        $this->lastUpdateMetaData = is_array($payload['meta_data'] ?? null) ? $payload['meta_data'] : [];
+
+        return (object) [
+            'id' => $messageId,
+            'event_id' => $eventId,
+            'type' => (string) ($payload['type'] ?? 'info'),
+            'text' => (string) ($payload['text'] ?? 'Melding'),
+            'status' => (string) ($payload['status'] ?? 'actief'),
         ];
     }
 

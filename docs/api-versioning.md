@@ -144,6 +144,41 @@ Foutcodes:
 - `bulk_delete_conflict` (409)
 - `bulk_delete_failed` (500)
 
+## v2 Implemented (S4)
+
+Gestandaardiseerd `meta` contract is toegevoegd op v2 write-endpoints:
+
+```http
+POST  /wp-json/bso-survival/v2/dashboard/messages
+PATCH /wp-json/bso-survival/v2/dashboard/messages/{message_id}
+POST  /wp-json/bso-survival/v2/scores/entries
+PATCH /wp-json/bso-survival/v2/scores/entries/{score_entry_id}
+```
+
+Contractvorm:
+
+```json
+{
+  "meta": {
+    "source": "admin",
+    "labels": ["operations"],
+    "trace_id": "abc-123"
+  }
+}
+```
+
+Validatieregels:
+- Alleen `source`, `labels`, `trace_id` zijn toegestaan als top-level keys.
+- Onbekende keys geven `invalid_meta_block` (400).
+- `labels` moet een array van niet-lege strings zijn.
+
+Backwards compatibility:
+- Voor dashboard messages blijft v1/v2 `meta_data` ondersteund.
+- Wanneer `meta` aanwezig is op v2, wordt dit genormaliseerd naar de bestaande opslag in `meta_data`.
+
+Foutcodes:
+- `invalid_meta_block` (400)
+
 ## Filtering Examples (v1)
 
 Voorbeeld: dashboardmeldingen ophalen voor een event met scope-filter en paginering.

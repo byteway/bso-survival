@@ -52,14 +52,17 @@ class AdminScoreService {
         $rawValue = $payload['raw_value'] ?? null;
         $changedBy = trim((string) ($payload['changed_by'] ?? 'admin'));
         $enteredByRole = trim((string) ($payload['entered_by_role'] ?? 'admin'));
+        $meta = $this->normalizeMeta($payload['meta'] ?? null);
 
         $assignment = $this->validateWritableAssignment($eventId, $assignmentId, $rawValue);
         $partId = (int) ($assignment->part_id ?? 0);
         $teamId = (int) ($assignment->team_id ?? 0);
 
         $stored = $this->scoreEntryService->submit($partId, $assignmentId, $rawValue, $enteredByRole, [
-            'source' => 'admin_score',
+            'source' => (string) ($meta['source'] ?? 'admin_score'),
             'event_id' => $eventId,
+            'labels' => $meta['labels'] ?? [],
+            'trace_id' => (string) ($meta['trace_id'] ?? ''),
         ]);
 
         $positions = $this->ranking->refreshForPart($partId, [
@@ -76,6 +79,7 @@ class AdminScoreService {
                 'assignment_id' => $assignmentId,
                 'raw_value' => (float) $rawValue,
                 'normalized_points' => (float) ($stored->normalized_points ?? 0),
+                'meta' => $meta,
             ],
             $changedBy
         );
@@ -103,6 +107,7 @@ class AdminScoreService {
         $rawValue = $payload['raw_value'] ?? null;
         $changedBy = trim((string) ($payload['changed_by'] ?? 'admin'));
         $enteredByRole = trim((string) ($payload['entered_by_role'] ?? 'admin'));
+        $meta = $this->normalizeMeta($payload['meta'] ?? null);
 
         $existing = $this->entries->findById($scoreEntryId);
         if ($existing === null) {
@@ -121,8 +126,10 @@ class AdminScoreService {
             $rawValue,
             $enteredByRole,
             [
-                'source' => 'admin_score_edit',
+                'source' => (string) ($meta['source'] ?? 'admin_score_edit'),
                 'event_id' => $eventId,
+                'labels' => $meta['labels'] ?? [],
+                'trace_id' => (string) ($meta['trace_id'] ?? ''),
             ]
         );
 
@@ -142,6 +149,7 @@ class AdminScoreService {
             [
                 'raw_value' => (float) $rawValue,
                 'normalized_points' => (float) ($updated->normalized_points ?? 0),
+                'meta' => $meta,
             ],
             $changedBy
         );
@@ -232,5 +240,65 @@ class AdminScoreService {
         }
 
         return $assignment;
+    }
+
+    /**
+     * @param mixed $meta
+     * @return array<string, mixed>
+     */
+    private function normalizeMeta($meta): array {
+        if ($meta === null) {
+            return [];
+        }
+
+        if (!is_array($meta)) {
+            throw new InvalidArgumentException('meta moet een object zijn.');
+        }
+
+        $allowedKeys = ['source', 'labels', 'trace_id'];
+        $unknown = array_diff(array_keys($meta), $allowedKeys);
+        if ($unknown !== []) {
+            throw new InvalidArgumentException('meta bevat onbekende velden: ' . implode(',', $unknown));
+        }
+
+        $normalized = [];
+
+        if (array_key_exists('source', $meta)) {
+            $source = trim((string) $meta['source']);
+            if ($source === '') {
+                throw new InvalidArgumentException('meta.source moet een niet-lege string zijn.');
+            }
+
+            $normalized['source'] = $source;
+        }
+
+        if (array_key_exists('trace_id', $meta)) {
+            $traceId = trim((string) $meta['trace_id']);
+            if ($traceId === '') {
+                throw new InvalidArgumentException('meta.trace_id moet een niet-lege string zijn.');
+            }
+
+            $normalized['trace_id'] = $traceId;
+        }
+
+        if (array_key_exists('labels', $meta)) {
+            if (!is_array($meta['labels'])) {
+                throw new InvalidArgumentException('meta.labels moet een array van strings zijn.');
+            }
+
+            $labels = [];
+            foreach ($meta['labels'] as $label) {
+                $value = trim((string) $label);
+                if ($value === '') {
+                    throw new InvalidArgumentException('meta.labels mag geen lege waarden bevatten.');
+                }
+
+                $labels[] = $value;
+            }
+
+            $normalized['labels'] = array_values(array_unique($labels));
+        }
+
+        return $normalized;
     }
 }

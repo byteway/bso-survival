@@ -363,7 +363,7 @@ Structuur: eerst een tickettemplate, daarna 5 concrete tickets in prioritaire vo
 - [x] Contracten uitwerken
 - [x] AC en testplan toevoegen
 - [x] Schatting en prioriteit bepalen
-- [ ] Review met team
+- [x] Review met team
 
 ---
 

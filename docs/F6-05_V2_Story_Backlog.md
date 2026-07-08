@@ -29,7 +29,7 @@ Statusupdate:
 - [x] F6-05-S1 geïmplementeerd in runtime (`/wp-json/bso-survival/v2/dashboard/messages`)
 - [x] F6-05-S2 geïmplementeerd in runtime (`/wp-json/bso-survival/v2/dashboard/messages/bulk-status`)
 - [x] F6-05-S3 geïmplementeerd in runtime (`/wp-json/bso-survival/v2/dashboard/messages/bulk-delete`)
-- [ ] F6-05-S4
+- [x] F6-05-S4 geïmplementeerd in runtime (`/wp-json/bso-survival/v2/dashboard/messages`, `/wp-json/bso-survival/v2/scores/entries`)
 - [ ] F6-05-S5
 
 ---
@@ -210,7 +210,7 @@ Statusupdate:
 ## Sprintvoorstel
 
 1. Sprint C.1: S1 + S2 afgerond
-2. Sprint C.2: S3 afgerond, start S4
+2. Sprint C.2: S3 + S4 afgerond
 3. Sprint C.3: S5 en release-gates
 
 ## Open punten

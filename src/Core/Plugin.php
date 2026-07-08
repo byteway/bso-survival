@@ -10,6 +10,7 @@ use BSO\Survival\Admin\PartRuleAdminPage;
 use BSO\Survival\Admin\RegistrationAdminPage;
 use BSO\Survival\Admin\ScoreEntryAdminPage;
 use BSO\Survival\Api\AdminScoreRestController;
+use BSO\Survival\Api\AdminScoreV2RestController;
 use BSO\Survival\Api\DashboardMessageRestController;
 use BSO\Survival\Api\DashboardMessageV2RestController;
 use BSO\Survival\Api\DashboardWidgetLayoutRestController;
@@ -248,6 +249,7 @@ class Plugin {
         $this->buildTeamRegistrationRestController()->registerRoutes();
         $this->buildFrontendScoreRestController()->registerRoutes();
         $this->buildAdminScoreRestController()->registerRoutes();
+        $this->buildAdminScoreV2RestController()->registerRoutes();
         $this->buildDashboardMessageRestController()->registerRoutes();
         $this->buildDashboardMessageV2RestController()->registerRoutes();
     }
@@ -441,6 +443,10 @@ class Plugin {
 
     private function buildAdminScoreRestController(): AdminScoreRestController {
         return new AdminScoreRestController($this->buildAdminScoreService());
+    }
+
+    private function buildAdminScoreV2RestController(): AdminScoreV2RestController {
+        return new AdminScoreV2RestController($this->buildAdminScoreService());
     }
 
     private function buildDashboardMessageRestController(): DashboardMessageRestController {
