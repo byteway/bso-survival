@@ -168,10 +168,11 @@ De task `Auto WP Runtime Smoke on Folder Open` draait automatisch bij openen van
 
 1. Open `Survival -> Events`.
 2. Maak een nieuw event aan met naam, datum en max teams.
-3. Kies een bestaand event, wijzig indien nodig naam/datum/max teams en sla op.
-4. Gebruik het onderdelenfilter om alleen geldig koppelbare parts snel te vinden.
-5. Gesloten/gepubliceerde events zijn read-only voor inhoudelijke mutaties.
-6. Verwijderen van event koppelt parts los maar verwijdert parts niet.
+3. Gebruik optioneel de vinkjes in `Nieuw event aanmaken` om direct demo teams te maken, alle onderdelen te koppelen en planning + initiële score-records te genereren.
+4. Kies een bestaand event, wijzig indien nodig naam/datum/max teams en sla op.
+5. Gebruik het onderdelenfilter om alleen geldig koppelbare parts snel te vinden.
+6. Gesloten/gepubliceerde events zijn read-only voor inhoudelijke mutaties.
+7. Verwijderen van event koppelt parts los maar verwijdert parts niet.
 
 ## Admin Quickstart (obstacle-specific rules)
 
@@ -245,6 +246,18 @@ Response bevat o.a. `registration_id`, `team_id`, `status`, en `counts.registere
 
 Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluiting_Voorbereiding.md)
 
+## Admin Quickstart (score invoer)
+
+1. Open `Survival -> Score Invoer`.
+2. Kies event en klik `Laden`.
+3. Klik `Initialiseer scores` om ontbrekende score-records voor alle assignments van het event vooraf aan te maken.
+4. Klik op een score-rij om rechts het flip-over paneel `Score bewerken` te openen.
+5. Wijzig `Ruwe score` en zet optioneel `Joker ingezet (score telt dubbel)` aan of uit.
+6. Klik `Opslaan`, of klik `Annuleren`.
+7. Joker is technisch afgedwongen als eenmalig per team per event; dubbele inzet wordt geblokkeerd met foutmelding.
+8. Gebruik `Nieuwe score` naast `Laden` als handmatige fallback voor uitzonderingen.
+9. Een extra score op hetzelfde onderdeel voor hetzelfde team is alleen toegestaan via een andere assignment/tijdslot en zolang het totaal aantal scores van alle teams gelijk blijft; anders wordt opslaan geannuleerd.
+
 ## CLI Quickstart (dagafsluiting)
 
 - `wp bso-survival lifecycle --phase=closeout --event_id=14 --changed_by=wedstrijdleiding --certificates='[{"team_id":5,"file_path":"/tmp/team-5.pdf"}]'`
@@ -305,6 +318,24 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 - Registratiebevestiging-template toegevoegd met MVP veldcodes.
 - Email template admin uitgebreid met templatekeuze, preview en placeholder-validatie.
 - Outbox status + `last_error` zichtbaar gemaakt in admin.
+
+### 0.5.9 - Score Invoer flip-over en initialisatie
+
+- Score Invoer toont nu een klikbare scorelijst per event met rechter edit flip-over.
+- Nieuwe knop `Initialiseer scores` maakt ontbrekende score-records voor alle event-assignments aan en slaat bestaande records over.
+- Score-overzicht query gebruikt bestaande kolom `entered_by_role` (fix voor omgevingen zonder `changed_by` kolom).
+
+### 0.5.10 - Demo-opbouw bij eventcreatie
+
+- `Nieuw event aanmaken` bevat nu checkbox-opties voor demo teams, alle onderdelen koppelen en planning + score-records genereren.
+- Demo-planning maakt automatisch timeslots en assignments aan op basis van een round-robin-achtige teamindeling.
+- Initiële score-records worden direct per gegenereerde assignment aangemaakt zodat Score Invoer meteen operationeel is.
+
+### 0.5.11 - Joker inzet in Score Invoer
+
+- Score Invoer ondersteunt nu jokerregistratie via checkbox in het create- en edit-paneel.
+- Jokergebruik wordt server-side afgedwongen als eenmalig per team per event en vastgelegd in `joker_usages`.
+- `normalized_points` wordt bij jokerinzet verdubbeld en ranking-refresh gebruikt de effectieve genormaliseerde score.
 
 ## Ontwikkelcommando's
 
