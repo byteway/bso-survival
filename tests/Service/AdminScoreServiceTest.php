@@ -17,7 +17,7 @@ class AdminScoreServiceTest extends TestCase {
     /** @test */
     public function it_recalculates_positions_for_part_using_latest_score_entries(): void {
         $entries = new InMemoryAdminScoreRepository();
-        $entries->latestRawByPart = [
+        $entries->latestNormalizedByPart = [
             11 => 54.5,
             12 => 40.0,
         ];
@@ -46,7 +46,7 @@ class AdminScoreServiceTest extends TestCase {
         $this->assertSame(2, $result['team_count']);
         $this->assertSame([11 => 1, 12 => 2], $result['positions']);
         $this->assertSame(31, $ranking->lastPartId);
-        $this->assertSame([11 => 54.5, 12 => 40.0], $ranking->lastTeamRawValues);
+        $this->assertSame([11 => 54.5, 12 => 40.0], $ranking->lastTeamNormalizedValues);
         $this->assertSame(1, count($auditRepo->rows));
         $this->assertSame('recalculated', $auditRepo->rows[0]->action);
     }
@@ -98,6 +98,9 @@ class InMemoryAdminScoreRepository implements ScoreEntryRepositoryInterface {
     /** @var array<int, float> */
     public $latestRawByPart = [];
 
+    /** @var array<int, float> */
+    public $latestNormalizedByPart = [];
+
     public function findById(int $id) {
         return null;
     }
@@ -113,6 +116,14 @@ class InMemoryAdminScoreRepository implements ScoreEntryRepositoryInterface {
     public function findLatestRawValuesByPart(int $eventId, int $partId): array {
         return $this->latestRawByPart;
     }
+
+    public function findLatestNormalizedPointsByPart(int $eventId, int $partId): array {
+        return $this->latestNormalizedByPart;
+    }
+
+    public function findAssignmentIdsWithEntries(array $assignmentIds): array {
+        return [];
+    }
 }
 
 class FakeAdminScoreEntryService extends ScoreEntryService {
@@ -127,12 +138,22 @@ class FakeAdminRankingService extends RankingService {
     /** @var array<int, float|int> */
     public $lastTeamRawValues = [];
 
+    /** @var array<int, float|int> */
+    public $lastTeamNormalizedValues = [];
+
     public function __construct() {
     }
 
     public function refreshForPart(int $partId, array $teamRawValues): array {
         $this->lastPartId = $partId;
         $this->lastTeamRawValues = $teamRawValues;
+
+        return [11 => 1, 12 => 2];
+    }
+
+    public function refreshForPartWithNormalized(int $partId, array $teamNormalizedPoints): array {
+        $this->lastPartId = $partId;
+        $this->lastTeamNormalizedValues = $teamNormalizedPoints;
 
         return [11 => 1, 12 => 2];
     }

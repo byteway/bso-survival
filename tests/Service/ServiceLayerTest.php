@@ -211,4 +211,8 @@ class FakeTeamRepository implements TeamRepositoryInterface {
     public function create(array $data) {
         return null;
     }
+
+    public function updateById(int $id, array $data) {
+        return null;
+    }
 }

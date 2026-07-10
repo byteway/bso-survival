@@ -51,7 +51,7 @@ class ScoreEntryServiceTest extends TestCase {
             'normalization_curve' => 'linear',
         ]);
 
-        $stored = $service->submit(31, 301, 44, 'referee', ['source' => 'admin']);
+        $stored = $service->submit(31, 301, 44, 0, 'referee', ['source' => 'admin']);
 
         $this->assertSame(1, count($beforeCalls));
         $this->assertSame(1, count($recordedCalls));
@@ -84,7 +84,7 @@ class ScoreEntryServiceTest extends TestCase {
         ]);
 
         $this->expectException(InvalidArgumentException::class);
-        $service->submit(32, 302, 'not-a-number', 'referee');
+        $service->submit(32, 302, 'not-a-number', 0, 'referee');
     }
 }
 
@@ -150,5 +150,29 @@ class InMemoryScoreEntryRepository implements ScoreEntryRepositoryInterface {
 
     public function findLatestRawValuesByPart(int $eventId, int $partId): array {
         return [];
+    }
+
+    public function findLatestNormalizedPointsByPart(int $eventId, int $partId): array {
+        return [];
+    }
+
+    public function findAssignmentIdsWithEntries(array $assignmentIds): array {
+        $present = [];
+        foreach ($this->entries as $entry) {
+            $assignmentId = (int) ($entry->assignment_id ?? 0);
+            if ($assignmentId > 0) {
+                $present[$assignmentId] = $assignmentId;
+            }
+        }
+
+        $found = [];
+        foreach ($assignmentIds as $assignmentId) {
+            $id = (int) $assignmentId;
+            if (isset($present[$id])) {
+                $found[] = $id;
+            }
+        }
+
+        return $found;
     }
 }

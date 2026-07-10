@@ -18,7 +18,7 @@ class ScoreEntryRepositoryTest extends TestCase {
         $values = $repository->findLatestRawValuesByPart(12, 31);
 
         $this->assertSame([5 => 62.5, 8 => 47.0], $values);
-        $this->assertStringContainsString('a.event_id = 12', $wpdb->lastPreparedSql);
+        $this->assertStringContainsString('ts.event_id = 12', $wpdb->lastPreparedSql);
         $this->assertStringContainsString('a.part_id = 31', $wpdb->lastPreparedSql);
     }
 

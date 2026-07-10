@@ -37,7 +37,7 @@ class PartAdminServiceTest extends TestCase {
     }
 
     /** @test */
-    public function it_blocks_delete_when_part_is_used_in_active_event(): void {
+    public function it_deactivates_part_when_it_is_linked_to_an_active_event(): void {
         $events = new PartAdminInMemoryEventRepository();
         $events->seed((object) ['id' => 91, 'status' => 'actief']);
         $parts = new PartAdminInMemoryPartRepository();
@@ -45,8 +45,13 @@ class PartAdminServiceTest extends TestCase {
 
         $service = new PartAdminService($parts, $events);
 
-        $this->expectException(RuntimeException::class);
-        $service->deletePart(11);
+        $result = $service->deletePart(11);
+        $this->assertSame('deactivated', $result['saved']);
+        $this->assertStringContainsString('Touwbrug', $result['message']);
+
+        $updated = $parts->findById(11);
+        $this->assertSame('inactief', (string) ($updated->status ?? ''));
+        $this->assertSame(91, (int) ($updated->event_id ?? 0));
     }
 
     /** @test */
@@ -58,10 +63,13 @@ class PartAdminServiceTest extends TestCase {
 
         $service = new PartAdminService($parts, $events);
 
-        $this->assertTrue($service->deletePart(12));
-        $deleted = $parts->findById(12);
-        $this->assertSame('verwijderd', (string) ($deleted->status ?? ''));
-        $this->assertNull($deleted->event_id ?? null);
+        $result = $service->deletePart(12);
+        $this->assertSame('deactivated', $result['saved']);
+        $this->assertStringContainsString('Netklim', $result['message']);
+
+        $updated = $parts->findById(12);
+        $this->assertSame('inactief', (string) ($updated->status ?? ''));
+        $this->assertSame(92, (int) ($updated->event_id ?? 0));
     }
 
     /** @test */

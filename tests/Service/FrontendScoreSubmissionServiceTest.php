@@ -174,11 +174,12 @@ class FakeFrontendScoreEntryService extends ScoreEntryService {
     public function __construct() {
     }
 
-    public function submit(int $partId, int $assignmentId, $rawValue, string $enteredByRole, array $context = []) {
+    public function submit(int $partId, int $assignmentId, $rawValue, $bonusPoints, string $enteredByRole, array $context = []) {
         $this->calls[] = [
             'part_id' => $partId,
             'assignment_id' => $assignmentId,
             'raw_value' => $rawValue,
+            'bonus_points' => $bonusPoints,
             'entered_by_role' => $enteredByRole,
             'context' => $context,
         ];
@@ -186,6 +187,7 @@ class FakeFrontendScoreEntryService extends ScoreEntryService {
         return (object) [
             'id' => 1,
             'raw_value' => (float) $rawValue,
+            'bonus_points' => is_numeric($bonusPoints) ? (float) $bonusPoints : 0.0,
             'normalized_points' => (float) $rawValue,
             'status' => 'concept',
         ];

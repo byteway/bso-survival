@@ -194,6 +194,15 @@ class RegistrationTeamRepository implements TeamRepositoryInterface {
         return $row;
     }
 
+    public function updateById(int $id, array $data) {
+        if (!isset($this->rows[$id])) {
+            return null;
+        }
+
+        $this->rows[$id] = (object) array_merge((array) $this->rows[$id], $data);
+        return $this->rows[$id];
+    }
+
     public function seedExisting(int $eventId, string $name): void {
         $this->create([
             'event_id' => $eventId,
@@ -214,17 +223,107 @@ class RegistrationTeamMemberRepository implements TeamMemberRepositoryInterface 
         $this->rows[] = $rows;
         return count($rows);
     }
+
+    public function findByTeamId(int $teamId): array {
+        $collected = [];
+        foreach ($this->rows as $batch) {
+            foreach ($batch as $row) {
+                if ((int) ($row['team_id'] ?? 0) === $teamId) {
+                    $collected[] = (object) $row;
+                }
+            }
+        }
+
+        return $collected;
+    }
+
+    public function deleteByTeamId(int $teamId): int {
+        $deleted = 0;
+        foreach ($this->rows as $batchIndex => $batch) {
+            $remaining = [];
+            foreach ($batch as $row) {
+                if ((int) ($row['team_id'] ?? 0) === $teamId) {
+                    $deleted++;
+                    continue;
+                }
+
+                $remaining[] = $row;
+            }
+
+            $this->rows[$batchIndex] = $remaining;
+        }
+
+        return $deleted;
+    }
+
+    public function replaceForTeam(int $teamId, array $names): int {
+        $this->deleteByTeamId($teamId);
+
+        $rows = [];
+        foreach ($names as $name) {
+            $rows[] = [
+                'team_id' => $teamId,
+                'name' => (string) $name,
+            ];
+        }
+
+        if ($rows !== []) {
+            $this->rows[] = $rows;
+        }
+
+        return count($rows);
+    }
 }
 
 class OpenRegistrationWindowRepository implements RegistrationWindowRepositoryInterface {
     public function findOpenForEventAt(int $eventId, string $momentUtc) {
         return (object) ['id' => 1, 'event_id' => $eventId, 'status' => 'open'];
     }
+
+    public function findByEventId(int $eventId) {
+        return (object) [
+            'id' => 1,
+            'event_id' => $eventId,
+            'opens_at' => '2026-01-01 08:00:00',
+            'closes_at' => '2026-01-01 10:00:00',
+            'status' => 'open',
+        ];
+    }
+
+    public function saveForEvent(int $eventId, string $opensAt, string $closesAt, string $status = 'open') {
+        return (object) [
+            'id' => 1,
+            'event_id' => $eventId,
+            'opens_at' => $opensAt,
+            'closes_at' => $closesAt,
+            'status' => $status,
+        ];
+    }
 }
 
 class ClosedRegistrationWindowRepository implements RegistrationWindowRepositoryInterface {
     public function findOpenForEventAt(int $eventId, string $momentUtc) {
         return null;
+    }
+
+    public function findByEventId(int $eventId) {
+        return (object) [
+            'id' => 2,
+            'event_id' => $eventId,
+            'opens_at' => '2026-01-01 08:00:00',
+            'closes_at' => '2026-01-01 10:00:00',
+            'status' => 'closed',
+        ];
+    }
+
+    public function saveForEvent(int $eventId, string $opensAt, string $closesAt, string $status = 'open') {
+        return (object) [
+            'id' => 2,
+            'event_id' => $eventId,
+            'opens_at' => $opensAt,
+            'closes_at' => $closesAt,
+            'status' => $status,
+        ];
     }
 }
 
