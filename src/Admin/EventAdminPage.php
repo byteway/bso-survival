@@ -3,11 +3,14 @@
 namespace BSO\Survival\Admin;
 
 use BSO\Survival\Database\Repository\EventPublicationRepository;
+use BSO\Survival\Database\Repository\RegistrationWindowRepository;
 use BSO\Survival\Service\EventAdminService;
 use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
 use BSO\Survival\Service\ScoringMethodRegistry;
+use BSO\Survival\Support\Capabilities;
+use RuntimeException;
 
 class EventAdminPage {
     private const CREATE_NONCE_ACTION = 'bso_survival_event_create';
@@ -36,12 +39,16 @@ class EventAdminPage {
     /** @var object */
     private $partRules;
 
-    public function __construct(EventService $events, EventAdminService $admin, PartRuleConfiguratorService $partRuleConfigurator, $partRulesRepository, ?EventPublicationService $publications = null) {
+    /** @var RegistrationWindowRepository */
+    private $registrationWindows;
+
+    public function __construct(EventService $events, EventAdminService $admin, PartRuleConfiguratorService $partRuleConfigurator, $partRulesRepository, ?EventPublicationService $publications = null, ?RegistrationWindowRepository $registrationWindows = null) {
         $this->events = $events;
         $this->admin = $admin;
         $this->partRuleConfigurator = $partRuleConfigurator;
         $this->partRules = $partRulesRepository;
         $this->publications = $publications ?? new EventPublicationService(new EventPublicationRepository());
+        $this->registrationWindows = $registrationWindows ?? new RegistrationWindowRepository();
     }
 
     public function registerMenu(): void {
@@ -53,7 +60,7 @@ class EventAdminPage {
             'bso-survival-rules',
             __('Events', 'bso-survival'),
             __('Events', 'bso-survival'),
-            'manage_options',
+            Capabilities::MANAGE_SETTINGS,
             'bso-survival-events',
             [$this, 'renderPage']
         );
@@ -67,13 +74,23 @@ class EventAdminPage {
         }
 
         try {
-            $created = $this->admin->createEvent(
+            $result = $this->admin->createEventWithSetup(
                 isset($_POST['event_name']) ? sanitize_text_field(wp_unslash((string) $_POST['event_name'])) : '',
                 isset($_POST['event_date']) ? sanitize_text_field(wp_unslash((string) $_POST['event_date'])) : '',
-                isset($_POST['max_teams']) ? (int) $_POST['max_teams'] : 22
+                isset($_POST['max_teams']) ? (int) $_POST['max_teams'] : 22,
+                [
+                    'create_demo_teams' => isset($_POST['create_demo_teams']) && (string) $_POST['create_demo_teams'] === '1',
+                    'demo_teams_count' => isset($_POST['demo_teams_count']) ? (int) $_POST['demo_teams_count'] : 22,
+                    'link_all_parts' => isset($_POST['link_all_parts']) && (string) $_POST['link_all_parts'] === '1',
+                    'generate_scores' => isset($_POST['generate_scores']) && (string) $_POST['generate_scores'] === '1',
+                ]
             );
 
-            $this->redirectWithStatus((int) ($created->id ?? 0), 'created');
+            $created = $result['event'];
+            $summary = $result['summary'];
+            $message = $this->buildCreateSummaryMessage($summary);
+
+            $this->redirectWithStatus((int) ($created->id ?? 0), 'created', $message);
         } catch (\Throwable $exception) {
             $this->redirectWithStatus(0, 'error', $exception->getMessage(), 'create');
         }
@@ -87,6 +104,9 @@ class EventAdminPage {
         }
 
         $eventId = isset($_POST['event_id']) ? (int) $_POST['event_id'] : 0;
+        $registrationWindowEnabled = isset($_POST['registration_window_enabled']) && (string) $_POST['registration_window_enabled'] === '1';
+        $registrationWindowOpensOn = isset($_POST['registration_window_opens_on']) ? sanitize_text_field(wp_unslash((string) $_POST['registration_window_opens_on'])) : '';
+        $registrationWindowClosesOn = isset($_POST['registration_window_closes_on']) ? sanitize_text_field(wp_unslash((string) $_POST['registration_window_closes_on'])) : '';
 
         try {
             $updated = $this->admin->updateEvent(
@@ -95,6 +115,12 @@ class EventAdminPage {
                 isset($_POST['event_date']) ? sanitize_text_field(wp_unslash((string) $_POST['event_date'])) : '',
                 isset($_POST['max_teams']) ? (int) $_POST['max_teams'] : 22
             );
+
+            $eventDate = trim((string) ($updated->event_date ?? ''));
+            $windowSaved = $this->saveRegistrationWindow($eventId, $eventDate, $registrationWindowEnabled, $registrationWindowOpensOn, $registrationWindowClosesOn);
+            if ($windowSaved === false) {
+                throw new RuntimeException('Inschrijvingsperiode kon niet worden opgeslagen.');
+            }
 
             $this->redirectWithStatus((int) ($updated->id ?? $eventId), 'updated');
         } catch (\Throwable $exception) {
@@ -270,11 +296,18 @@ class EventAdminPage {
             .bso-events-layout{position:relative;}
             .bso-events-main{max-width:100%;transition:margin-right .2s ease;}
             .bso-events-main.with-panel{margin-right:380px;}
-            .bso-events-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0 14px 0;}
-            .bso-events-toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
+            .bso-events-toolbar{display:flex;align-items:center;gap:10px;margin:10px 0 14px 0;}
+            .bso-events-toolbar-actions{display:inline-flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:8px;vertical-align:middle;}
             .bso-events-panel{position:fixed;top:32px;right:0;width:360px;height:calc(100vh - 32px);background:#fff;border-left:1px solid #dcdcde;z-index:999;padding:14px 16px 16px 16px;overflow:auto;box-shadow:-6px 0 20px rgba(0,0,0,.08);}
             .bso-events-panel-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
             .bso-events-panel-title{font-size:20px;font-weight:600;margin:0;}
+            .bso-switch{display:inline-flex;align-items:center;gap:10px;font-weight:600;}
+            .bso-switch input{position:absolute;opacity:0;pointer-events:none;}
+            .bso-switch-track{position:relative;display:inline-block;width:44px;height:24px;background:#b4b9be;border-radius:999px;transition:background .18s ease;flex:0 0 auto;}
+            .bso-switch-thumb{position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:transform .18s ease;}
+            .bso-switch input:checked + .bso-switch-track{background:#2271b1;}
+            .bso-switch input:checked + .bso-switch-track .bso-switch-thumb{transform:translateX(20px);}
+            .bso-window-hint{margin-top:8px;color:#646970;font-size:12px;line-height:1.4;}
             @media (max-width: 1200px){
                 .bso-events-main.with-panel{margin-right:0;}
                 .bso-events-panel{position:static;width:auto;height:auto;box-shadow:none;border:1px solid #dcdcde;margin-top:14px;}
@@ -283,7 +316,8 @@ class EventAdminPage {
         echo '<h1>' . esc_html__('Survival Events', 'bso-survival') . '</h1>';
 
         if (isset($_GET['saved']) && $_GET['saved'] === 'created') {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Event aangemaakt.', 'bso-survival') . '</p></div>';
+            $message = isset($_GET['message']) ? sanitize_text_field(wp_unslash((string) $_GET['message'])) : __('Event aangemaakt.', 'bso-survival');
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
         }
         if (isset($_GET['saved']) && $_GET['saved'] === 'linked') {
             echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Parts gekoppeld aan event.', 'bso-survival') . '</p></div>';
@@ -307,12 +341,6 @@ class EventAdminPage {
 
         echo '<div class="bso-events-toolbar">';
         echo '<h2 style="margin:0;">' . esc_html__('Bestaand event beheren', 'bso-survival') . '</h2>';
-        echo '<div class="bso-events-toolbar-actions">';
-        echo '<a class="button" href="' . esc_url($createPanelUrl) . '">' . esc_html__('Nieuw event aanmaken', 'bso-survival') . '</a>';
-        if ($selectedEvent !== null) {
-            echo '<a class="button button-secondary" href="' . esc_url($editPanelUrl) . '">' . esc_html__('Event bewerken', 'bso-survival') . '</a>';
-        }
-        echo '</div>';
         echo '</div>';
 
         echo '<form method="get" action="' . esc_url(admin_url('admin.php')) . '">';
@@ -335,6 +363,12 @@ class EventAdminPage {
         }
         echo '</select> ';
         echo '<button class="button">' . esc_html__('Laden', 'bso-survival') . '</button>';
+        echo '<span class="bso-events-toolbar-actions">';
+        echo '<a class="button" href="' . esc_url($createPanelUrl) . '">' . esc_html__('Nieuw event aanmaken', 'bso-survival') . '</a>';
+        if ($selectedEvent !== null) {
+            echo '<a class="button button-secondary" href="' . esc_url($editPanelUrl) . '">' . esc_html__('Event bewerken', 'bso-survival') . '</a>';
+        }
+        echo '</span>';
         echo '</form>';
 
         if ($selectedEvent !== null && $isImmutable) {
@@ -461,7 +495,7 @@ class EventAdminPage {
     }
 
     private function assertAdminPermissions(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
     }
@@ -683,6 +717,10 @@ class EventAdminPage {
         echo '<a class="button button-link" href="' . esc_url($closePanelUrl) . '">' . esc_html__('Annuleren', 'bso-survival') . '</a>';
         echo '</div>';
 
+        if ($panelMode !== 'create' && $panelMode !== 'part' && $selectedEventId > 0) {
+            echo '<p><strong>' . esc_html__('Event ID', 'bso-survival') . ':</strong> #' . (int) $selectedEventId . '</p>';
+        }
+
         if ($panelMode === 'create') {
             $this->renderCreatePanelForm($closePanelUrl);
         } elseif ($panelMode === 'part') {
@@ -708,11 +746,68 @@ class EventAdminPage {
 
         echo '<tr><th scope="row"><label for="bso-max-teams">' . esc_html__('Max teams', 'bso-survival') . '</label></th>';
         echo '<td><input id="bso-max-teams" name="max_teams" type="number" min="1" value="22" /></td></tr>';
+
+        echo '<tr><th scope="row">' . esc_html__('Demo-opties', 'bso-survival') . '</th><td>';
+        echo '<p><label><input id="bso-create-demo-teams" type="checkbox" name="create_demo_teams" value="1" /> ' . esc_html__('Demo teams aanmaken', 'bso-survival') . '</label><br />';
+        echo '<input id="bso-demo-teams-count" name="demo_teams_count" type="number" min="1" value="22" style="width:110px;" />';
+        echo ' <span class="description">' . esc_html__('Aantal demo teams voor dit event.', 'bso-survival') . '</span></p>';
+        echo '<p><label><input id="bso-link-all-parts" type="checkbox" name="link_all_parts" value="1" /> ' . esc_html__('Alle beschikbare onderdelen koppelen', 'bso-survival') . '</label></p>';
+        echo '<p><label><input id="bso-generate-scores" type="checkbox" name="generate_scores" value="1" /> ' . esc_html__('Planning + score-records genereren', 'bso-survival') . '</label><br />';
+        echo '<span id="bso-generate-scores-hint" class="description">' . esc_html__('Vereist teams en gekoppelde onderdelen; gebruikt de bestaande planningsregels voor spreiding van tegenstanders.', 'bso-survival') . '</span></p>';
+        echo '</td></tr>';
         echo '</tbody></table>';
 
         echo '<p><button class="button button-primary">' . esc_html__('Event aanmaken', 'bso-survival') . '</button> ';
         echo '<a class="button" href="' . esc_url($closePanelUrl) . '">' . esc_html__('Annuleren', 'bso-survival') . '</a></p>';
         echo '</form>';
+        echo '<script>';
+        echo '(function(){';
+        echo 'var demo=document.getElementById("bso-create-demo-teams");';
+        echo 'var count=document.getElementById("bso-demo-teams-count");';
+        echo 'var parts=document.getElementById("bso-link-all-parts");';
+        echo 'var scores=document.getElementById("bso-generate-scores");';
+        echo 'var hint=document.getElementById("bso-generate-scores-hint");';
+        echo 'if(!demo||!count||!parts||!scores){return;}';
+        echo 'var sync=function(){';
+        echo 'count.disabled=!demo.checked;';
+        echo 'var ready=demo.checked&&parts.checked;';
+        echo 'scores.disabled=!ready;';
+        echo 'if(!ready){scores.checked=false;}';
+        echo 'if(hint){hint.textContent=ready?"' . esc_js(__('Planning en score-records worden aangemaakt op basis van demo teams en gekoppelde onderdelen.', 'bso-survival')) . '":"' . esc_js(__('Vink eerst Demo teams aanmaken en Alle beschikbare onderdelen koppelen aan.', 'bso-survival')) . '";}';
+        echo '};';
+        echo 'demo.addEventListener("change",sync);';
+        echo 'parts.addEventListener("change",sync);';
+        echo 'sync();';
+        echo '})();';
+        echo '</script>';
+    }
+
+    /**
+     * @param array<string, int> $summary
+     */
+    private function buildCreateSummaryMessage(array $summary): string {
+        $parts = [__('Event aangemaakt.', 'bso-survival')];
+
+        if ((int) ($summary['teams_created'] ?? 0) > 0) {
+            $parts[] = sprintf(__('Demo teams: %d.', 'bso-survival'), (int) $summary['teams_created']);
+        }
+        if ((int) ($summary['parts_linked'] ?? 0) > 0) {
+            $parts[] = sprintf(__('Onderdelen gekoppeld: %d.', 'bso-survival'), (int) $summary['parts_linked']);
+        }
+        if ((int) ($summary['part_rules_created'] ?? 0) > 0) {
+            $parts[] = sprintf(__('Standaard scoreregels aangemaakt: %d.', 'bso-survival'), (int) $summary['part_rules_created']);
+        }
+        if ((int) ($summary['timeslots_created'] ?? 0) > 0) {
+            $parts[] = sprintf(__('Timeslots: %d.', 'bso-survival'), (int) $summary['timeslots_created']);
+        }
+        if ((int) ($summary['assignments_created'] ?? 0) > 0) {
+            $parts[] = sprintf(__('Assignments: %d.', 'bso-survival'), (int) $summary['assignments_created']);
+        }
+        if ((int) ($summary['scores_created'] ?? 0) > 0) {
+            $parts[] = sprintf(__('Score-records: %d.', 'bso-survival'), (int) $summary['scores_created']);
+        }
+
+        return implode(' ', $parts);
     }
 
     /** @param object|null $selectedEvent */
@@ -729,6 +824,22 @@ class EventAdminPage {
             $maxTeams = (int) $meta['max_teams'];
         }
 
+        $registrationWindow = $this->registrationWindows->findByEventId($selectedEventId);
+        $registrationWindowEnabled = is_object($registrationWindow) && (string) ($registrationWindow->status ?? '') === 'open';
+        $registrationWindowOpensOn = $this->formatDateValue((string) ($registrationWindow->opens_at ?? ''));
+        $registrationWindowClosesOn = $this->formatDateValue((string) ($registrationWindow->closes_at ?? ''));
+        $eventDate = (string) ($selectedEvent->event_date ?? '');
+
+        if ($registrationWindowOpensOn === '' || $registrationWindowClosesOn === '') {
+            [$defaultOpensOn, $defaultClosesOn] = $this->defaultRegistrationWindowDates($eventDate);
+            if ($registrationWindowOpensOn === '') {
+                $registrationWindowOpensOn = $defaultOpensOn;
+            }
+            if ($registrationWindowClosesOn === '') {
+                $registrationWindowClosesOn = $defaultClosesOn;
+            }
+        }
+
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="bso_survival_event_update" />';
         echo '<input type="hidden" name="event_id" value="' . (int) $selectedEventId . '" />';
@@ -741,11 +852,103 @@ class EventAdminPage {
         echo '<td><input id="bso-event-edit-date" name="event_date" type="date" value="' . esc_attr((string) ($selectedEvent->event_date ?? '')) . '"' . ($isImmutable ? ' disabled="disabled"' : '') . ' /></td></tr>';
         echo '<tr><th scope="row"><label for="bso-event-edit-max-teams">' . esc_html__('Max teams', 'bso-survival') . '</label></th>';
         echo '<td><input id="bso-event-edit-max-teams" name="max_teams" type="number" min="1" value="' . (int) $maxTeams . '"' . ($isImmutable ? ' disabled="disabled"' : '') . ' /></td></tr>';
+
+        echo '<tr><th scope="row">' . esc_html__('Inschrijvingen', 'bso-survival') . '</th>';
+        echo '<td>';
+        echo '<label class="bso-switch">';
+        echo '<input id="bso-registration-window-enabled" name="registration_window_enabled" type="checkbox" value="1"' . checked($registrationWindowEnabled, true, false) . ($isImmutable ? ' disabled="disabled"' : '') . ' />';
+        echo '<span class="bso-switch-track" aria-hidden="true"><span class="bso-switch-thumb"></span></span>';
+        echo '<span>' . esc_html__('Open voor inschrijvingen', 'bso-survival') . '</span>';
+        echo '</label>';
+        echo '<p class="description">' . esc_html__('Teams kunnen alleen inschrijven binnen deze periode. De sluitdatum moet vóór de eventdatum liggen.', 'bso-survival') . '</p>';
+        echo '<p><label for="bso-registration-window-opens-on"><strong>' . esc_html__('Open vanaf', 'bso-survival') . '</strong></label><br />';
+        echo '<input id="bso-registration-window-opens-on" name="registration_window_opens_on" type="date" value="' . esc_attr($registrationWindowOpensOn) . '"' . ($isImmutable ? ' disabled="disabled"' : '') . ' /></p>';
+        echo '<p><label for="bso-registration-window-closes-on"><strong>' . esc_html__('Open tot en met', 'bso-survival') . '</strong></label><br />';
+        echo '<input id="bso-registration-window-closes-on" name="registration_window_closes_on" type="date" value="' . esc_attr($registrationWindowClosesOn) . '"' . ($isImmutable ? ' disabled="disabled"' : '') . ' /></p>';
+        echo '<p class="bso-window-hint">' . esc_html(sprintf(__('Eventdatum: %s. De inschrijvingsperiode hoort daarvóór te eindigen.', 'bso-survival'), $eventDate !== '' ? $eventDate : '-')) . '</p>';
+        echo '</td></tr>';
         echo '</tbody></table>';
 
         echo '<p><button class="button button-primary"' . ($isImmutable ? ' disabled="disabled"' : '') . '>' . esc_html__('Event opslaan', 'bso-survival') . '</button> ';
         echo '<a class="button" href="' . esc_url($closePanelUrl) . '">' . esc_html__('Annuleren', 'bso-survival') . '</a></p>';
         echo '</form>';
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function defaultRegistrationWindowDates(string $eventDate): array {
+        if (!$this->isValidDateValue($eventDate)) {
+            return ['', ''];
+        }
+
+        $eventMoment = \DateTimeImmutable::createFromFormat('Y-m-d', $eventDate, new \DateTimeZone('UTC'));
+        if ($eventMoment === false) {
+            return ['', ''];
+        }
+
+        $opensOn = $eventMoment->modify('-30 days')->format('Y-m-d');
+        $closesOn = $eventMoment->modify('-1 day')->format('Y-m-d');
+
+        return [$opensOn, $closesOn];
+    }
+
+    private function formatDateValue(string $dateTime): string {
+        $value = trim($dateTime);
+        if ($value === '') {
+            return '';
+        }
+
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}/', $value)) {
+            return '';
+        }
+
+        return substr($value, 0, 10);
+    }
+
+    private function isValidDateValue(string $value): bool {
+        if ($value === '') {
+            return false;
+        }
+
+        $parsed = \DateTimeImmutable::createFromFormat('Y-m-d', $value, new \DateTimeZone('UTC'));
+        return $parsed !== false && $parsed->format('Y-m-d') === $value;
+    }
+
+    private function toUtcDateTime(string $date, bool $endOfDay = false): string {
+        return $date . ($endOfDay ? ' 23:59:59' : ' 00:00:00');
+    }
+
+    private function saveRegistrationWindow(int $eventId, string $eventDate, bool $enabled, string $opensOn, string $closesOn): bool {
+        if ($eventId <= 0) {
+            return false;
+        }
+
+        if (!$this->isValidDateValue($eventDate)) {
+            throw new \InvalidArgumentException('event_date moet YYYY-MM-DD zijn.');
+        }
+
+        if (!$this->isValidDateValue($opensOn) || !$this->isValidDateValue($closesOn)) {
+            throw new \InvalidArgumentException('De inschrijvingsperiode moet geldige datums bevatten.');
+        }
+
+        if (strcmp($opensOn, $closesOn) > 0) {
+            throw new \InvalidArgumentException('De openingsdatum van de inschrijving mag niet na de sluitdatum liggen.');
+        }
+
+        if (strcmp($closesOn, $eventDate) >= 0) {
+            throw new \InvalidArgumentException('De sluitdatum van de inschrijving moet vóór de eventdatum liggen.');
+        }
+
+        $windowStatus = $enabled ? 'open' : 'closed';
+        $window = $this->registrationWindows->saveForEvent(
+            $eventId,
+            $this->toUtcDateTime($opensOn, false),
+            $this->toUtcDateTime($closesOn, true),
+            $windowStatus
+        );
+
+        return $window !== null;
     }
 
     private function renderPartSettingsPanelForm(int $selectedEventId, int $selectedPartId, bool $isImmutable, string $closePanelUrl, string $partFilter, string $partSortBy, string $partSortDirection, array $attachedLookup): void {

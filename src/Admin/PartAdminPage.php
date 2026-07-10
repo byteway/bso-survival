@@ -3,6 +3,7 @@
 namespace BSO\Survival\Admin;
 
 use BSO\Survival\Service\PartAdminService;
+use BSO\Survival\Support\Capabilities;
 
 class PartAdminPage {
     private const SAVE_NONCE_ACTION = 'bso_survival_part_save';
@@ -30,7 +31,7 @@ class PartAdminPage {
             'bso-survival-rules',
             __('Onderdelen', 'bso-survival'),
             __('Onderdelen', 'bso-survival'),
-            'manage_options',
+            Capabilities::MANAGE_SETTINGS,
             'bso-survival-parts',
             [$this, 'renderPage']
         );
@@ -72,8 +73,10 @@ class PartAdminPage {
 
         $partId = isset($_POST['part_id']) ? (int) $_POST['part_id'] : 0;
         try {
-            $this->parts->deletePart($partId);
-            $this->redirectWithStatus('deleted');
+            $result = $this->parts->deletePart($partId);
+            $saved = is_array($result) && isset($result['saved']) ? (string) $result['saved'] : 'deleted';
+            $message = is_array($result) && isset($result['message']) ? (string) $result['message'] : '';
+            $this->redirectWithStatus($saved, 0, $message);
         } catch (\Throwable $exception) {
             $this->redirectWithStatus('error', $partId, $exception->getMessage(), 'edit');
         }
@@ -158,13 +161,22 @@ class PartAdminPage {
             .bso-parts-layout{position:relative;}
             .bso-parts-main{max-width:100%;transition:margin-right .2s ease;}
             .bso-parts-main.with-panel{margin-right:380px;}
-            .bso-parts-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0 14px 0;}
-            .bso-parts-toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
+            .bso-parts-toolbar{display:flex;align-items:center;gap:10px;margin:10px 0 14px 0;flex-wrap:wrap;}
+            .bso-parts-toolbar-actions{display:inline-flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:0;}
+            .bso-parts-filterbox{border:1px solid #dcdcde;border-radius:4px;padding:10px 12px 12px;background:#fff;margin:0 0 12px 0;}
             .bso-parts-panel{position:fixed;top:32px;right:0;width:360px;height:calc(100vh - 32px);background:#fff;border-left:1px solid #dcdcde;z-index:999;padding:14px 16px 16px 16px;overflow:auto;box-shadow:-6px 0 20px rgba(0,0,0,.08);}
             .bso-parts-panel-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
             .bso-parts-panel-title{font-size:20px;font-weight:600;margin:0;}
             .bso-parts-panel-actions{display:flex;gap:8px;}
-            .bso-parts-search{margin:0 0 12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+            .bso-parts-search{margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+            .bso-parts-search .button{min-width:72px;}
+            .bso-parts-search .button-link{
+                min-width:72px;
+                display:inline-flex;
+                align-items:center;
+                justify-content:center;
+                text-align:center;
+            }
             @media (max-width: 1200px){
                 .bso-parts-main.with-panel{margin-right:0;}
                 .bso-parts-panel{position:static;width:auto;height:auto;box-shadow:none;border:1px solid #dcdcde;margin-top:14px;}
@@ -178,12 +190,9 @@ class PartAdminPage {
         echo '<div class="bso-parts-main' . ($panel !== '' ? ' with-panel' : '') . '">';
         echo '<div class="bso-parts-toolbar">';
         echo '<h2 style="margin:0;">' . esc_html__('Beschikbare onderdelen', 'bso-survival') . '</h2>';
-        echo '<div class="bso-parts-toolbar-actions">';
-        echo '<a class="button button-secondary" href="' . esc_url($newPartUrl) . '">' . esc_html__('Nieuw onderdeel', 'bso-survival') . '</a>';
-        echo '<a class="button" href="' . esc_url($importPanelUrl) . '">' . esc_html__('Import / export', 'bso-survival') . '</a>';
-        echo '</div>';
         echo '</div>';
 
+        echo '<div class="bso-parts-filterbox">';
         echo '<form method="get" action="' . esc_url(admin_url('admin.php')) . '" class="bso-parts-search">';
         echo '<input type="hidden" name="page" value="bso-survival-parts" />';
         echo '<input type="hidden" name="sort_by" value="' . esc_attr($sortBy) . '" />';
@@ -198,7 +207,12 @@ class PartAdminPage {
         echo '<input id="bso-part-search" type="search" name="part_search" class="regular-text" value="' . esc_attr($search) . '" placeholder="' . esc_attr__('Zoek op ID, naam, status of event', 'bso-survival') . '" />';
         echo '<button class="button">' . esc_html__('Zoek', 'bso-survival') . '</button>';
         echo '<a class="button button-link" href="' . esc_url($closePanelUrl) . '">' . esc_html__('Reset', 'bso-survival') . '</a>';
+        echo '<div class="bso-parts-toolbar-actions">';
+        echo '<a class="button button-secondary" href="' . esc_url($newPartUrl) . '">' . esc_html__('Nieuw onderdeel', 'bso-survival') . '</a>';
+        echo '<a class="button" href="' . esc_url($importPanelUrl) . '">' . esc_html__('Import / export', 'bso-survival') . '</a>';
+        echo '</div>';
         echo '</form>';
+        echo '</div>';
 
         echo '<table class="widefat striped"><thead><tr>';
         echo '<th>' . $this->renderSortLink('id', __('ID', 'bso-survival'), $sortBy, $sortDirection, $selectedPartId, $search, $panel) . '</th>';
@@ -230,7 +244,7 @@ class PartAdminPage {
 
             echo '<tr>';
             echo '<td>' . $partId . '</td>';
-            echo '<td>' . esc_html((string) ($part->name ?? '')) . '</td>';
+            echo '<td><a href="' . esc_url($editUrl) . '">' . esc_html((string) ($part->name ?? '')) . '</a></td>';
             echo '<td>' . esc_html((string) ($part->status ?? '')) . '</td>';
             echo '<td>';
             if ($eventUrl !== '') {
@@ -240,7 +254,6 @@ class PartAdminPage {
             }
             echo '</td>';
             echo '<td>';
-            echo '<a class="button button-small" href="' . esc_url($editUrl) . '">' . esc_html__('Bewerken', 'bso-survival') . '</a> ';
             echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" style="display:inline;" onsubmit="return confirm(\'' . esc_js(__('Weet je zeker dat je dit onderdeel wilt verwijderen of deactiveren?', 'bso-survival')) . '\');">';
             echo '<input type="hidden" name="action" value="bso_survival_part_delete" />';
             echo '<input type="hidden" name="part_id" value="' . $partId . '" />';
@@ -279,7 +292,11 @@ class PartAdminPage {
             return;
         }
         if ($saved === 'deleted') {
-            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Onderdeel verwijderd uit de actieve set.', 'bso-survival') . '</p></div>';
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message !== '' ? $message : __('Onderdeel verwijderd uit de actieve set.', 'bso-survival')) . '</p></div>';
+            return;
+        }
+        if ($saved === 'deactivated') {
+            echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html($message !== '' ? $message : __('Onderdeel is op inactief gezet omdat het nog gekoppeld is aan een event.', 'bso-survival')) . '</p></div>';
             return;
         }
         if ($saved === 'imported') {
@@ -292,7 +309,7 @@ class PartAdminPage {
     }
 
     private function assertAdminPermissions(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
     }

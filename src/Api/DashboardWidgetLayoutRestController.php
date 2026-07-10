@@ -3,6 +3,7 @@
 namespace BSO\Survival\Api;
 
 use BSO\Survival\Service\DashboardWidgetLayoutService;
+use BSO\Survival\Support\Capabilities;
 use BSO\Survival\Support\ApiResponse;
 use InvalidArgumentException;
 use RuntimeException;
@@ -46,7 +47,7 @@ class DashboardWidgetLayoutRestController {
      * @param mixed $request
      */
     public function canManage($request = null): bool {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             return false;
         }
 

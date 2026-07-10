@@ -4,6 +4,7 @@ namespace BSO\Survival\Admin;
 
 use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Service\EventService;
+use BSO\Survival\Support\Capabilities;
 
 class EventLifecycleAdminPage {
     /** @var EventService */
@@ -23,7 +24,7 @@ class EventLifecycleAdminPage {
                 'bso-survival-rules',
                 __('Event Lifecycle', 'bso-survival'),
                 __('Event Lifecycle', 'bso-survival'),
-                'manage_options',
+                Capabilities::MANAGE_SETTINGS,
                 'bso-survival-event-lifecycle',
                 [$this, 'renderPage']
             );
@@ -37,7 +38,7 @@ class EventLifecycleAdminPage {
         add_menu_page(
             __('Event Lifecycle', 'bso-survival'),
             __('Event Lifecycle', 'bso-survival'),
-            'manage_options',
+            Capabilities::MANAGE_SETTINGS,
             'bso-survival-event-lifecycle',
             [$this, 'renderPage'],
             'dashicons-update',
@@ -46,7 +47,7 @@ class EventLifecycleAdminPage {
     }
 
     public function renderPage(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
 
@@ -178,6 +179,7 @@ class EventLifecycleAdminPage {
         echo '<button type="button" id="bso-lifecycle-validate-json" class="button">' . esc_html__('JSON valideren', 'bso-survival') . '</button> ';
         echo '<button type="button" id="bso-lifecycle-clear-json" class="button button-link-delete">' . esc_html__('JSON velden leegmaken', 'bso-survival') . '</button>';
         echo '</p>';
+        echo '<div id="bso-lifecycle-status" class="notice inline" style="display:none;"><p></p></div>';
 
         echo '<table class="form-table" role="presentation" style="max-width:860px;">';
         echo '<tbody>';
@@ -223,8 +225,6 @@ class EventLifecycleAdminPage {
         echo '<button type="button" id="bso-lifecycle-closeout" class="button button-secondary">' . esc_html__('Event afsluiten (closeout)', 'bso-survival') . '</button> ';
         echo '<button type="button" id="bso-lifecycle-publish" class="button button-primary">' . esc_html__('Event publiceren', 'bso-survival') . '</button>';
         echo '</p>';
-
-        echo '<div id="bso-lifecycle-status" class="notice inline" style="display:none;"><p></p></div>';
         echo '<h2>' . esc_html__('Publicatie preview', 'bso-survival') . '</h2>';
         echo '<div id="bso-lifecycle-preview" class="notice inline" style="display:block;">';
         echo '<p><strong>' . esc_html__('Standings items', 'bso-survival') . ':</strong> <span id="bso-lifecycle-preview-count">0</span></p>';

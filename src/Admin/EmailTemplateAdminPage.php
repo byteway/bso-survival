@@ -5,6 +5,7 @@ namespace BSO\Survival\Admin;
 use BSO\Survival\Service\EmailTemplateService;
 use BSO\Survival\Service\EmailOutboxService;
 use BSO\Survival\Service\RegistrationConfirmationService;
+use BSO\Survival\Support\Capabilities;
 use InvalidArgumentException;
 
 class EmailTemplateAdminPage {
@@ -31,14 +32,14 @@ class EmailTemplateAdminPage {
             'bso-survival-rules',
             __('Email Templates', 'bso-survival'),
             __('Email Templates', 'bso-survival'),
-            'manage_options',
+            Capabilities::MANAGE_SETTINGS,
             'bso-survival-email-templates',
             [$this, 'renderPage']
         );
     }
 
     public function handleSave(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
 
@@ -82,7 +83,7 @@ class EmailTemplateAdminPage {
     }
 
     public function renderPage(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
 

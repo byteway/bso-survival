@@ -7,6 +7,7 @@ use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
 use BSO\Survival\Service\ScoringMethodRegistry;
+use BSO\Survival\Support\Capabilities;
 
 class PartRuleAdminPage {
     private const SAVE_NONCE_ACTION = 'bso_survival_save_part_rule';
@@ -39,7 +40,7 @@ class PartRuleAdminPage {
         add_menu_page(
             __('BSO Survival Rules', 'bso-survival'),
             __('Survival', 'bso-survival'),
-            'manage_options',
+            Capabilities::MANAGE_SETTINGS,
             'bso-survival-rules',
             [$this, 'renderPage'],
             'dashicons-editor-ol',
@@ -53,7 +54,7 @@ class PartRuleAdminPage {
     }
 
     public function handleSave(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
 
@@ -107,7 +108,7 @@ class PartRuleAdminPage {
     }
 
     public function renderPage(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
 

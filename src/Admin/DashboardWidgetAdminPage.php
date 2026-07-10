@@ -5,6 +5,7 @@ namespace BSO\Survival\Admin;
 use BSO\Survival\Service\DashboardWidgetLayoutService;
 use BSO\Survival\Service\DashboardWidgetRegistry;
 use BSO\Survival\Service\EventService;
+use BSO\Survival\Support\Capabilities;
 
 class DashboardWidgetAdminPage {
     private const SAVE_NONCE_ACTION = 'bso_survival_save_dashboard_widget_layout';
@@ -27,7 +28,7 @@ class DashboardWidgetAdminPage {
                 'bso-survival-rules',
                 __('Dashboard Widgets', 'bso-survival'),
                 __('Dashboard Widgets', 'bso-survival'),
-                'manage_options',
+                Capabilities::MANAGE_SETTINGS,
                 'bso-survival-dashboard-widgets',
                 [$this, 'renderPage']
             );
@@ -41,7 +42,7 @@ class DashboardWidgetAdminPage {
         add_menu_page(
             __('Dashboard Widgets', 'bso-survival'),
             __('Dashboard Widgets', 'bso-survival'),
-            'manage_options',
+            Capabilities::MANAGE_SETTINGS,
             'bso-survival-dashboard-widgets',
             [$this, 'renderPage'],
             'dashicons-screenoptions',
@@ -50,7 +51,7 @@ class DashboardWidgetAdminPage {
     }
 
     public function handleSave(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
 
@@ -80,7 +81,7 @@ class DashboardWidgetAdminPage {
     }
 
     public function renderPage(): void {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
 

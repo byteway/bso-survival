@@ -2,13 +2,13 @@
 
 namespace BSO\Survival\Core;
 
+use BSO\Survival\Admin\AccessAdminPage;
 use BSO\Survival\Admin\DashboardWidgetAdminPage;
 use BSO\Survival\Admin\DashboardMessageAdminPage;
 use BSO\Survival\Admin\EmailTemplateAdminPage;
 use BSO\Survival\Admin\EventAdminPage;
 use BSO\Survival\Admin\EventLifecycleAdminPage;
 use BSO\Survival\Admin\PartAdminPage;
-use BSO\Survival\Admin\PartRuleAdminPage;
 use BSO\Survival\Admin\RegistrationAdminPage;
 use BSO\Survival\Admin\ScoreEntryAdminPage;
 use BSO\Survival\Api\AdminScoreRestController;
@@ -21,6 +21,7 @@ use BSO\Survival\Api\FrontendScoreRestController;
 use BSO\Survival\Api\TeamRegistrationRestController;
 use BSO\Survival\Database\Repository\AssignmentRepository;
 use BSO\Survival\Core\Cli\EventLifecycleCommand;
+use BSO\Survival\Core\Cli\SeedDemoScoresCommand;
 use BSO\Survival\Core\Cli\SeedGoldenDatasetCommand;
 use BSO\Survival\Database\Repository\AuditLogRepository;
 use BSO\Survival\Database\Repository\CertificateRepository;
@@ -82,7 +83,6 @@ class Plugin {
         add_action('wp_enqueue_scripts', [$this, 'register_assets']);
         add_action('admin_enqueue_scripts', [$this, 'register_assets']);
         add_action('admin_menu', [$this, 'register_admin_pages']);
-        add_action('admin_post_bso_survival_save_part_rule', [$this, 'handle_part_rule_save']);
         add_action('admin_post_bso_survival_part_save', [$this, 'handle_part_save']);
         add_action('admin_post_bso_survival_part_delete', [$this, 'handle_part_delete']);
         add_action('admin_post_bso_survival_part_import', [$this, 'handle_part_import']);
@@ -91,6 +91,7 @@ class Plugin {
         add_action('admin_post_bso_survival_save_email_template', [$this, 'handle_email_template_save']);
         add_action('admin_post_bso_survival_admin_score_create', [$this, 'handle_admin_score_create']);
         add_action('admin_post_bso_survival_admin_score_update', [$this, 'handle_admin_score_update']);
+        add_action('admin_post_bso_survival_admin_score_initialize', [$this, 'handle_admin_score_initialize']);
         add_action('admin_post_bso_survival_dashboard_message_create', [$this, 'handle_dashboard_message_create']);
         add_action('admin_post_bso_survival_dashboard_message_update', [$this, 'handle_dashboard_message_update']);
         add_action('admin_post_bso_survival_dashboard_message_toggle', [$this, 'handle_dashboard_message_toggle']);
@@ -100,6 +101,8 @@ class Plugin {
         add_action('admin_post_bso_survival_event_link_parts', [$this, 'handle_event_link_parts']);
         add_action('admin_post_bso_survival_event_part_rule_save', [$this, 'handle_event_part_rule_save']);
         add_action('admin_post_bso_survival_event_delete', [$this, 'handle_event_delete']);
+        add_action('admin_post_bso_survival_registration_team_update', [$this, 'handle_registration_team_update']);
+        add_action('admin_post_bso_survival_save_access_overrides', [$this, 'handle_access_override_save']);
         add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('init', [$this, 'schedule_email_outbox_processing']);
         add_action('bso_survival_process_email_outbox', [$this, 'process_email_outbox']);
@@ -135,19 +138,53 @@ class Plugin {
     }
 
     public function register_admin_pages(): void {
-        $this->buildPartRuleAdminPage()->registerMenu();
+        $this->register_survival_root_menu();
         $this->buildPartAdminPage()->registerMenu();
         $this->buildEventAdminPage()->registerMenu();
         $this->buildDashboardWidgetAdminPage()->registerMenu();
         $this->buildRegistrationAdminPage()->registerMenu();
         $this->buildScoreEntryAdminPage()->registerMenu();
         $this->buildDashboardMessageAdminPage()->registerMenu();
+        $this->buildAccessAdminPage()->registerMenu();
         $this->buildEventLifecycleAdminPage()->registerMenu();
         $this->buildEmailTemplateAdminPage()->registerMenu();
+        $this->cleanup_survival_root_submenu();
     }
 
-    public function handle_part_rule_save(): void {
-        $this->buildPartRuleAdminPage()->handleSave();
+    private function register_survival_root_menu(): void {
+        if (!function_exists('add_menu_page')) {
+            return;
+        }
+
+        add_menu_page(
+            __('BSO Survival', 'bso-survival'),
+            __('Survival', 'bso-survival'),
+            Capabilities::MANAGE_SETTINGS,
+            'bso-survival-rules',
+            [$this, 'render_survival_root_page'],
+            'dashicons-editor-ol',
+            58
+        );
+    }
+
+    public function render_survival_root_page(): void {
+        if (!Capabilities::canManageSettings()) {
+            wp_die(__('Onvoldoende rechten.', 'bso-survival'));
+        }
+
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('BSO Survival', 'bso-survival') . '</h1>';
+        echo '<p>' . esc_html__('Gebruik het submenu om een beheerscherm te openen.', 'bso-survival') . '</p>';
+        echo '<p><a class="button button-primary" href="' . esc_url(admin_url('admin.php?page=bso-survival-events')) . '">' . esc_html__('Ga naar Events', 'bso-survival') . '</a></p>';
+        echo '</div>';
+    }
+
+    private function cleanup_survival_root_submenu(): void {
+        if (!function_exists('remove_submenu_page')) {
+            return;
+        }
+
+        remove_submenu_page('bso-survival-rules', 'bso-survival-rules');
     }
 
     public function handle_part_save(): void {
@@ -180,6 +217,10 @@ class Plugin {
 
     public function handle_admin_score_update(): void {
         $this->buildScoreEntryAdminPage()->handleUpdate();
+    }
+
+    public function handle_admin_score_initialize(): void {
+        $this->buildScoreEntryAdminPage()->handleInitialize();
     }
 
     public function handle_dashboard_message_create(): void {
@@ -216,6 +257,14 @@ class Plugin {
 
     public function handle_event_part_rule_save(): void {
         $this->buildEventAdminPage()->handlePartRuleSave();
+    }
+
+    public function handle_registration_team_update(): void {
+        $this->buildRegistrationAdminPage()->handleTeamUpdate();
+    }
+
+    public function handle_access_override_save(): void {
+        $this->buildAccessAdminPage()->handleSave();
     }
 
     public function register_assets(): void {
@@ -334,6 +383,10 @@ class Plugin {
             \WP_CLI::add_command('bso-survival seed-golden', SeedGoldenDatasetCommand::class);
         }
 
+        if (class_exists(SeedDemoScoresCommand::class)) {
+            \WP_CLI::add_command('bso-survival seed-demo-scores', SeedDemoScoresCommand::class);
+        }
+
         if (class_exists(EventLifecycleCommand::class)) {
             \WP_CLI::add_command('bso-survival lifecycle', EventLifecycleCommand::class);
         }
@@ -367,14 +420,6 @@ class Plugin {
         echo '<div class="notice notice-warning is-dismissible"><p>' . esc_html($message) . '</p></div>';
     }
 
-    private function buildPartRuleAdminPage(): PartRuleAdminPage {
-        $eventService = new EventService(new EventRepository());
-        $rules = new PartRuleRepository();
-        $configurator = new PartRuleConfiguratorService($rules);
-
-        return new PartRuleAdminPage($eventService, $configurator, $rules);
-    }
-
     private function buildPartAdminPage(): PartAdminPage {
         return new PartAdminPage(
             new PartAdminService(new PartAdminRepository(), new EventRepository())
@@ -399,12 +444,12 @@ class Plugin {
         $partRules = new PartRuleRepository();
         $partRuleConfigurator = new PartRuleConfiguratorService($partRules);
 
-        return new EventAdminPage($eventService, $adminService, $partRuleConfigurator, $partRules);
+        return new EventAdminPage($eventService, $adminService, $partRuleConfigurator, $partRules, null, new RegistrationWindowRepository());
     }
 
     private function buildRegistrationAdminPage(): RegistrationAdminPage {
         $eventService = new EventService(new EventRepository());
-        $teamService = new TeamService(new TeamRepository());
+        $teamService = new TeamService(new TeamRepository(), new TeamMemberRepository());
         $windowService = new RegistrationWindowService(new RegistrationWindowRepository());
 
         return new RegistrationAdminPage($eventService, $teamService, $windowService);
@@ -428,6 +473,10 @@ class Plugin {
         );
 
         return new DashboardMessageAdminPage($eventService, $messages);
+    }
+
+    private function buildAccessAdminPage(): AccessAdminPage {
+        return new AccessAdminPage();
     }
 
     private function buildEventLifecycleAdminPage(): EventLifecycleAdminPage {

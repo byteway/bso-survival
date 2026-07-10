@@ -5,6 +5,7 @@ namespace BSO\Survival\Api;
 use BSO\Survival\Service\EventCloseoutService;
 use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Support\ApiResponse;
+use BSO\Survival\Support\Capabilities;
 use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
@@ -54,7 +55,7 @@ class EventCloseoutRestController {
      * @param mixed $request
      */
     public function canManage($request = null): bool {
-        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+        if (!Capabilities::canManageSettings()) {
             return false;
         }
 

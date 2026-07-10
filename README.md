@@ -2,7 +2,7 @@
 
 BSO Survival v2 is de schone, uitbreidbare basis voor de volgende ontwikkelfase van de plugin.
 
-Laatste documentatie-update: 8 juli 2026.
+Laatste documentatie-update: 10 juli 2026.
 
 ## Status
 
@@ -22,6 +22,10 @@ De codebase staat nu in een vroeg maar werkend v2-fundament:
 - admin inschrijvingsdashboard en registratie-capaciteitswidget zijn toegevoegd
 - admin eventbeheer toegevoegd: event aanmaken/bewerken, geldig part-filteren, bestaande parts koppelen en veilig verwijderen zonder part-verlies
 - admin onderdelenbeheer toegevoegd: CRUD en JSON import/export voor herbruikbare onderdelen
+- demo-simulatie voor scoreverloop via WP-CLI is beschikbaar en idempotent (update-only op bestaande score-records)
+- score-invoer uitgebreid met numeriek bonusveld per score-entry, inclusief sortering in admin en shortcode-tabellen
+- tie-resolutie bij gelijke ruwe score gebruikt bonuspunten als eerste tie-break
+- admin toegang en rollen toegevoegd: gebruiker-override per WordPress account voor settings/score/meldingen rechten
 
 De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en kan verder worden uitgebreid met geavanceerde ranking- en communicatielagen.
 
@@ -55,12 +59,16 @@ De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en 
 - Dagafsluitingsservice: [src/Service/EventCloseoutService.php](src/Service/EventCloseoutService.php)
 - Dagafsluiting adminpagina: [src/Admin/EventLifecycleAdminPage.php](src/Admin/EventLifecycleAdminPage.php)
 - Dagafsluiting CLI-command: [src/Core/Cli/EventLifecycleCommand.php](src/Core/Cli/EventLifecycleCommand.php)
+- Demo-score CLI-command: [src/Core/Cli/SeedDemoScoresCommand.php](src/Core/Cli/SeedDemoScoresCommand.php)
 - Publicatienotificatieservice: [src/Service/PublicationNotificationService.php](src/Service/PublicationNotificationService.php)
 - Eventbeheer adminpagina: [src/Admin/EventAdminPage.php](src/Admin/EventAdminPage.php)
 - Eventbeheer service: [src/Service/EventAdminService.php](src/Service/EventAdminService.php)
+- Toegang en rollen adminpagina: [src/Admin/AccessAdminPage.php](src/Admin/AccessAdminPage.php)
+- Capabilities helper: [src/Support/Capabilities.php](src/Support/Capabilities.php)
 - Onderdelen adminpagina: [src/Admin/PartAdminPage.php](src/Admin/PartAdminPage.php)
 - Onderdelen adminservice: [src/Service/PartAdminService.php](src/Service/PartAdminService.php)
 - Eventbeheer handleiding: [docs/Admin_Eventbeheer.md](docs/Admin_Eventbeheer.md)
+- Beheer runbook demo-simulatie: [docs/Runbook_Beheer_Demo_Simulatie.md](docs/Runbook_Beheer_Demo_Simulatie.md)
 
 ## Frontend shortcodes (actueel)
 
@@ -76,11 +84,17 @@ De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en 
 	- Attributen: `event_id`, `title`
 - `[bso_survival_team_registration]`
 	- Attributen: `event_id`, `title`, `button_label`
+- `[bso_survival_team_score]`
+	- Attributen: `event_id`, `team_id`, `title`
+- `[bso_survival_part_score]`
+	- Attributen: `event_id`, `part_id`, `title`
 
 Voorbeeld:
 
 ```text
 [bso_survival_event_overview title="Gecombineerd Overzicht Event 2" event_id="2" compact="yes"]
+[bso_survival_team_score title="Tussentijdse teamscore Team001" event_id="2" team_id="14"]
+[bso_survival_part_score title="Tussentijdse onderdeelscore Kano Bungee" event_id="2" part_id="8"]
 ```
 
 ## Hook index
@@ -251,17 +265,61 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 1. Open `Survival -> Score Invoer`.
 2. Kies event en klik `Laden`.
 3. Klik `Initialiseer scores` om ontbrekende score-records voor alle assignments van het event vooraf aan te maken.
-4. Klik op een score-rij om rechts het flip-over paneel `Score bewerken` te openen.
-5. Wijzig `Ruwe score` en zet optioneel `Joker ingezet (score telt dubbel)` aan of uit.
+4. Klik op een score-rij om rechts het flip-over paneel `Bewerken score, score ID #...` te openen.
+5. Wijzig `Ruwe score`, zet optioneel `Bonus punten` (numeriek, >= 0) en zet indien nodig `Joker ingezet (score telt dubbel)` aan of uit.
 6. Klik `Opslaan`, of klik `Annuleren`.
 7. Joker is technisch afgedwongen als eenmalig per team per event; dubbele inzet wordt geblokkeerd met foutmelding.
 8. Gebruik `Nieuwe score` naast `Laden` als handmatige fallback voor uitzonderingen.
 9. Een extra score op hetzelfde onderdeel voor hetzelfde team is alleen toegestaan via een andere assignment/tijdslot en zolang het totaal aantal scores van alle teams gelijk blijft; anders wordt opslaan geannuleerd.
+10. Voor simulaties zonder handmatige invoer: gebruik het runbook [docs/Runbook_Beheer_Demo_Simulatie.md](docs/Runbook_Beheer_Demo_Simulatie.md).
+
+## Admin Quickstart (toegang en rollen)
+
+1. Open `Survival -> Toegang`.
+2. Kies per WordPress gebruiker een override-profiel.
+3. Profielen:
+	- `Overnemen van WordPress rol`: alleen standaard WP rechten gelden.
+	- `Survival eigenaar`: volledige pluginrechten (settings + toegang + score + meldingen).
+	- `Survival coordinator`: settings + score + meldingen.
+	- `Alleen scorebeheer`: alleen scorebeheerpagina en score-API acties.
+	- `Alleen meldingen`: alleen dashboard-meldingenbeheer.
+	- `Geen Survival toegang`: verwijdert pluginrechten voor deze gebruiker.
+4. Klik `Toegang opslaan`.
+5. Laat de gebruiker opnieuw inloggen zodat het menu met nieuwe rechten zichtbaar wordt.
+
+## Frontend scorelogica (team/onderdeel)
+
+- Onderdeelscore (`[bso_survival_part_score]`) toont alle teams voor het geselecteerde onderdeel.
+- Posities worden per onderdeel opnieuw berekend op basis van ruwe score en onderdeelregel (`lower_raw_wins` / `higher_raw_wins`, of `time` als lagere score wint).
+- Bij gelijke ruwe score geldt bonus als tie-break (meer bonus = hogere positie); pas bij gelijke bonus volgt alfabetische fallback op teamnaam.
+- Per team wordt een tussentijdse waarde berekend met:
+	- `tussentijdse_score = positie * 10 * joker_factor`
+	- `joker_factor = 1` zonder joker, `2` met joker.
+- Positie in het grid blijft de originele rangorde (1, 2, 3, ...).
+- Voor de tussentijdse score wordt intern een omgekeerde weging gebruikt (bij 7 teams: beste rij telt als 7, laagste rij als 1).
+- Teamscore (`[bso_survival_team_score]`) toont voor het geselecteerde team per onderdeel:
+	- ruwe score
+	- bonuspunten
+	- berekende positie binnen dat onderdeel
+	- tussentijdse score
+- De tussentijdse eindscore van het team is de som van alle tussentijdse onderdelencores.
 
 ## CLI Quickstart (dagafsluiting)
 
 - `wp bso-survival lifecycle --phase=closeout --event_id=14 --changed_by=wedstrijdleiding --certificates='[{"team_id":5,"file_path":"/tmp/team-5.pdf"}]'`
 - `wp bso-survival lifecycle --phase=publish --event_id=14 --changed_by=wedstrijdleiding --publication='{"headline":"Uitslag gepubliceerd","standings":[{"rank":1,"team_id":11,"team_name":"Team Rood","points":98.5}],"recipients":["coach@example.test"]}'`
+
+## CLI Quickstart (demo simulatie)
+
+- Alle tijdsloten van een event seeden (standaardgedrag als `--slot` ontbreekt):
+	- `WORDPRESS_DB_HOST=wordpress-db WORDPRESS_DB_NAME=wordpress WORDPRESS_DB_USER=wordpress WORDPRESS_DB_PASSWORD='DitIsNiet4Jou!' wp --path=/var/www/html --allow-root bso-survival seed-demo-scores --event-id=7`
+- Alleen specifieke tijdsloten seeden:
+	- `WORDPRESS_DB_HOST=wordpress-db WORDPRESS_DB_NAME=wordpress WORDPRESS_DB_USER=wordpress WORDPRESS_DB_PASSWORD='DitIsNiet4Jou!' wp --path=/var/www/html --allow-root bso-survival seed-demo-scores --slot=1,6,9,12 --event-id=7`
+- Idempotent gedrag:
+	- de command werkt update-only op bestaande score-records;
+	- er worden geen nieuwe score-entries toegevoegd door demo-seeding.
+
+Volledige beheerstappen en checks staan in [docs/Runbook_Beheer_Demo_Simulatie.md](docs/Runbook_Beheer_Demo_Simulatie.md).
 
 ## Release notes 0.5.x
 
@@ -336,6 +394,24 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 - Score Invoer ondersteunt nu jokerregistratie via checkbox in het create- en edit-paneel.
 - Jokergebruik wordt server-side afgedwongen als eenmalig per team per event en vastgelegd in `joker_usages`.
 - `normalized_points` wordt bij jokerinzet verdubbeld en ranking-refresh gebruikt de effectieve genormaliseerde score.
+
+### 0.5.12 - Demo score-seeding voor simulatie-tests
+
+- Nieuwe CLI command `wp bso-survival seed-demo-scores` toegevoegd voor beheersimulaties.
+- Demo-score dataset dekt alle tijdsloten van het event; zonder `--slot` worden alle tijdsloten geupdate.
+- Seeder is idempotent gemaakt: update-only op bestaande score-records, zonder nieuwe score-entry inserts.
+
+### 0.5.13 - Bonusveld en tie-resolutie
+
+- Score Invoer ondersteunt nu een numeriek veld `bonus_points` in create/edit flip-over en in de scoregrid (inclusief sortering).
+- Onderdeelscore en teamscore shortcodes tonen nu bonuspunten en ondersteunen sortering op bonus.
+- Bij gelijke `raw_value` bepaalt bonuspunten de onderlinge rangorde (meer bonus wint tie).
+
+### 0.5.14 - Toegang en rollen
+
+- Nieuwe adminpagina `Survival -> Toegang` toegevoegd met per-gebruiker override-profielen.
+- Plugin gebruikt nu eigen capabilities voor settings, toegang, scorebeheer en meldingenbeheer.
+- Settings-gebonden adminpagina's en relevante REST beheeracties respecteren toegewezen survival-caps.
 
 ## Ontwikkelcommando's
 
