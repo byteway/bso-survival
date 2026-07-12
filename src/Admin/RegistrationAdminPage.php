@@ -3,6 +3,7 @@
 namespace BSO\Survival\Admin;
 
 use BSO\Survival\Service\EventService;
+use BSO\Survival\Service\EventAdminService;
 use BSO\Survival\Service\RegistrationWindowService;
 use BSO\Survival\Service\TeamService;
 use BSO\Survival\Support\Capabilities;
@@ -11,6 +12,10 @@ use RuntimeException;
 class RegistrationAdminPage {
     private const UPDATE_TEAM_NONCE_ACTION = 'bso_survival_registration_team_update';
     private const UPDATE_TEAM_NONCE_FIELD = 'bso_survival_registration_team_update_nonce';
+    private const GENERATE_NONCE_ACTION = 'bso_survival_registration_generate_scores';
+    private const GENERATE_NONCE_FIELD = 'bso_survival_registration_generate_scores_nonce';
+    private const GENERATE_MODE_RECREATE_ALL = 'recreate_all';
+    private const GENERATE_MODE_SYNC = 'sync_missing_remove_obsolete';
 
     /** @var EventService */
     private $events;
@@ -18,12 +23,16 @@ class RegistrationAdminPage {
     /** @var TeamService */
     private $teams;
 
+    /** @var EventAdminService */
+    private $eventAdmin;
+
     /** @var RegistrationWindowService */
     private $windows;
 
-    public function __construct(EventService $events, TeamService $teams, RegistrationWindowService $windows) {
+    public function __construct(EventService $events, TeamService $teams, EventAdminService $eventAdmin, RegistrationWindowService $windows) {
         $this->events = $events;
         $this->teams = $teams;
+        $this->eventAdmin = $eventAdmin;
         $this->windows = $windows;
     }
 
@@ -81,6 +90,67 @@ class RegistrationAdminPage {
             $this->redirectWithStatus($eventId, 'team_updated', '', $teamId, $teamFilter, $teamSortBy, $teamSortDirection, 'team');
         } catch (\Throwable $exception) {
             $this->redirectWithStatus($eventId, 'error', $exception->getMessage(), $teamId, $teamFilter, $teamSortBy, $teamSortDirection, 'team');
+        }
+    }
+
+    public function handleGeneratePlanningScores(): void {
+        $this->assertAdminPermissions();
+
+        if (!isset($_POST[self::GENERATE_NONCE_FIELD]) || !wp_verify_nonce((string) $_POST[self::GENERATE_NONCE_FIELD], self::GENERATE_NONCE_ACTION)) {
+            wp_die(__('Ongeldige aanvraag (nonce).', 'bso-survival'));
+        }
+
+        $eventId = isset($_POST['event_id']) ? (int) $_POST['event_id'] : 0;
+        $teamFilter = isset($_POST['team_filter']) ? sanitize_text_field(wp_unslash((string) $_POST['team_filter'])) : '';
+        $teamSortBy = isset($_POST['team_sort_by']) ? sanitize_key((string) wp_unslash($_POST['team_sort_by'])) : 'team_name';
+        $teamSortDirection = isset($_POST['team_sort_direction']) ? sanitize_key((string) wp_unslash($_POST['team_sort_direction'])) : 'asc';
+        $scoreRecordMode = isset($_POST['score_record_mode']) ? sanitize_key((string) wp_unslash($_POST['score_record_mode'])) : '';
+
+        try {
+            if ($eventId <= 0) {
+                throw new RuntimeException(__('Kies eerst een event.', 'bso-survival'));
+            }
+
+            $event = $this->events->getEvent($eventId);
+            if (!is_object($event)) {
+                throw new RuntimeException(__('Event niet gevonden.', 'bso-survival'));
+            }
+
+            if ($this->windows->isOpenForEvent($eventId)) {
+                throw new RuntimeException(__('De team inschrijvingsperiode is nog open. Sluit eerst de inschrijfperiode.', 'bso-survival'));
+            }
+
+            $parts = $this->eventAdmin->listAssignedPartsForEvent($eventId);
+            if ($parts === []) {
+                throw new RuntimeException(__('Er zijn nog geen onderdelen gekoppeld aan dit event.', 'bso-survival'));
+            }
+
+            $snapshot = $this->eventAdmin->getPlanningScoreSnapshot($eventId);
+            $hasExistingScores = (int) ($snapshot['scores'] ?? 0) > 0;
+            $allowedModes = [
+                self::GENERATE_MODE_RECREATE_ALL,
+                self::GENERATE_MODE_SYNC,
+            ];
+
+            if ($hasExistingScores && !in_array($scoreRecordMode, $allowedModes, true)) {
+                throw new RuntimeException(__('Maak eerst een verplichte keuze voor bestaande score-records.', 'bso-survival'));
+            }
+
+            if (!$hasExistingScores) {
+                $scoreRecordMode = self::GENERATE_MODE_RECREATE_ALL;
+            }
+
+            if ($scoreRecordMode === self::GENERATE_MODE_SYNC) {
+                $summary = $this->eventAdmin->syncScoreRecordsForEvent($eventId);
+            } else {
+                $summary = $this->eventAdmin->generatePlanningAndScoresForEvent($eventId);
+            }
+
+            $message = $this->buildGenerateSummaryMessage($summary, $scoreRecordMode);
+
+            $this->redirectWithStatus($eventId, 'planning_generated', $message, 0, $teamFilter, $teamSortBy, $teamSortDirection, '');
+        } catch (\Throwable $exception) {
+            $this->redirectWithStatus($eventId, 'error', $exception->getMessage(), 0, $teamFilter, $teamSortBy, $teamSortDirection, '');
         }
     }
 
@@ -210,11 +280,35 @@ class RegistrationAdminPage {
             .bso-registration-panel{position:fixed;top:32px;right:0;width:400px;height:calc(100vh - 32px);background:#fff;border-left:1px solid #dcdcde;z-index:999;padding:14px 16px 16px 16px;overflow:auto;box-shadow:-6px 0 20px rgba(0,0,0,.08);}
             .bso-registration-panel-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;}
             .bso-registration-panel-title{font-size:20px;font-weight:600;margin:0;}
+            .bso-registration-flow{display:flex;gap:12px;flex-wrap:wrap;max-width:1120px;margin:0 0 10px 0;}
+            .bso-registration-flow-step{position:relative;flex:1 1 240px;padding:12px 16px;background:#f1f1f1;border:2px solid #1d2327;clip-path:polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%, 18px 50%);line-height:1.3;font-weight:500;}
+            .bso-registration-flow-step.is-active{background:#8acb4f;}
+            .bso-registration-flow-step.is-done{background:#d9f2bf;}
+            .bso-registration-flow-step.is-pending{background:#e5e5e5;}
+            .bso-registration-action{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 14px 0;}
+            .bso-registration-action p{margin:0;color:#646970;}
+            .bso-registration-generate-options{margin:10px 0 12px;padding:10px;border:1px solid #dcdcde;background:#fff;max-width:1120px;}
+            .bso-registration-generate-options legend{font-weight:600;padding:0 4px;}
+            .bso-registration-generate-options label{display:block;margin:6px 0;}
             .bso-registration-toolbar{display:flex;justify-content:flex-start;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0 14px 0;}
             .bso-registration-toolbar form{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0;}
             .bso-registration-filter-button,.bso-registration-reset-button{display:inline-flex;justify-content:center;align-items:center;min-width:82px;text-align:center;}
             .bso-registration-phone-links a{display:inline-block;margin-right:6px;}
             .bso-registration-members{max-width:320px;white-space:normal;line-height:1.4;}
+            .bso-registration-table td,.bso-registration-table th{vertical-align:middle;}
+            .bso-registration-row-clickable{cursor:pointer;}
+            .bso-registration-row-clickable:hover td{background:#f6f7ff;}
+            .bso-registration-row-clickable:focus td{outline:2px solid #93c5fd;outline-offset:-2px;}
+            .bso-registration-row-clickable.is-selected td{background:#eef4ff;}
+            .bso-registration-row-clickable td:first-child{position:relative;padding-left:24px;}
+            .bso-registration-row-clickable td:first-child::before{content:"↗";position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:0;color:#64748b;transition:opacity .15s ease,color .15s ease;}
+            .bso-registration-row-clickable:hover td:first-child::before,
+            .bso-registration-row-clickable:focus td:first-child::before,
+            .bso-registration-row-clickable.is-selected td:first-child::before{opacity:1;color:#1d4ed8;}
+            .bso-registration-row-clickable.is-selected td:first-child{box-shadow:inset 4px 0 0 #1d4ed8;font-weight:600;}
+            .bso-registration-sort-link{text-decoration:none;display:inline-flex;align-items:center;gap:4px;}
+            .bso-registration-sort-arrow{font-size:12px;opacity:1;color:#9ca3af;line-height:1;min-width:10px;display:inline-block;}
+            .bso-registration-sort-link.is-active .bso-registration-sort-arrow{color:#111827;}
             @media (max-width: 1280px){
                 .bso-registration-main.with-panel{margin-right:0;}
                 .bso-registration-panel{position:static;width:auto;height:auto;box-shadow:none;border:1px solid #dcdcde;margin-top:14px;}
@@ -232,18 +326,74 @@ class RegistrationAdminPage {
         if (isset($_GET['saved']) && $_GET['saved'] === 'team_updated') {
             echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('Team bijgewerkt.', 'bso-survival') . '</p></div>';
         }
+        if (isset($_GET['saved']) && $_GET['saved'] === 'planning_generated') {
+            $message = isset($_GET['message']) ? sanitize_text_field(wp_unslash((string) $_GET['message'])) : __('Planning + score-records zijn gegenereerd.', 'bso-survival');
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
+        }
         if (isset($_GET['saved']) && $_GET['saved'] === 'error') {
             $message = isset($_GET['message']) ? sanitize_text_field(wp_unslash((string) $_GET['message'])) : __('Onbekende fout.', 'bso-survival');
             echo '<div class="notice notice-error"><p>' . esc_html($message) . '</p></div>';
         }
 
         $windowOpen = $selectedEvent !== null ? $this->windows->isOpenForEvent($selectedEventId) : false;
+        $windowClosed = !$windowOpen;
+        $partsLinked = $selectedEventId > 0 ? $this->eventAdmin->listAssignedPartsForEvent($selectedEventId) !== [] : false;
+        $planningSnapshot = $selectedEventId > 0 ? $this->eventAdmin->getPlanningScoreSnapshot($selectedEventId) : [
+            'timeslots' => 0,
+            'assignments' => 0,
+            'scores' => 0,
+        ];
+        $scoresReady = (int) ($planningSnapshot['scores'] ?? 0) > 0;
+        $canGenerate = $windowClosed && $partsLinked;
+        $hasExistingScores = (int) ($planningSnapshot['scores'] ?? 0) > 0;
         $registered = $selectedEventId > 0 ? $this->teams->countTeamsForEvent($selectedEventId) : 0;
         $maxTeams = $selectedEvent !== null ? $this->extractMaxTeams((string) ($selectedEvent->meta_data ?? '')) : 0;
         $occupancy = $maxTeams > 0 ? min(100, (int) round(($registered / $maxTeams) * 100)) : 0;
 
         echo '<div class="bso-registration-layout">';
         echo '<div class="bso-registration-main' . ($eventPanel === 'team' ? ' with-panel' : '') . '">';
+
+        echo '<div class="bso-registration-flow">';
+        echo '<div class="bso-registration-flow-step ' . ($windowClosed ? 'is-done' : 'is-active') . '">';
+        echo esc_html__('Team inschrijvingsperiode', 'bso-survival') . '<br /><strong>' . esc_html($windowClosed ? __('gesloten', 'bso-survival') : __('open', 'bso-survival')) . '</strong>';
+        echo '</div>';
+        echo '<div class="bso-registration-flow-step ' . ($partsLinked ? 'is-done' : ($windowClosed ? 'is-active' : 'is-pending')) . '">';
+        echo esc_html__('Event gekoppelde onderdelen', 'bso-survival') . '<br /><strong>' . esc_html($partsLinked ? __('bestaan', 'bso-survival') : __('ontbreken', 'bso-survival')) . '</strong>';
+        echo '</div>';
+        echo '<div class="bso-registration-flow-step ' . ($scoresReady ? 'is-done' : ($canGenerate ? 'is-active' : 'is-pending')) . '">';
+        echo esc_html__('Planning + score-records', 'bso-survival') . '<br /><strong>' . esc_html($scoresReady ? __('klaar', 'bso-survival') : __('genereren', 'bso-survival')) . '</strong>';
+        echo '</div>';
+        echo '</div>';
+
+        echo '<div class="bso-registration-action">';
+        echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+        echo '<input type="hidden" name="action" value="bso_survival_registration_generate_scores" />';
+        echo '<input type="hidden" name="event_id" value="' . (int) $selectedEventId . '" />';
+        echo '<input type="hidden" name="team_filter" value="' . esc_attr($teamFilter) . '" />';
+        echo '<input type="hidden" name="team_sort_by" value="' . esc_attr($teamSortBy) . '" />';
+        echo '<input type="hidden" name="team_sort_direction" value="' . esc_attr($teamSortDirection) . '" />';
+        if ($hasExistingScores) {
+            echo '<fieldset class="bso-registration-generate-options">';
+            echo '<legend>' . esc_html__('Bestaande score-records gevonden: keuze verplicht', 'bso-survival') . '</legend>';
+            echo '<label><input type="radio" name="score_record_mode" value="' . esc_attr(self::GENERATE_MODE_RECREATE_ALL) . '" required="required" /> ' . esc_html__('Alle bestaande score-records verwijderen en alles opnieuw aanmaken', 'bso-survival') . '</label>';
+            echo '<label><input type="radio" name="score_record_mode" value="' . esc_attr(self::GENERATE_MODE_SYNC) . '" required="required" /> ' . esc_html__('Alleen ontbrekende score-records aanmaken en overbodige verwijderen', 'bso-survival') . '</label>';
+            echo '</fieldset>';
+        } else {
+            echo '<input type="hidden" name="score_record_mode" value="' . esc_attr(self::GENERATE_MODE_RECREATE_ALL) . '" />';
+        }
+        wp_nonce_field(self::GENERATE_NONCE_ACTION, self::GENERATE_NONCE_FIELD);
+        echo '<button class="button button-primary"' . ($canGenerate ? '' : ' disabled="disabled"') . '>' . esc_html__('Planning + score-records genereren', 'bso-survival') . '</button>';
+        echo '</form>';
+        if ($scoresReady) {
+            echo '<p>' . esc_html(sprintf(__('Klaar: %d timeslots, %d assignments, %d score-records.', 'bso-survival'), (int) ($planningSnapshot['timeslots'] ?? 0), (int) ($planningSnapshot['assignments'] ?? 0), (int) ($planningSnapshot['scores'] ?? 0))) . '</p>';
+        } elseif (!$windowClosed) {
+            echo '<p>' . esc_html__('Voorwaarde: team inschrijvingsperiode moet eerst gesloten zijn.', 'bso-survival') . '</p>';
+        } elseif (!$partsLinked) {
+            echo '<p>' . esc_html__('Voorwaarde: event moet gekoppelde onderdelen hebben.', 'bso-survival') . '</p>';
+        } else {
+            echo '<p>' . esc_html__('Voorwaarden voldaan. Je kunt nu planning en score-records genereren.', 'bso-survival') . '</p>';
+        }
+        echo '</div>';
 
         echo '<div class="notice inline" style="display:block;padding:10px 12px;max-width:1120px;">';
         echo '<p><strong>' . esc_html__('Event', 'bso-survival') . ':</strong> ' . esc_html($selectedEvent !== null ? sprintf('#%d %s', $selectedEventId, (string) ($selectedEvent->name ?? '')) : __('niet geselecteerd', 'bso-survival')) . '</p>';
@@ -286,7 +436,7 @@ class RegistrationAdminPage {
         echo '</form>';
         echo '</div>';
 
-        echo '<table class="widefat striped" style="max-width:1120px;">';
+        echo '<table class="widefat striped bso-registration-table" style="max-width:1120px;">';
         echo '<thead><tr>';
         echo '<th>' . $this->renderSortLink('team_name', __('Team', 'bso-survival'), $selectedEventId, $teamFilter, $teamSortBy, $teamSortDirection) . '</th>';
         echo '<th>' . $this->renderSortLink('contact_name', __('Contactpersoon', 'bso-survival'), $selectedEventId, $teamFilter, $teamSortBy, $teamSortDirection) . '</th>';
@@ -313,7 +463,11 @@ class RegistrationAdminPage {
                 'team_sort_by' => $teamSortBy,
                 'team_sort_direction' => $teamSortDirection,
             ]);
-            echo '<tr>';
+            $rowClass = 'bso-registration-row-clickable';
+            if ($selectedTeamId > 0 && $selectedTeamId === $teamId) {
+                $rowClass .= ' is-selected';
+            }
+            echo '<tr class="' . esc_attr($rowClass) . '" tabindex="0" role="button" aria-label="' . esc_attr(sprintf(__('Bewerk team #%d', 'bso-survival'), $teamId)) . '" data-edit-url="' . esc_url($teamPanelUrl) . '">';
             echo '<td><a href="' . esc_url($teamPanelUrl) . '">' . esc_html($teamName !== '' ? $teamName : ('#' . $teamId)) . '</a></td>';
             echo '<td>' . ($email !== '' ? '<a href="' . esc_url('mailto:' . $email) . '">' . esc_html($contactName) . '</a>' : esc_html($contactName)) . '</td>';
             echo '<td>' . ($email !== '' ? '<a href="' . esc_url('mailto:' . $email) . '">' . esc_html($email) . '</a>' : '-') . '</td>';
@@ -340,7 +494,18 @@ class RegistrationAdminPage {
         echo '</div>';
 
         echo '<script>';
-        echo '(function(){var links=document.querySelectorAll(".bso-phone-link");if(!links.length){return;}var ua=(navigator.userAgent||"").toLowerCase();var mobile=/android|iphone|ipad|ipod|windows phone/.test(ua);links.forEach(function(link){var tel=link.getAttribute("data-tel")||"";var wa=link.getAttribute("data-wa")||"";if(mobile&&tel){link.setAttribute("href",tel);link.removeAttribute("target");}else if(wa){link.setAttribute("href",wa);link.setAttribute("target","_blank");link.setAttribute("rel","noopener noreferrer");}});})();';
+        echo '(function(){'
+            . 'var links=document.querySelectorAll(".bso-phone-link");'
+            . 'var rows=document.querySelectorAll(".bso-registration-row-clickable");'
+            . 'var openRow=function(row){var url=row.getAttribute("data-edit-url")||"";if(url){window.location.href=url;}};'
+            . 'rows.forEach(function(row){'
+                . 'row.addEventListener("click",function(event){var target=event.target;if(target&&target.closest("a, button, input, select, textarea, label, form")){return;}openRow(row);});'
+                . 'row.addEventListener("keydown",function(event){if(event.key!=="Enter"&&event.key!==" "){return;}event.preventDefault();openRow(row);});'
+            . '});'
+            . 'if(!links.length){return;}'
+            . 'var ua=(navigator.userAgent||"").toLowerCase();var mobile=/android|iphone|ipad|ipod|windows phone/.test(ua);'
+            . 'links.forEach(function(link){var tel=link.getAttribute("data-tel")||"";var wa=link.getAttribute("data-wa")||"";if(mobile&&tel){link.setAttribute("href",tel);link.removeAttribute("target");}else if(wa){link.setAttribute("href",wa);link.setAttribute("target","_blank");link.setAttribute("rel","noopener noreferrer");}});'
+        . '})();';
         echo '</script>';
 
         echo '</div>';
@@ -414,9 +579,9 @@ class RegistrationAdminPage {
     private function renderSortLink(string $column, string $label, int $eventId, string $teamFilter, string $currentSortBy, string $currentSortDirection): string {
         $isActive = $column === $currentSortBy;
         $nextDirection = $isActive && $currentSortDirection === 'asc' ? 'desc' : 'asc';
-        $indicator = '';
+        $indicator = '↕';
         if ($isActive) {
-            $indicator = $currentSortDirection === 'asc' ? ' ↑' : ' ↓';
+            $indicator = $currentSortDirection === 'asc' ? '▲' : '▼';
         }
 
         $url = $this->buildAdminUrl([
@@ -426,7 +591,10 @@ class RegistrationAdminPage {
             'team_sort_direction' => $nextDirection,
         ]);
 
-        return '<a href="' . esc_url($url) . '">' . esc_html($label . $indicator) . '</a>';
+        return '<a class="bso-registration-sort-link' . ($isActive ? ' is-active' : '') . '" href="' . esc_url($url) . '">' .
+            esc_html($label) .
+            '<span class="bso-registration-sort-arrow">' . esc_html($indicator) . '</span>' .
+            '</a>';
     }
 
     private function renderPhoneLinks(string $phone): string {
@@ -509,6 +677,27 @@ class RegistrationAdminPage {
         if (!Capabilities::canManageSettings()) {
             wp_die(__('Onvoldoende rechten.', 'bso-survival'));
         }
+    }
+
+    /**
+     * @param array<string, int> $summary
+     */
+    private function buildGenerateSummaryMessage(array $summary, string $mode): string {
+        if ($mode === self::GENERATE_MODE_SYNC) {
+            return sprintf(
+                __('Score-records gesynchroniseerd. Aangemaakt: %d · Verwijderd: %d · Doel-assignments: %d', 'bso-survival'),
+                (int) ($summary['scores_created'] ?? 0),
+                (int) ($summary['scores_deleted'] ?? 0),
+                (int) ($summary['target_assignments'] ?? 0)
+            );
+        }
+
+        return sprintf(
+            __('Planning en score-records opnieuw opgebouwd. Timeslots: %d · Assignments: %d · Score-records: %d', 'bso-survival'),
+            (int) ($summary['timeslots_created'] ?? 0),
+            (int) ($summary['assignments_created'] ?? 0),
+            (int) ($summary['scores_created'] ?? 0)
+        );
     }
 
     private function extractMaxTeams(string $metaData): int {

@@ -56,6 +56,17 @@ class InterimTeamScoreService {
                 'part_id' => (int) ($selected['part_id'] ?? 0),
                 'team_id' => (int) ($selected['team_id'] ?? 0),
                 'timeslot_id' => (int) ($selected['timeslot_id'] ?? 0),
+                'timeslot_start_at' => (string) ($selected['timeslot_start_at'] ?? ''),
+                'timeslot_end_at' => (string) ($selected['timeslot_end_at'] ?? ''),
+                'timeslot_range' => (string) ($selected['timeslot_range'] ?? $this->formatTimeslotRange(
+                    (string) ($selected['timeslot_start_at'] ?? ''),
+                    (string) ($selected['timeslot_end_at'] ?? ''),
+                    (int) ($selected['timeslot_id'] ?? 0)
+                )),
+                'timeslot_sort' => (int) ($selected['timeslot_sort'] ?? $this->timeslotSortValue(
+                    (string) ($selected['timeslot_start_at'] ?? ''),
+                    (int) ($selected['timeslot_id'] ?? 0)
+                )),
                 'part_name' => (string) ($selected['part_name'] ?? ''),
                 'team_name' => (string) ($selected['team_name'] ?? ''),
                 'score_entry_id' => (int) ($selected['score_entry_id'] ?? 0),
@@ -123,7 +134,7 @@ class InterimTeamScoreService {
         $rule = $partRules[$partId] ?? null;
 
         $rows = $this->rankPartRows(
-            $this->findLatestTeamScoresForPart($eventId, $partId),
+            $this->findLatestAssignmentScoresForPart($eventId, $partId),
             $rule
         );
 
@@ -160,6 +171,36 @@ class InterimTeamScoreService {
     /**
      * @return array<int, array<string, mixed>>
      */
+    public function getTimeslotBoardRows(int $eventId, int $partId): array {
+        if ($eventId <= 0) {
+            throw new InvalidArgumentException('event_id must be a positive integer.');
+        }
+
+        if ($partId <= 0) {
+            throw new InvalidArgumentException('part_id must be a positive integer.');
+        }
+
+        $rows = $this->findLatestAssignmentScoresForPart($eventId, $partId);
+        usort($rows, static function (array $left, array $right): int {
+            $byTimeslot = ((int) ($left['timeslot_id'] ?? 0)) <=> ((int) ($right['timeslot_id'] ?? 0));
+            if ($byTimeslot !== 0) {
+                return $byTimeslot;
+            }
+
+            return ((int) ($left['assignment_id'] ?? 0)) <=> ((int) ($right['assignment_id'] ?? 0));
+        });
+
+        foreach ($rows as &$row) {
+            $row['is_completed'] = $this->isCompletedScore($row);
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     private function findLatestAssignmentScoresForTeam(int $eventId, int $teamId): array {
         global $wpdb;
         if (!is_object($wpdb)) {
@@ -177,6 +218,8 @@ class InterimTeamScoreService {
                     a.part_id,
                     a.team_id,
                     ts.id AS timeslot_id,
+                    ts.start_at AS timeslot_start_at,
+                    ts.end_at AS timeslot_end_at,
                     p.name AS part_name,
                     t.name AS team_name,
                     se.id AS score_entry_id,
@@ -215,6 +258,10 @@ class InterimTeamScoreService {
                 'part_id' => (int) ($result->part_id ?? 0),
                 'team_id' => (int) ($result->team_id ?? 0),
                 'timeslot_id' => (int) ($result->timeslot_id ?? 0),
+                'timeslot_start_at' => (string) ($result->timeslot_start_at ?? ''),
+                'timeslot_end_at' => (string) ($result->timeslot_end_at ?? ''),
+                'timeslot_range' => $this->formatTimeslotRange((string) ($result->timeslot_start_at ?? ''), (string) ($result->timeslot_end_at ?? ''), (int) ($result->timeslot_id ?? 0)),
+                'timeslot_sort' => $this->timeslotSortValue((string) ($result->timeslot_start_at ?? ''), (int) ($result->timeslot_id ?? 0)),
                 'part_name' => (string) ($result->part_name ?? ''),
                 'team_name' => (string) ($result->team_name ?? ''),
                 'score_entry_id' => (int) ($result->score_entry_id ?? 0),
@@ -250,6 +297,8 @@ class InterimTeamScoreService {
                     a.part_id,
                     a.team_id,
                     ts.id AS timeslot_id,
+                    ts.start_at AS timeslot_start_at,
+                    ts.end_at AS timeslot_end_at,
                     p.name AS part_name,
                     t.name AS team_name,
                     se.id AS score_entry_id,
@@ -288,6 +337,10 @@ class InterimTeamScoreService {
                 'part_id' => (int) ($result->part_id ?? 0),
                 'team_id' => (int) ($result->team_id ?? 0),
                 'timeslot_id' => (int) ($result->timeslot_id ?? 0),
+                'timeslot_start_at' => (string) ($result->timeslot_start_at ?? ''),
+                'timeslot_end_at' => (string) ($result->timeslot_end_at ?? ''),
+                'timeslot_range' => $this->formatTimeslotRange((string) ($result->timeslot_start_at ?? ''), (string) ($result->timeslot_end_at ?? ''), (int) ($result->timeslot_id ?? 0)),
+                'timeslot_sort' => $this->timeslotSortValue((string) ($result->timeslot_start_at ?? ''), (int) ($result->timeslot_id ?? 0)),
                 'part_name' => (string) ($result->part_name ?? ''),
                 'team_name' => (string) ($result->team_name ?? ''),
                 'score_entry_id' => (int) ($result->score_entry_id ?? 0),
@@ -474,5 +527,41 @@ class InterimTeamScoreService {
         $enteredByRole = (string) ($row['entered_by_role'] ?? '');
 
         return $scoreEntryId > 0 && $enteredByRole !== 'admin_init';
+    }
+
+    private function formatTimeslotRange(string $startAt, string $endAt, int $timeslotId): string {
+        $startTs = $this->parseUtcDateTime($startAt);
+        $endTs = $this->parseUtcDateTime($endAt);
+
+        if ($startTs > 0 && $endTs > 0 && $endTs > $startTs) {
+            return gmdate('H:i', $startTs) . ' - ' . gmdate('H:i', $endTs);
+        }
+
+        return $timeslotId > 0
+            ? sprintf('Tijdslot %d', $timeslotId)
+            : 'Geen tijdslot';
+    }
+
+    private function timeslotSortValue(string $startAt, int $timeslotId): int {
+        $timestamp = $this->parseUtcDateTime($startAt);
+        if ($timestamp > 0) {
+            return $timestamp;
+        }
+
+        return $timeslotId;
+    }
+
+    private function parseUtcDateTime(string $value): int {
+        $value = trim($value);
+        if ($value === '') {
+            return 0;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $value, new \DateTimeZone('UTC'));
+        if ($date === false) {
+            return 0;
+        }
+
+        return $date->getTimestamp();
     }
 }

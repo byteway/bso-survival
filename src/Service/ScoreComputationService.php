@@ -10,6 +10,9 @@ class ScoreComputationService {
     /** @var PartRuleRepositoryInterface */
     private $rules;
 
+    /** @var array<int, int> */
+    private $autoCreatedPartIds = [];
+
     public function __construct(PartRuleRepositoryInterface $rules) {
         $this->rules = $rules;
     }
@@ -71,6 +74,49 @@ class ScoreComputationService {
     }
 
     /**
+     * @param array<int, float|int> $teamNormalizedPoints
+     * @return array<int, int>
+     */
+    public function positionProposalFromNormalizedForPart(int $partId, array $teamNormalizedPoints): array {
+        $rule = $this->requireRule($partId);
+        $method = $this->requireMethod($rule->scoring_mode ?? '');
+        $config = $this->decodeConfig($rule->scoring_config ?? null);
+
+        $normalized = [];
+        foreach ($teamNormalizedPoints as $teamId => $value) {
+            $normalized[(int) $teamId] = (float) $value;
+        }
+
+        $positions = $method->generatePositionProposal($normalized);
+
+        if (function_exists('apply_filters')) {
+            $positions = apply_filters(
+                'bso_survival_position_proposal',
+                $positions,
+                $partId,
+                $teamNormalizedPoints,
+                $rule,
+                $method,
+                $config
+            );
+        }
+
+        return is_array($positions) ? $positions : [];
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    public function consumeAutoCreatedPartIds(): array {
+        $ids = array_values(array_unique(array_map('intval', $this->autoCreatedPartIds)));
+        $this->autoCreatedPartIds = [];
+
+        return array_values(array_filter($ids, static function (int $id): bool {
+            return $id > 0;
+        }));
+    }
+
+    /**
      * @return object
      */
     private function requireRule(int $partId) {
@@ -80,7 +126,27 @@ class ScoreComputationService {
 
         $rule = $this->rules->findByPartId($partId);
         if ($rule === null) {
-            throw new RuntimeException(sprintf('No PartRule configured for part %d.', $partId));
+            $created = $this->rules->upsertForPart(
+                $partId,
+                'points',
+                'points',
+                'manual_referee',
+                json_encode([
+                    'normalization_curve' => 'linear',
+                    'max_points' => 100,
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{"normalization_curve":"linear","max_points":100}'
+            );
+
+            if (!$created) {
+                throw new RuntimeException(sprintf('No PartRule configured for part %d.', $partId));
+            }
+
+            $this->autoCreatedPartIds[] = $partId;
+
+            $rule = $this->rules->findByPartId($partId);
+            if ($rule === null) {
+                throw new RuntimeException(sprintf('No PartRule configured for part %d.', $partId));
+            }
         }
 
         return $rule;

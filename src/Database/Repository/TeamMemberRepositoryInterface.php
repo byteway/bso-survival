@@ -14,4 +14,16 @@ interface TeamMemberRepositoryInterface {
      * @return int
      */
     public function createBatch(array $rows): int;
+
+    /**
+     * @return array<int, object>
+     */
+    public function findByTeamId(int $teamId): array;
+
+    public function deleteByTeamId(int $teamId): int;
+
+    /**
+     * @param array<int, string> $names
+     */
+    public function replaceForTeam(int $teamId, array $names): int;
 }

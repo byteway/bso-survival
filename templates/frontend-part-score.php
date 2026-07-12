@@ -5,11 +5,16 @@
  * @var string $title
  * @var object $event
  * @var object $part
+ * @var array<int, object> $parts
+ * @var int $partId
  * @var array<string, mixed> $overview
  * @var bool $canEditScores
  */
 
 $rows = is_array($overview['rows'] ?? null) ? $overview['rows'] : [];
+$parts = is_array($parts ?? null) ? $parts : [];
+$partId = isset($partId) ? (int) $partId : (int) ($part->id ?? 0);
+$pageId = function_exists('get_queried_object_id') ? (int) get_queried_object_id() : 0;
 $rawDefaultDir = isset($overview['sort']['raw_default_dir']) ? (string) $overview['sort']['raw_default_dir'] : 'desc';
 if ($rawDefaultDir !== 'asc' && $rawDefaultDir !== 'desc') {
     $rawDefaultDir = 'desc';
@@ -22,6 +27,7 @@ $restNonce = function_exists('wp_create_nonce') ? (string) wp_create_nonce('wp_r
 
 $sortableColumns = [
     'team' => ['field' => 'team_name', 'type' => 'text'],
+    'timeslot' => ['field' => 'timeslot_sort', 'type' => 'number'],
     'raw' => ['field' => 'raw_value', 'type' => 'number'],
     'joker' => ['field' => 'joker_applied', 'type' => 'number'],
     'position' => ['field' => 'provisional_position', 'type' => 'number'],
@@ -32,11 +38,11 @@ if ($canEditScores) {
     $sortableColumns['interim'] = ['field' => 'interim_score', 'type' => 'number'];
 }
 
-$activeSortBy = isset($_GET['part_sort_by']) ? sanitize_key((string) $_GET['part_sort_by']) : 'position';
+$activeSortBy = isset($_GET['part_sort_by']) ? sanitize_key((string) $_GET['part_sort_by']) : 'timeslot';
 $activeSortDir = isset($_GET['part_sort_dir']) && strtolower((string) $_GET['part_sort_dir']) === 'desc' ? 'desc' : 'asc';
 
 if (!isset($sortableColumns[$activeSortBy])) {
-    $activeSortBy = 'position';
+    $activeSortBy = 'timeslot';
 }
 
 $activeSortConfig = $sortableColumns[$activeSortBy];
@@ -107,8 +113,31 @@ $positionRuleText = $rawDefaultDir === 'asc'
 <section class="bso-survival-part-score<?php echo $canEditScores ? ' bso-survival-part-score--editable' : ''; ?>" id="<?php echo esc_attr($editorId); ?>" data-part-score-editor="1" data-can-edit="<?php echo $canEditScores ? '1' : '0'; ?>" data-event-id="<?php echo (int) $event->id; ?>" data-rest-update-base="<?php echo esc_attr($restUpdateBase); ?>" data-rest-nonce="<?php echo esc_attr($restNonce); ?>">
     <header class="bso-survival-part-score__header">
         <h2><?php echo esc_html($title); ?></h2>
+        <?php if ($parts !== []) : ?>
+            <form class="bso-survival-score-selector" method="get">
+                <?php if ($pageId > 0) : ?>
+                    <input type="hidden" name="page_id" value="<?php echo $pageId; ?>" />
+                <?php endif; ?>
+                <input type="hidden" name="event_id" value="<?php echo (int) $event->id; ?>" />
+                <label for="bso-part-score-part-id"><?php esc_html_e('Onderdeel', 'bso-survival'); ?></label>
+                <select id="bso-part-score-part-id" name="part_id" onchange="this.form.submit()">
+                    <?php foreach ($parts as $partOption) : ?>
+                        <?php $optionPartId = (int) ($partOption->id ?? 0); ?>
+                        <option value="<?php echo $optionPartId; ?>"<?php echo $optionPartId === $partId ? ' selected="selected"' : ''; ?>>
+                            <?php echo esc_html((string) ($partOption->name ?? '')); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <noscript>
+                    <button type="submit" class="button button-primary"><?php esc_html_e('Toon onderdeel', 'bso-survival'); ?></button>
+                </noscript>
+            </form>
+        <?php endif; ?>
         <p class="bso-survival-part-score__meta">
             <?php echo esc_html(sprintf('Event #%d - %s | Onderdeel: %s', (int) $event->id, (string) $event->name, (string) $part->name)); ?>
+        </p>
+        <p class="bso-survival-part-score__permission-note <?php echo $canEditScores ? 'is-editor' : 'is-readonly'; ?>">
+            <?php echo esc_html($canEditScores ? __('Rol: scorebeheerder (bewerken toegestaan).', 'bso-survival') : __('Rol: alleen-lezen (bewerken niet toegestaan).', 'bso-survival')); ?>
         </p>
     </header>
 
@@ -129,6 +158,7 @@ $positionRuleText = $rawDefaultDir === 'asc'
             <table class="bso-survival-part-score__table">
                 <thead>
                     <tr>
+                        <th><a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('timeslot')); ?>"><?php esc_html_e('Tijdsrange', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('timeslot')); ?></a></th>
                         <th><a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('team')); ?>"><?php esc_html_e('Team', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('team')); ?></a></th>
                         <th><a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('raw')); ?>"><?php esc_html_e('Ruwe score', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('raw')); ?></a></th>
                         <?php if ($canEditScores) : ?>
@@ -142,12 +172,24 @@ $positionRuleText = $rawDefaultDir === 'asc'
                     </tr>
                 </thead>
                 <tbody>
+                    <?php $previousTimeslotGroup = ''; ?>
+                    <?php $hasRenderedRow = false; ?>
                     <?php foreach ($rows as $row) : ?>
                         <?php
                         $scoreEntryId = (int) ($row['score_entry_id'] ?? 0);
                         $isRowEditable = $canEditScores && $scoreEntryId > 0;
+                        $timeslotLabel = (string) ($row['timeslot_range'] ?? __('Geen tijdslot', 'bso-survival'));
+                        $isTimeslotBreak = $hasRenderedRow && $activeSortBy === 'timeslot' && $timeslotLabel !== $previousTimeslotGroup;
+                        $rowClasses = [];
+                        if ($isRowEditable) {
+                            $rowClasses[] = 'bso-part-score-row-clickable';
+                        }
+                        if ($isTimeslotBreak) {
+                            $rowClasses[] = 'bso-part-score-row--timeslot-break';
+                        }
                         ?>
-                        <tr<?php echo $isRowEditable ? ' class="bso-part-score-row-clickable"' : ''; ?> data-score-entry-id="<?php echo $scoreEntryId; ?>" data-team-name="<?php echo esc_attr((string) ($row['team_name'] ?? '')); ?>" data-raw-value="<?php echo esc_attr((string) ($row['raw_value'] ?? '0')); ?>" data-bonus-points="<?php echo esc_attr((string) ($row['bonus_points'] ?? '0')); ?>" data-joker-applied="<?php echo !empty($row['joker_applied']) ? '1' : '0'; ?>" data-editable="<?php echo $isRowEditable ? '1' : '0'; ?>">
+                        <tr<?php echo $rowClasses !== [] ? ' class="' . esc_attr(implode(' ', $rowClasses)) . '"' : ''; ?> data-score-entry-id="<?php echo $scoreEntryId; ?>" data-team-name="<?php echo esc_attr((string) ($row['team_name'] ?? '')); ?>" data-timeslot-label="<?php echo esc_attr($timeslotLabel); ?>" data-raw-value="<?php echo esc_attr((string) ($row['raw_value'] ?? '0')); ?>" data-bonus-points="<?php echo esc_attr((string) ($row['bonus_points'] ?? '0')); ?>" data-joker-applied="<?php echo !empty($row['joker_applied']) ? '1' : '0'; ?>" data-editable="<?php echo $isRowEditable ? '1' : '0'; ?>">
+                            <td><span class="bso-survival-timeslot-tag"><?php echo esc_html($timeslotLabel); ?></span></td>
                             <td><?php echo esc_html((string) $row['team_name']); ?></td>
                             <td><?php echo esc_html(!empty($row['is_completed']) ? number_format((float) $row['raw_value'], 4, '.', '') : '-'); ?></td>
                             <?php if ($canEditScores) : ?>
@@ -159,6 +201,8 @@ $positionRuleText = $rawDefaultDir === 'asc'
                                 <td><?php echo esc_html((string) (int) ($row['interim_score'] ?? 0)); ?></td>
                             <?php endif; ?>
                         </tr>
+                        <?php $previousTimeslotGroup = $timeslotLabel; ?>
+                        <?php $hasRenderedRow = true; ?>
                     <?php endforeach; ?>
                 </tbody>
             </table>

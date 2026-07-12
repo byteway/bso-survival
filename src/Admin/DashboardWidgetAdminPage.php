@@ -144,6 +144,7 @@ class DashboardWidgetAdminPage {
             $widgetIds = DashboardWidgetRegistry::getSectionWidgetIds($section);
             $enabledIds = $layout[$section] ?? $widgetIds;
             $orderLookup = array_flip($enabledIds);
+            $widthsByWidget = isset($layout['widths'][$section]) && is_array($layout['widths'][$section]) ? $layout['widths'][$section] : [];
 
             echo '<div class="bso-widget-admin-section" data-section="' . esc_attr($section) . '">';
             echo '<h2>' . esc_html(ucfirst($section)) . '</h2>';
@@ -151,7 +152,7 @@ class DashboardWidgetAdminPage {
             echo '<div class="notice notice-warning inline bso-widget-section-warning" style="display:none;"><p>' . esc_html__('Deze sectie heeft geen actieve widgets. Frontend toont deze sectie leeg.', 'bso-survival') . '</p></div>';
 
             echo '<table class="widefat striped bso-widget-admin-table" style="max-width:900px;">';
-            echo '<thead><tr><th>' . esc_html__('Actief', 'bso-survival') . '</th><th>' . esc_html__('Widget', 'bso-survival') . '</th><th>' . esc_html__('Volgorde', 'bso-survival') . '</th></tr></thead><tbody>';
+            echo '<thead><tr><th>' . esc_html__('Actief', 'bso-survival') . '</th><th>' . esc_html__('Widget', 'bso-survival') . '</th><th>' . esc_html__('Volgorde', 'bso-survival') . '</th><th>' . esc_html__('Breedte', 'bso-survival') . '</th></tr></thead><tbody>';
 
             foreach ($widgetIds as $index => $widgetId) {
                 $widget = DashboardWidgetRegistry::get($section, $widgetId);
@@ -161,11 +162,20 @@ class DashboardWidgetAdminPage {
 
                 $isEnabled = in_array($widgetId, $enabledIds, true);
                 $position = isset($orderLookup[$widgetId]) ? (int) $orderLookup[$widgetId] + 1 : $index + 1;
+                $currentWidth = isset($widthsByWidget[$widgetId]) && is_string($widthsByWidget[$widgetId])
+                    ? (string) $widthsByWidget[$widgetId]
+                    : DashboardWidgetLayoutService::getDefaultWidthForWidget($widgetId);
 
                 echo '<tr class="bso-widget-row" draggable="true" data-widget-id="' . esc_attr($widgetId) . '">';
                 echo '<td><label><input type="checkbox" name="layout[' . esc_attr($section) . '][]" value="' . esc_attr($widgetId) . '" ' . checked($isEnabled, true, false) . ' /> ' . esc_html__('Inschakelen', 'bso-survival') . '</label></td>';
                 echo '<td><button type="button" class="button-link bso-widget-drag-handle" aria-label="' . esc_attr__('Sleep om te verplaatsen', 'bso-survival') . '">&#x2630;</button> ' . esc_html($widget->getTitle()) . '<br /><small>' . esc_html($widgetId) . '</small></td>';
                 echo '<td><input class="bso-widget-order-input" type="number" min="1" step="1" name="order[' . esc_attr($section) . '][' . esc_attr($widgetId) . ']" value="' . esc_attr((string) $position) . '" /></td>';
+                echo '<td><select class="bso-widget-width-select" name="width[' . esc_attr($section) . '][' . esc_attr($widgetId) . ']">';
+                foreach (DashboardWidgetLayoutService::getWidthOptions() as $option) {
+                    $selected = selected($currentWidth, (string) $option['value'], false);
+                    echo '<option value="' . esc_attr((string) $option['value']) . '" ' . $selected . '>' . esc_html((string) $option['label']) . '</option>';
+                }
+                echo '</select></td>';
                 echo '</tr>';
             }
 
@@ -188,11 +198,14 @@ class DashboardWidgetAdminPage {
     private function extractLayoutFromRequest(): array {
         $rawLayout = isset($_POST['layout']) && is_array($_POST['layout']) ? $_POST['layout'] : [];
         $rawOrder = isset($_POST['order']) && is_array($_POST['order']) ? $_POST['order'] : [];
+        $rawWidth = isset($_POST['width']) && is_array($_POST['width']) ? $_POST['width'] : [];
 
         $layout = [];
+        $widths = [];
         foreach (DashboardWidgetRegistry::getSectionIds() as $section) {
             $sectionEnabled = isset($rawLayout[$section]) && is_array($rawLayout[$section]) ? $rawLayout[$section] : [];
             $sectionOrder = isset($rawOrder[$section]) && is_array($rawOrder[$section]) ? $rawOrder[$section] : [];
+            $sectionWidth = isset($rawWidth[$section]) && is_array($rawWidth[$section]) ? $rawWidth[$section] : [];
 
             $ranked = [];
             foreach ($sectionEnabled as $index => $widgetId) {
@@ -220,7 +233,17 @@ class DashboardWidgetAdminPage {
             $layout[$section] = array_values(array_map(static function (array $item): string {
                 return $item['id'];
             }, $ranked));
+
+            $widths[$section] = [];
+            foreach (DashboardWidgetRegistry::getSectionWidgetIds($section) as $widgetId) {
+                $rawWidgetWidth = isset($sectionWidth[$widgetId]) ? (string) $sectionWidth[$widgetId] : '';
+                $widths[$section][$widgetId] = in_array($rawWidgetWidth, array_column(DashboardWidgetLayoutService::getWidthOptions(), 'value'), true)
+                    ? $rawWidgetWidth
+                    : DashboardWidgetLayoutService::getDefaultWidthForWidget($widgetId);
+            }
         }
+
+        $layout['widths'] = $widths;
 
         return $layout;
     }

@@ -37,7 +37,9 @@ class DashboardWidgetLayoutRestControllerTest extends TestCase {
 
         $this->assertTrue($response['success']);
         $this->assertSame(11, $response['data']['event_id']);
-        $this->assertSame(['team_ranking'], $response['data']['layout']['main']);
+        $this->assertSame(['team_ranking', 'message_widget'], $response['data']['layout']['main']);
+        $this->assertSame([], $response['data']['layout']['operations']);
+        $this->assertSame('1/4', $response['data']['layout']['widths']['main']['team_ranking']);
     }
 
     /**
@@ -53,12 +55,17 @@ class DashboardWidgetLayoutRestControllerTest extends TestCase {
                 'main' => ['reporting_status', 'team_ranking'],
                 'operations' => ['contact_finder'],
             ],
+            'widths' => [
+                'main' => ['reporting_status' => '1/5', 'team_ranking' => '3/4'],
+                'operations' => ['contact_finder' => '1'],
+            ],
         ]));
 
         $this->assertTrue($response['success']);
         $this->assertTrue($response['data']['updated']);
         $this->assertSame(['reporting_status', 'team_ranking'], $response['data']['layout']['main']);
         $this->assertSame(['contact_finder'], $response['data']['layout']['operations']);
+        $this->assertSame('3/4', $response['data']['layout']['widths']['main']['team_ranking']);
     }
 
     /**

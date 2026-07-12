@@ -200,3 +200,4 @@ Laatste documentatie-update: 7 juli 2026.
 - [bso_survival_event_overview title="Gecombineerd Overzicht Event 2" event_id="2"]
 - [bso_survival_event_overview title="Compact Overzicht Event 2" event_id="2" compact="yes"]
 - [bso_survival_event_summary title="Compact Overzicht Event 2" event_id="2"]
+- [bso_survival_timeslot_board title="Tijdslot overzicht Event 2" event_id="2" part_id="8"]

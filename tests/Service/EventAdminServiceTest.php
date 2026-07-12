@@ -171,6 +171,28 @@ class EventAdminServiceTest extends TestCase {
     }
 
     /** @test */
+    public function it_allows_idempotent_delete_for_already_deleted_event(): void {
+        $events = new InMemoryEventReadRepository();
+        $events->seed((object) [
+            'id' => 16,
+            'name' => 'Event 16',
+            'status' => 'verwijderd',
+        ]);
+
+        $eventAdmin = new InMemoryEventAdminRepository($events);
+        $parts = new InMemoryPartAdminRepository();
+        $parts->seed((object) ['id' => 601, 'name' => 'Touwhangen', 'event_id' => 16]);
+
+        $service = new EventAdminService($events, $eventAdmin, $parts, new InMemoryEventPublicationRepository());
+        $result = $service->deleteEventFromAdmin(16);
+
+        $this->assertSame('verwijderd', $result['status']);
+        $this->assertTrue((bool) ($result['already_deleted'] ?? false));
+        $this->assertSame(1, (int) ($result['detached_parts'] ?? 0));
+        $this->assertNull($parts->findOne(601)->event_id ?? null);
+    }
+
+    /** @test */
     public function it_rejects_empty_event_name_on_create(): void {
         $service = new EventAdminService(
             new InMemoryEventReadRepository(),

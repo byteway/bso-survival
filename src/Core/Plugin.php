@@ -55,6 +55,7 @@ use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\FrontendScoreSubmissionService;
 use BSO\Survival\Service\OutboxProcessorService;
+use BSO\Survival\Service\PartConfirmationService;
 use BSO\Survival\Service\PartAdminService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
 use BSO\Survival\Service\PartService;
@@ -65,6 +66,7 @@ use BSO\Survival\Service\ScoreComputationService;
 use BSO\Survival\Service\ScoreEntryService;
 use BSO\Survival\Service\TeamService;
 use BSO\Survival\Service\TeamRegistrationService;
+use BSO\Survival\Service\InterimTeamScoreService;
 use BSO\Survival\Service\WpMailer;
 use BSO\Survival\Service\RegistrationWindowService;
 use BSO\Survival\Service\RankingService;
@@ -102,6 +104,7 @@ class Plugin {
         add_action('admin_post_bso_survival_event_part_rule_save', [$this, 'handle_event_part_rule_save']);
         add_action('admin_post_bso_survival_event_delete', [$this, 'handle_event_delete']);
         add_action('admin_post_bso_survival_registration_team_update', [$this, 'handle_registration_team_update']);
+        add_action('admin_post_bso_survival_registration_generate_scores', [$this, 'handle_registration_generate_scores']);
         add_action('admin_post_bso_survival_save_access_overrides', [$this, 'handle_access_override_save']);
         add_action('rest_api_init', [$this, 'register_rest_routes']);
         add_action('init', [$this, 'schedule_email_outbox_processing']);
@@ -261,6 +264,10 @@ class Plugin {
 
     public function handle_registration_team_update(): void {
         $this->buildRegistrationAdminPage()->handleTeamUpdate();
+    }
+
+    public function handle_registration_generate_scores(): void {
+        $this->buildRegistrationAdminPage()->handleGeneratePlanningScores();
     }
 
     public function handle_access_override_save(): void {
@@ -450,9 +457,15 @@ class Plugin {
     private function buildRegistrationAdminPage(): RegistrationAdminPage {
         $eventService = new EventService(new EventRepository());
         $teamService = new TeamService(new TeamRepository(), new TeamMemberRepository());
+        $eventAdminService = new EventAdminService(
+            new EventRepository(),
+            new EventAdminRepository(),
+            new PartAdminRepository(),
+            new EventPublicationRepository()
+        );
         $windowService = new RegistrationWindowService(new RegistrationWindowRepository());
 
-        return new RegistrationAdminPage($eventService, $teamService, $windowService);
+        return new RegistrationAdminPage($eventService, $teamService, $eventAdminService, $windowService);
     }
 
     private function buildScoreEntryAdminPage(): ScoreEntryAdminPage {
@@ -557,7 +570,8 @@ class Plugin {
             new ScoreEntryService(
                 new ScoreEntryRepository(),
                 new ScoreComputationService(new PartRuleRepository())
-            )
+            ),
+            $this->buildPartConfirmationService()
         );
 
         return new FrontendScoreRestController($scoreService);
@@ -568,7 +582,7 @@ class Plugin {
     }
 
     private function buildAdminScoreV2RestController(): AdminScoreV2RestController {
-        return new AdminScoreV2RestController($this->buildAdminScoreService());
+        return new AdminScoreV2RestController($this->buildAdminScoreService(), $this->buildPartConfirmationService());
     }
 
     private function buildDashboardMessageRestController(): DashboardMessageRestController {
@@ -607,7 +621,18 @@ class Plugin {
             $entries,
             $scoreEntryService,
             $ranking,
-            $audit
+            $audit,
+            $this->buildPartConfirmationService()
+        );
+    }
+
+    private function buildPartConfirmationService(): PartConfirmationService {
+        return new PartConfirmationService(
+            new InterimTeamScoreService(new PartRuleRepository()),
+            new AssignmentRepository(),
+            new TeamService(new TeamRepository()),
+            new EventPublicationService(new EventPublicationRepository()),
+            $this->buildPublicationNotificationService()
         );
     }
 }

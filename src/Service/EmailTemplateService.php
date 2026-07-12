@@ -80,7 +80,7 @@ class EmailTemplateService {
         return [
             'template_key' => self::TEMPLATE_PUBLICATION_RESULT,
             'subject' => '{headline}',
-            'html_body' => '<h2>{headline}</h2><p>De eindstand van event #{event_id} is gepubliceerd op {published_at}.</p><h3>Top 3</h3>{top_3_html}',
+            'html_body' => '<h2>{headline}</h2><p>De eindstand van event #{event_id} is gepubliceerd op {published_at}.</p><h3>Top 3</h3>{top_3_html}<h3>Volledige eindstand</h3>{final_standings_html}<p>{appreciation_message}</p>',
             'is_active' => 1,
         ];
     }
@@ -139,7 +139,7 @@ class EmailTemplateService {
         }
 
         if ($templateKey === self::TEMPLATE_PUBLICATION_RESULT) {
-            return ['headline', 'event_id', 'published_at', 'top_3_html'];
+            return ['headline', 'event_id', 'published_at', 'top_3_html', 'final_standings_html', 'appreciation_message'];
         }
 
         return [];

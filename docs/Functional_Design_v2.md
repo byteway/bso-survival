@@ -1,6 +1,6 @@
 # Functioneel Ontwerp v2 - BSO Survival
 
-> Statusnotitie 7 juli 2026: de read-only shortcode-laag uit dit ontwerp is nu deels operationeel met dashboard, onderdelen, teams, gecombineerd overzicht en compacte overzichtsvariant.
+> Statusnotitie 12 juli 2026: de read-only shortcode-laag uit dit ontwerp is nu deels operationeel met dashboard, onderdelen, teams, gecombineerd overzicht, compacte overzichtsvariant en tijdslot-overzicht met part-selectie.
 
 ## Inhoudsopgave
 
@@ -257,6 +257,7 @@ Acceptatiecriteria:
 - Team mag joker maximaal eenmalig gebruiken per survivaldag en op slechts één onderdeel.
 - Joker-status wordt gecontroleerd bij opslaan.
 - Registratie bevat wie de joker heeft bevestigd en wanneer.
+- Score-invoer ondersteunt daarnaast een numeriek bonusveld per score-entry (>= 0) voor uitzonderingen en tie-resolutie.
 - De joker verdubbelt het behaalde onderdeelresultaat en beïnvloedt daarmee zowel de voorgestelde onderdeelplaatsing als de totaalscore.
 
 **US-D4 - Fallback-score-invoer door leiding**
@@ -274,6 +275,7 @@ Als scheidsrechter wil ik voor mijn onderdeel samen met mijn collega-scheidsrech
 
 Acceptatiecriteria:
 - Het systeem stelt op basis van tijd, punten of afstand automatisch een plaatsing voor.
+- Bij gelijke ruwe uitkomst gebruikt het systeem bonuspunten als eerste tie-break (hoogste bonus eerst).
 - De twee scheidsrechters van het onderdeel bepalen gezamenlijk de definitieve volgorde.
 - Beide scheidsrechters zijn verantwoordelijk voor de juistheid van de eindplaatsing.
 - Bij gelijke uitkomst worden teams door beide scheidsrechters samen gerangschikt.
@@ -849,6 +851,42 @@ Beheerder kan volgende waarden per event instellen:
 | 4 | Registreer joker indien ingezet |
 | 5 | Sla op en bevestig zichtbaar resultaat |
 
+### Simulatie test met demo-data (beheer)
+
+Om het dagverloop voorspelbaar te testen zonder handmatige score-invoer per onderdeel, ondersteunt beheer een operationele demo-seeding flow via WP-CLI.
+
+Functionele afspraken:
+
+- Demo-seeding werkt op bestaande score-records (update-only op `raw_value`).
+- De flow is idempotent: herhaald uitvoeren maakt geen extra score-entries.
+- Met `--slot` kan beheer specifieke tijdslotmomenten simuleren (bijv. 1, 6, 9, 12).
+- Zonder `--slot` worden alle tijdsloten van het geselecteerde event geupdate.
+
+Doel:
+
+- gecontroleerd simuleren van tussentijdse stand op verschillende momenten van de dag;
+- regressietesten op team- en onderdeelscore-overzichten;
+- sneller acceptatietesten van statusovergangen en dashboardweergaven.
+
+### Tussentijdse scorelogica in frontend overzichten
+
+- Voor ieder onderdeel wordt de teampositie opnieuw berekend op basis van de laatst bekende ruwe score per team.
+- De sorteervolgorde volgt de onderdeelregel (`lower_raw_wins` / `higher_raw_wins`, met `time` als lagere score wint).
+- De zichtbare positie blijft de originele rangorde (1, 2, 3, ...).
+- Voor tussentijdse weging wordt intern een omgekeerde positiewaarde gebruikt (beste rij N, laagste rij 1).
+- Daarna wordt per team een tussentijdse waarde bepaald met:
+
+$$
+	ext{tussentijdse\_score} = \text{positie} \times 10 \times \text{jokerfactor}
+$$
+
+waarbij:
+
+- jokerfactor $= 1$ bij geen joker;
+- jokerfactor $= 2$ bij joker.
+
+- Het teamoverzicht toont deze waarde per onderdeel en berekent de tussentijdse eindscore als som van alle onderdeelwaarden.
+
 ### Leiding-dashboard tijdens event
 
 | Onderdeel | Doel |
@@ -1118,6 +1156,21 @@ $$
 $$
 tussenstand_{team} = \sum rankpunten_{team, afgeronde\_onderdelen}
 $$
+
+Huidige implementatieregel voor de voorlopige positie per onderdeel:
+- alleen assignments met een daadwerkelijk ingevoerde score tellen mee in de voorlopige rangorde;
+- geinitialiseerde placeholder-scores (`admin_init`) tellen nog niet mee en tonen positie `0`;
+- de primaire ordening gebruikt de genormaliseerde score van het onderdeel;
+- bij gelijke genormaliseerde score bepaalt `tiebreaker_mode` de voorlopige volgorde:
+  - `manual_referee`: stabiele voorlopige volgorde, definitieve correctie blijft aan scheidsrechters;
+  - `lower_raw_wins`: lagere ruwe score gaat voor;
+  - `higher_raw_wins`: hogere ruwe score gaat voor.
+
+Voor frontend-inzicht per team is hiervoor de shortcode `bso_survival_team_score` beschikbaar. Deze toont per assignment het onderdeel, de ruwe score, jokerstatus, voorlopige positie en het tijdslot.
+
+Voor frontend-inzicht per onderdeel is daarnaast de shortcode `bso_survival_part_score` beschikbaar. Deze toont alle assignments van één onderdeel met team, ruwe score, jokerstatus en voorlopige positie. In dit onderdeel-overzicht worden ook open of nog niet afgeronde score-records meegenomen; die blijven onderaan staan doordat hun genormaliseerde score op `0` staat.
+
+Voor operationeel inzicht in de planning is daarnaast de shortcode `bso_survival_timeslot_board` beschikbaar. Deze toont per tijdslot welke teams tegenover elkaar staan voor een geselecteerd onderdeel en geeft per team een status-led: groen als er al een score bestaat, grijs als er nog geen score is.
 
 De leiding berekent daarna de tussenstand en eindstand op basis van de definitieve onderdeelplaatsingen van alle onderdelen.
 

@@ -57,6 +57,26 @@ class DashboardOverviewServiceTest extends TestCase {
         $service->getOverviewForEvent(999);
     }
 
+    /** @test */
+    public function it_lists_only_upcoming_active_events_for_dashboard_selector(): void {
+        $service = $this->buildService();
+
+        $events = $service->listUpcomingActiveEvents(5);
+
+        $this->assertCount(2, $events);
+        $this->assertSame(3, (int) $events[0]->id);
+        $this->assertSame(4, (int) $events[1]->id);
+    }
+
+    /** @test */
+    public function it_resolves_first_upcoming_active_event_as_dashboard_default(): void {
+        $service = $this->buildService();
+
+        $defaultEventId = $service->resolveDefaultDashboardEventId();
+
+        $this->assertSame(3, $defaultEventId);
+    }
+
     private function buildService(): DashboardOverviewService {
         return new DashboardOverviewService(
             new EventService(new DashboardFakeEventRepository()),
@@ -70,7 +90,8 @@ class DashboardFakeEventRepository implements EventRepositoryInterface {
     /** @return array<int, object> */
     public function findAll(): array {
         return [
-            (object) ['id' => 1, 'status' => 'gepland'],
+            (object) ['id' => 1, 'status' => 'gepland', 'event_date' => gmdate('Y-m-d')],
+            (object) ['id' => 2, 'status' => 'verwijderd', 'event_date' => gmdate('Y-m-d')],
         ];
     }
 
@@ -81,7 +102,15 @@ class DashboardFakeEventRepository implements EventRepositoryInterface {
 
     /** @return array<int, object> */
     public function findByStatus(string $status): array {
-        return [];
+        if ($status !== 'actief') {
+            return [];
+        }
+
+        return [
+            (object) ['id' => 7, 'status' => 'actief', 'event_date' => gmdate('Y-m-d', strtotime('-1 day'))],
+            (object) ['id' => 4, 'status' => 'actief', 'event_date' => gmdate('Y-m-d', strtotime('+1 day'))],
+            (object) ['id' => 3, 'status' => 'actief', 'event_date' => gmdate('Y-m-d')],
+        ];
     }
 
     public function updateStatus(int $id, string $status): bool {

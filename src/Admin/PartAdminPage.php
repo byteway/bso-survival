@@ -164,6 +164,20 @@ class PartAdminPage {
             .bso-parts-toolbar{display:flex;align-items:center;gap:10px;margin:10px 0 14px 0;flex-wrap:wrap;}
             .bso-parts-toolbar-actions{display:inline-flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:0;}
             .bso-parts-filterbox{border:1px solid #dcdcde;border-radius:4px;padding:10px 12px 12px;background:#fff;margin:0 0 12px 0;}
+            .bso-parts-table td,.bso-parts-table th{vertical-align:middle;}
+            .bso-parts-row-clickable{cursor:pointer;}
+            .bso-parts-row-clickable:hover td{background:#f6f7ff;}
+            .bso-parts-row-clickable:focus td{outline:2px solid #93c5fd;outline-offset:-2px;}
+            .bso-parts-row-clickable.is-selected td{background:#eef4ff;}
+            .bso-parts-row-clickable td:first-child{position:relative;padding-left:24px;}
+            .bso-parts-row-clickable td:first-child::before{content:"↗";position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:0;color:#64748b;transition:opacity .15s ease,color .15s ease;}
+            .bso-parts-row-clickable:hover td:first-child::before,
+            .bso-parts-row-clickable:focus td:first-child::before,
+            .bso-parts-row-clickable.is-selected td:first-child::before{opacity:1;color:#1d4ed8;}
+            .bso-parts-row-clickable.is-selected td:first-child{box-shadow:inset 4px 0 0 #1d4ed8;font-weight:600;}
+            .bso-parts-sort-link{text-decoration:none;display:inline-flex;align-items:center;gap:4px;}
+            .bso-parts-sort-arrow{font-size:12px;opacity:1;color:#9ca3af;line-height:1;min-width:10px;display:inline-block;}
+            .bso-parts-sort-link.is-active .bso-parts-sort-arrow{color:#111827;}
             .bso-parts-panel{position:fixed;top:32px;right:0;width:360px;height:calc(100vh - 32px);background:#fff;border-left:1px solid #dcdcde;z-index:999;padding:14px 16px 16px 16px;overflow:auto;box-shadow:-6px 0 20px rgba(0,0,0,.08);}
             .bso-parts-panel-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
             .bso-parts-panel-title{font-size:20px;font-weight:600;margin:0;}
@@ -214,7 +228,7 @@ class PartAdminPage {
         echo '</form>';
         echo '</div>';
 
-        echo '<table class="widefat striped"><thead><tr>';
+        echo '<table class="widefat striped bso-parts-table"><thead><tr>';
         echo '<th>' . $this->renderSortLink('id', __('ID', 'bso-survival'), $sortBy, $sortDirection, $selectedPartId, $search, $panel) . '</th>';
         echo '<th>' . $this->renderSortLink('name', __('Naam', 'bso-survival'), $sortBy, $sortDirection, $selectedPartId, $search, $panel) . '</th>';
         echo '<th>' . $this->renderSortLink('status', __('Status', 'bso-survival'), $sortBy, $sortDirection, $selectedPartId, $search, $panel) . '</th>';
@@ -241,8 +255,12 @@ class PartAdminPage {
                 'page' => 'bso-survival-events',
                 'event_id' => $eventId,
             ], admin_url('admin.php')) : '';
+            $rowClass = 'bso-parts-row-clickable';
+            if ($selectedPartId > 0 && $selectedPartId === $partId) {
+                $rowClass .= ' is-selected';
+            }
 
-            echo '<tr>';
+            echo '<tr class="' . esc_attr($rowClass) . '" tabindex="0" role="button" aria-label="' . esc_attr(sprintf(__('Bewerk onderdeel #%d', 'bso-survival'), $partId)) . '" data-edit-url="' . esc_url($editUrl) . '">';
             echo '<td>' . $partId . '</td>';
             echo '<td><a href="' . esc_url($editUrl) . '">' . esc_html((string) ($part->name ?? '')) . '</a></td>';
             echo '<td>' . esc_html((string) ($part->status ?? '')) . '</td>';
@@ -265,6 +283,37 @@ class PartAdminPage {
         }
 
         echo '</tbody></table>';
+        echo '<script>
+            (function(){
+                var rows = document.querySelectorAll(".bso-parts-row-clickable");
+                var openRow = function(row){
+                    var url = row.getAttribute("data-edit-url");
+                    if (url) {
+                        window.location.href = url;
+                    }
+                };
+
+                rows.forEach(function(row){
+                    row.addEventListener("click", function(event){
+                        var target = event.target;
+                        if (target && target.closest("a, button, input, select, textarea, label, form")) {
+                            return;
+                        }
+
+                        openRow(row);
+                    });
+
+                    row.addEventListener("keydown", function(event){
+                        if (event.key !== "Enter" && event.key !== " ") {
+                            return;
+                        }
+
+                        event.preventDefault();
+                        openRow(row);
+                    });
+                });
+            })();
+        </script>';
         echo '</div>';
 
         if ($panel !== '') {
@@ -336,10 +385,10 @@ class PartAdminPage {
     private function renderSortLink(string $column, string $label, string $currentColumn, string $currentDirection, int $selectedPartId, string $search, string $panel): string {
         $isActive = $column === $currentColumn;
         $nextDirection = $isActive && $currentDirection === 'asc' ? 'desc' : 'asc';
-        $indicator = '';
+        $indicator = '↕';
 
         if ($isActive) {
-            $indicator = $currentDirection === 'asc' ? ' ↑' : ' ↓';
+            $indicator = $currentDirection === 'asc' ? '▲' : '▼';
         }
 
         $args = [
@@ -360,7 +409,10 @@ class PartAdminPage {
 
         $url = $this->buildAdminUrl($args);
 
-        return '<a href="' . esc_url($url) . '">' . esc_html($label . $indicator) . '</a>';
+        return '<a class="bso-parts-sort-link' . ($isActive ? ' is-active' : '') . '" href="' . esc_url($url) . '">' .
+            esc_html($label) .
+            '<span class="bso-parts-sort-arrow">' . esc_html($indicator) . '</span>' .
+            '</a>';
     }
 
     /**

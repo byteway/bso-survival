@@ -57,4 +57,64 @@ class GoldenDataset {
             ],
         ];
     }
+
+    /**
+     * Deterministic demo scores for the live event golden test set.
+     *
+     * Keyed by timeslot ordinal -> part name -> team name -> raw_value.
+     * Generates scores for every timeslot (1..13) so any moment in the day
+     * can be activated during scenario testing.
+     *
+     * - "Kano Bungee" uses time mode (seconds, lower_is_better, max 1200).
+     * - All other parts use points mode (0..100).
+     *
+     * @return array<int, array<string, array<string, int>>>
+     */
+    public static function demoScores(): array {
+        $partNames = [
+            'Kanovaren',
+            'Touwbaan',
+            'Kasteelspel',
+            'Kano Bungee',
+            'Survivalbaan',
+            'Vrachtauto / tokkelbaan',
+            'Kano touwtrekken',
+            'Water scheppen',
+            'Water dragen',
+            'Vlotten bouw',
+            'Step-run',
+            'Labyrint',
+            'Paal zitten',
+        ];
+
+        $teamNames = [];
+        for ($team = 1; $team <= 22; $team++) {
+            $teamNames[] = 'Team' . str_pad((string) $team, 3, '0', STR_PAD_LEFT);
+        }
+
+        $scores = [];
+        for ($slot = 1; $slot <= 13; $slot++) {
+            $scores[$slot] = [];
+
+            foreach ($partNames as $partIndex => $partName) {
+                $scores[$slot][$partName] = [];
+
+                foreach ($teamNames as $teamIndex => $teamName) {
+                    $seed = ($slot * 131) + (($partIndex + 1) * 17) + (($teamIndex + 1) * 29);
+
+                    if ($partName === 'Kano Bungee') {
+                        // Time mode: keep values realistic and below max_time.
+                        $value = 320 + ($seed % 581); // 320..900
+                    } else {
+                        // Points mode: spread around mid/high range for readable standings.
+                        $value = 45 + ($seed % 51); // 45..95
+                    }
+
+                    $scores[$slot][$partName][$teamName] = $value;
+                }
+            }
+        }
+
+        return $scores;
+    }
 }

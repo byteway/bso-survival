@@ -5,11 +5,13 @@ namespace BSO\Survival\Frontend;
 use BSO\Survival\Database\Repository\EventRepository;
 use BSO\Survival\Database\Repository\EventPublicationRepository;
 use BSO\Survival\Database\Repository\PartRepository;
+use BSO\Survival\Database\Repository\PartRuleRepository;
 use BSO\Survival\Database\Repository\TeamRepository;
 use BSO\Survival\Service\DashboardOverviewService;
 use BSO\Survival\Service\EventService;
 use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Database\Repository\AssignmentRepository;
+use BSO\Survival\Service\InterimTeamScoreService;
 use BSO\Survival\Service\PartService;
 use BSO\Survival\Service\TeamService;
 
@@ -21,6 +23,9 @@ class ShortcodeController {
     public const SUMMARY_TAG = 'bso_survival_event_summary';
     public const TEAM_REGISTRATION_TAG = 'bso_survival_team_registration';
     public const SCORE_FORM_TAG = 'bso_survival_score_form';
+    public const TEAM_SCORE_TAG = 'bso_survival_team_score';
+    public const PART_SCORE_TAG = 'bso_survival_part_score';
+    public const TIMESLOT_BOARD_TAG = 'bso_survival_timeslot_board';
 
     /** @var DashboardController */
     private $dashboardController;
@@ -43,7 +48,16 @@ class ShortcodeController {
     /** @var ScoreFormController */
     private $scoreFormController;
 
-    public function __construct(DashboardController $dashboardController = null, PartsController $partsController = null, TeamsController $teamsController = null, EventOverviewController $eventOverviewController = null, EventSummaryController $eventSummaryController = null, TeamRegistrationController $teamRegistrationController = null, ScoreFormController $scoreFormController = null) {
+    /** @var TeamScoreController */
+    private $teamScoreController;
+
+    /** @var PartScoreController */
+    private $partScoreController;
+
+    /** @var TimeslotBoardController */
+    private $timeslotBoardController;
+
+    public function __construct(DashboardController $dashboardController = null, PartsController $partsController = null, TeamsController $teamsController = null, EventOverviewController $eventOverviewController = null, EventSummaryController $eventSummaryController = null, TeamRegistrationController $teamRegistrationController = null, ScoreFormController $scoreFormController = null, TeamScoreController $teamScoreController = null, PartScoreController $partScoreController = null, TimeslotBoardController $timeslotBoardController = null) {
         $this->dashboardController = $dashboardController ?? $this->buildDashboardController();
         $this->partsController = $partsController ?? $this->buildPartsController();
         $this->teamsController = $teamsController ?? $this->buildTeamsController();
@@ -51,6 +65,9 @@ class ShortcodeController {
         $this->eventSummaryController = $eventSummaryController ?? $this->buildEventSummaryController();
         $this->teamRegistrationController = $teamRegistrationController ?? $this->buildTeamRegistrationController();
         $this->scoreFormController = $scoreFormController ?? $this->buildScoreFormController();
+        $this->teamScoreController = $teamScoreController ?? $this->buildTeamScoreController();
+        $this->partScoreController = $partScoreController ?? $this->buildPartScoreController();
+        $this->timeslotBoardController = $timeslotBoardController ?? $this->buildTimeslotBoardController();
     }
 
     public function register(): void {
@@ -61,6 +78,9 @@ class ShortcodeController {
         add_shortcode(self::SUMMARY_TAG, [$this, 'render_event_summary']);
         add_shortcode(self::TEAM_REGISTRATION_TAG, [$this, 'render_team_registration']);
         add_shortcode(self::SCORE_FORM_TAG, [$this, 'render_score_form']);
+        add_shortcode(self::TEAM_SCORE_TAG, [$this, 'render_team_score']);
+        add_shortcode(self::PART_SCORE_TAG, [$this, 'render_part_score']);
+        add_shortcode(self::TIMESLOT_BOARD_TAG, [$this, 'render_timeslot_board']);
     }
 
     public function render(array $atts = []): string {
@@ -89,6 +109,18 @@ class ShortcodeController {
 
     public function render_score_form(array $atts = []): string {
         return $this->scoreFormController->render($atts);
+    }
+
+    public function render_team_score(array $atts = []): string {
+        return $this->teamScoreController->render($atts);
+    }
+
+    public function render_part_score(array $atts = []): string {
+        return $this->partScoreController->render($atts);
+    }
+
+    public function render_timeslot_board(array $atts = []): string {
+        return $this->timeslotBoardController->render($atts);
     }
 
     private function buildDashboardController(): DashboardController {
@@ -175,5 +207,47 @@ class ShortcodeController {
         $overviewService = new DashboardOverviewService($eventService, $partService, $teamService, $publicationService);
 
         return new ScoreFormController($eventService, $overviewService, new AssignmentRepository());
+    }
+
+    private function buildTeamScoreController(): TeamScoreController {
+        $eventRepository = new EventRepository();
+        $teamRepository = new TeamRepository();
+
+        $eventService = new EventService($eventRepository);
+        $teamService = new TeamService($teamRepository);
+
+        return new TeamScoreController(
+            $eventService,
+            $teamService,
+            new InterimTeamScoreService(new PartRuleRepository())
+        );
+    }
+
+    private function buildPartScoreController(): PartScoreController {
+        $eventRepository = new EventRepository();
+        $partRepository = new PartRepository();
+
+        $eventService = new EventService($eventRepository);
+        $partService = new PartService($partRepository);
+
+        return new PartScoreController(
+            $eventService,
+            $partService,
+            new InterimTeamScoreService(new PartRuleRepository())
+        );
+    }
+
+    private function buildTimeslotBoardController(): TimeslotBoardController {
+        $eventRepository = new EventRepository();
+        $partRepository = new PartRepository();
+
+        $eventService = new EventService($eventRepository);
+        $partService = new PartService($partRepository);
+
+        return new TimeslotBoardController(
+            $eventService,
+            $partService,
+            new InterimTeamScoreService(new PartRuleRepository())
+        );
     }
 }

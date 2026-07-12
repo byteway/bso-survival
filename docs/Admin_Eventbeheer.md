@@ -1,6 +1,6 @@
 # Admin Eventbeheer
 
-Laatste update: 10 juli 2026.
+Laatste update: 12 juli 2026.
 
 ## Doel
 
@@ -36,6 +36,11 @@ Functionaliteit:
 - Event-create demo-opbouw gebruikt bij scoregeneratie een round-robin-achtige planning zodat teams zo min mogelijk direct dezelfde tegenstander treffen binnen de automatisch gegenereerde rondes.
 - WP-CLI demo-simulatie voor scoreverloop is beschikbaar via `wp bso-survival seed-demo-scores`.
 - Frontend shortcodes voor tussentijdse scores rekenen nu per onderdeel opnieuw de teamposities uit op basis van de ruwe score en onderdeelregel.
+- In frontend onderdeelscore zijn score-rijen voor geautoriseerde scorebeheerders aanklikbaar; bewerken gebeurt via een rechter flip-over.
+- Frontend dashboard kiest zonder `event_id` automatisch het eerstvolgende actieve event vanaf vandaag en toont bovenin een combobox met maximaal 5 actieve toekomstige events.
+- Frontend shortcodes `teamscore` en `onderdeelscore` tonen bovenin een combobox (team/onderdeel) om binnen hetzelfde event direct van context te wisselen.
+- Frontend onderdeelscore toont per tijdslot beide teams (assignment-niveau), met tijdsrange als eerste kolom en visuele scheiding tussen tijdslotblokken.
+- Frontend teamscore hanteert hetzelfde gridgedrag als onderdeelscore: click-to-edit voor scorebeheerders, read-only voor andere rollen.
 
 ## Belangrijke regels
 
@@ -93,6 +98,8 @@ Praktisch gevolg:
 - De omgekeerde positiewaarde (N..1) wordt alleen intern gebruikt voor de tussentijdse scoreweging.
 - Bij gelijke ruwe score beslist bonuspunten als tie-break (hoogste bonus eerst).
 - Teamscore toont per onderdeel de positie van het geselecteerde team en telt alle tussentijdse waarden op tot de tussentijdse eindscore.
+- Zowel onderdeelscore als teamscore tonen tijdsrange in plaats van een tijdslot-id.
+- Teamscore forceert tijdsrange-sortering standaard op oplopende tijd (vroeg naar laat), ook bij oude URL-sortparams.
 
 ## Score-eigenschappen
 
@@ -113,6 +120,57 @@ Aanvullend wordt voor jokergebruik een aparte registratie bijgehouden in `joker_
 - Eventstatus wordt `verwijderd`.
 - Event verdwijnt uit standaard eventselecties in admin/frontend flows.
 - Part-records blijven bestaan en zijn opnieuw koppelbaar aan andere events.
+
+## Snelle SQL-check na event verwijderen
+
+Vervang `:event_id` met het verwijderde event en pas `wp_` aan naar jouw eigen WordPress prefix.
+
+```sql
+-- 1) Event blijft bestaan, maar met status 'verwijderd'
+SELECT id, status
+FROM wp_bso_survival_events
+WHERE id = :event_id;
+
+-- 2) Moet 0 zijn (planning/score-opruiming)
+SELECT COUNT(*) AS timeslots
+FROM wp_bso_survival_timeslots
+WHERE event_id = :event_id;
+
+SELECT COUNT(*) AS assignments
+FROM wp_bso_survival_assignments a
+JOIN wp_bso_survival_timeslots ts ON ts.id = a.timeslot_id
+WHERE ts.event_id = :event_id;
+
+SELECT COUNT(*) AS score_entries
+FROM wp_bso_survival_score_entries se
+JOIN wp_bso_survival_assignments a ON a.id = se.assignment_id
+JOIN wp_bso_survival_timeslots ts ON ts.id = a.timeslot_id
+WHERE ts.event_id = :event_id;
+
+SELECT COUNT(*) AS joker_usages
+FROM wp_bso_survival_joker_usages
+WHERE event_id = :event_id;
+
+-- 3) Parts moeten losgekoppeld zijn (event_id = NULL)
+SELECT COUNT(*) AS gekoppelde_parts
+FROM wp_bso_survival_parts
+WHERE event_id = :event_id;
+
+-- 4) Optioneel: overzicht van resterende event-gerelateerde data
+SELECT
+	(SELECT COUNT(*) FROM wp_bso_survival_teams WHERE event_id = :event_id) AS teams,
+	(SELECT COUNT(*) FROM wp_bso_survival_messages WHERE event_id = :event_id) AS messages,
+	(SELECT COUNT(*) FROM wp_bso_survival_event_publications WHERE event_id = :event_id) AS publications,
+	(SELECT COUNT(*) FROM wp_bso_survival_email_outbox WHERE event_id = :event_id) AS email_outbox,
+	(SELECT COUNT(*) FROM wp_bso_survival_registration_windows WHERE event_id = :event_id) AS registration_windows;
+```
+
+Verwachte kernuitkomst na verwijderen:
+- `timeslots = 0`
+- `assignments = 0`
+- `score_entries = 0`
+- `joker_usages = 0`
+- `gekoppelde_parts = 0`
 
 ## Automatische tests
 

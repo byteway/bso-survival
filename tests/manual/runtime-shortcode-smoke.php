@@ -4,6 +4,7 @@ $codes = [
     '[bso_survival_dashboard]',
     '[bso_survival_parts event_id="2"]',
     '[bso_survival_teams event_id="2"]',
+    '[bso_survival_timeslot_board event_id="2"]',
     '[bso_survival_event_overview event_id="2"]',
     '[bso_survival_event_overview event_id="2" compact="yes"]',
     '[bso_survival_event_summary event_id="2"]',

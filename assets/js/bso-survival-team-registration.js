@@ -25,6 +25,18 @@
         return 'reg-' + seed.replace(/[^a-zA-Z0-9|_-]/g, '').slice(0, 96);
     }
 
+    function extractErrorMessage(json, fallbackMessage) {
+        if (json && json.error && typeof json.error.message === 'string' && json.error.message.trim() !== '') {
+            return json.error.message;
+        }
+
+        if (json && typeof json.message === 'string' && json.message.trim() !== '') {
+            return json.message;
+        }
+
+        return fallbackMessage;
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         var form = document.getElementById('bso-team-registration-form');
         if (!form) {
@@ -38,6 +50,7 @@
             event.preventDefault();
 
             var restUrl = String(form.getAttribute('data-rest-url') || '').trim();
+            var restNonce = String(form.getAttribute('data-rest-nonce') || '').trim();
             var nonce = String(form.getAttribute('data-registration-nonce') || '').trim();
             var eventId = Number(form.getAttribute('data-event-id') || 0);
             var teamName = String((document.getElementById('bso-registration-team-name') || {}).value || '').trim();
@@ -71,7 +84,9 @@
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': restNonce,
+                    'X-BSO-Registration-Nonce': nonce
                 },
                 body: JSON.stringify({
                     event_id: eventId,
@@ -84,11 +99,15 @@
                     idempotency_key: generateIdempotencyKey(eventId, teamName, contactEmail)
                 })
             }).then(function (response) {
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
-                }
+                return response.json().catch(function () {
+                    return {};
+                }).then(function (json) {
+                    if (!response.ok) {
+                        throw new Error(extractErrorMessage(json, 'HTTP ' + response.status));
+                    }
 
-                return response.json();
+                    return json;
+                });
             }).then(function (json) {
                 var result = json && json.result ? json.result : {};
                 var status = String(result.status || 'registered');

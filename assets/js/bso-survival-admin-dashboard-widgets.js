@@ -16,21 +16,31 @@
 
     function collectLayout(form) {
         var layout = {};
+        var widths = {};
 
         Array.prototype.forEach.call(form.querySelectorAll('.bso-widget-admin-section'), function (sectionEl) {
             var section = sectionEl.getAttribute('data-section');
             var rows = sectionEl.querySelectorAll('.bso-widget-row');
             layout[section] = [];
+            widths[section] = {};
 
             Array.prototype.forEach.call(rows, function (row) {
                 var checkbox = row.querySelector('input[type="checkbox"]');
+                var widthSelect = row.querySelector('.bso-widget-width-select');
                 if (checkbox && checkbox.checked) {
                     layout[section].push(row.getAttribute('data-widget-id'));
+                }
+
+                if (widthSelect) {
+                    widths[section][row.getAttribute('data-widget-id')] = widthSelect.value;
                 }
             });
         });
 
-        return layout;
+        return {
+            layout: layout,
+            widths: widths
+        };
     }
 
     function saveViaRest(form) {
@@ -49,7 +59,7 @@
             return true;
         }
 
-        var layout = collectLayout(form);
+        var payload = collectLayout(form);
         var endpoint = restBase.replace(/\/$/, '') + '/' + encodeURIComponent(eventId);
 
         if (submitButton) {
@@ -64,7 +74,8 @@
                 'X-WP-Nonce': restNonce
             },
             body: JSON.stringify({
-                layout: layout
+                layout: payload.layout,
+                widths: payload.widths
             })
         }).then(function (response) {
             if (!response.ok) {
@@ -100,8 +111,10 @@
         rows.forEach(function (row, index) {
             var checkbox = row.querySelector('input[type="checkbox"]');
             var orderInput = row.querySelector('.bso-widget-order-input');
+            var widthSelect = row.querySelector('.bso-widget-width-select');
             var titleCell = row.children[1];
             var title = titleCell ? titleCell.textContent.split('\n')[0].trim() : row.getAttribute('data-widget-id');
+            var width = widthSelect ? widthSelect.value : '';
 
             if (orderInput) {
                 orderInput.value = String(index + 1);
@@ -110,7 +123,7 @@
             if (checkbox && checkbox.checked) {
                 activeCount += 1;
                 var li = document.createElement('li');
-                li.textContent = (index + 1) + '. ' + title;
+                li.textContent = (index + 1) + '. ' + title + (width ? ' - ' + width : '');
                 preview.appendChild(li);
             }
         });

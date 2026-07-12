@@ -296,6 +296,7 @@ class Schema {
                     'id' => 'BIGINT UNSIGNED NOT NULL AUTO_INCREMENT',
                     'assignment_id' => 'BIGINT UNSIGNED NOT NULL',
                     'raw_value' => 'DECIMAL(14,4) NOT NULL',
+                    'bonus_points' => 'DECIMAL(10,2) NOT NULL DEFAULT 0',
                     'normalized_points' => 'DECIMAL(14,4) NOT NULL',
                     'position' => 'INT UNSIGNED NULL DEFAULT NULL',
                     'rank_points' => 'INT UNSIGNED NULL DEFAULT NULL',

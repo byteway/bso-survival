@@ -134,7 +134,10 @@ class PartAdminService {
         return $updated;
     }
 
-    public function deletePart(int $partId): bool {
+    /**
+     * @return array{saved: string, message: string}
+     */
+    public function deletePart(int $partId): array {
         if ($partId <= 0) {
             throw new InvalidArgumentException('part_id moet positief zijn.');
         }
@@ -147,14 +150,34 @@ class PartAdminService {
         $eventId = (int) ($existing->event_id ?? 0);
         if ($eventId > 0) {
             $event = $this->events->findById($eventId);
-            $status = $event !== null ? (string) ($event->status ?? '') : '';
-            $normalizedStatus = function_exists('mb_strtolower') ? mb_strtolower(trim($status)) : strtolower(trim($status));
-            if (!in_array($normalizedStatus, ['afgesloten', 'gesloten', 'closed', 'gepubliceerd', 'verwijderd'], true)) {
-                throw new RuntimeException('Onderdeel kan niet verwijderd worden zolang het nog aan een actief event gekoppeld is.');
+            $eventName = $event !== null ? trim((string) ($event->name ?? '')) : '';
+            if ($eventName === '') {
+                $eventName = sprintf('event #%d', $eventId);
             }
+
+            $updated = $this->parts->updateById($partId, [
+                'status' => 'inactief',
+                'updated_at' => gmdate('Y-m-d H:i:s'),
+            ]);
+            if ($updated === null) {
+                throw new RuntimeException('Onderdeel kon niet op inactief worden gezet.');
+            }
+
+            return [
+                'saved' => 'deactivated',
+                'message' => sprintf('Onderdeel "%s" is op inactief gezet omdat het gekoppeld is aan "%s".', (string) ($existing->name ?? ('#' . $partId)), $eventName),
+            ];
         }
 
-        return $this->parts->markDeleted($partId);
+        $deleted = $this->parts->markDeleted($partId);
+        if (!$deleted) {
+            throw new RuntimeException('Onderdeel kon niet worden verwijderd.');
+        }
+
+        return [
+            'saved' => 'deleted',
+            'message' => sprintf('Onderdeel "%s" is verwijderd omdat het niet aan een event gekoppeld was.', (string) ($existing->name ?? ('#' . $partId))),
+        ];
     }
 
     /** @return array<int, object> */

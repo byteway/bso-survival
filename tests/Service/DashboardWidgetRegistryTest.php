@@ -24,13 +24,13 @@ class DashboardWidgetRegistryTest extends TestCase {
         $mainWidgets = DashboardWidgetRegistry::getSection('main');
         $operationsWidgets = DashboardWidgetRegistry::getSection('operations');
 
-        $this->assertCount(4, $mainWidgets);
-        $this->assertCount(3, $operationsWidgets);
+        $this->assertCount(5, $mainWidgets);
+        $this->assertCount(2, $operationsWidgets);
         $this->assertNotNull(DashboardWidgetRegistry::get('main', 'timeslot_progress'));
+        $this->assertNotNull(DashboardWidgetRegistry::get('main', 'message_widget'));
         $this->assertNotNull(DashboardWidgetRegistry::get('main', 'registration_capacity'));
         $this->assertNotNull(DashboardWidgetRegistry::get('main', 'team_ranking'));
         $this->assertNotNull(DashboardWidgetRegistry::get('main', 'reporting_status'));
-        $this->assertNotNull(DashboardWidgetRegistry::get('operations', 'message_widget'));
         $this->assertNotNull(DashboardWidgetRegistry::get('operations', 'contact_finder'));
         $this->assertNotNull(DashboardWidgetRegistry::get('operations', 'fallback_score'));
     }
@@ -122,7 +122,7 @@ class DashboardWidgetRegistryTest extends TestCase {
 
         $html = DashboardWidgetRegistry::renderSection('operations', $overview);
 
-        $this->assertStringContainsString('Meldingen', $html);
+        $this->assertStringContainsString('Contactzoeker', $html);
         $this->assertStringNotContainsString('Fallback-scoreinvoer', $html);
     }
 

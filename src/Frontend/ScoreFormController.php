@@ -69,6 +69,12 @@ class ScoreFormController {
         $nonce = function_exists('wp_create_nonce')
             ? (string) wp_create_nonce('bso_survival_score_submission')
             : '';
+        $partStatusRestBase = function_exists('rest_url')
+            ? (string) rest_url('bso-survival/v2/scores/parts')
+            : '';
+        $restNonce = function_exists('wp_create_nonce')
+            ? (string) wp_create_nonce('wp_rest')
+            : '';
 
         ob_start();
         $title = (string) $attributes['title'];

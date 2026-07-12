@@ -107,6 +107,31 @@ if (!function_exists('shortcode_atts')) {
     }
 }
 
+if (!function_exists('get_queried_object_id')) {
+    /**
+     * Return the mocked queried object id.
+     *
+     * @return int
+     */
+    function get_queried_object_id() {
+        global $test_queried_object_id;
+
+        return isset($test_queried_object_id) ? (int) $test_queried_object_id : 0;
+    }
+}
+
+if (!function_exists('set_test_queried_object_id')) {
+    /**
+     * Set the mocked queried object id.
+     *
+     * @param int $value
+     */
+    function set_test_queried_object_id($value) {
+        global $test_queried_object_id;
+        $test_queried_object_id = (int) $value;
+    }
+}
+
 if (!function_exists('__')) {
     /**
      * Translation stub.

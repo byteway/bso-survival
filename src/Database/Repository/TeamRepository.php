@@ -80,6 +80,24 @@ class TeamRepository implements TeamRepositoryInterface {
         return $this->findById($id);
     }
 
+    /**
+     * @param array<string, mixed> $data
+     * @return object|null
+     */
+    public function updateById(int $id, array $data) {
+        if ($id <= 0) {
+            return null;
+        }
+
+        $table = $this->tableName();
+        $updated = $this->wpdb->update($table, $data, ['id' => $id]);
+        if ($updated === false) {
+            return null;
+        }
+
+        return $this->findById($id);
+    }
+
     private function tableName(): string {
         return $this->wpdb->prefix . 'bso_survival_teams';
     }

@@ -48,6 +48,9 @@ class TeamRegistrationController {
         $restUrl = function_exists('rest_url')
             ? (string) rest_url('bso-survival/v1/registrations')
             : '';
+        $restNonce = function_exists('wp_create_nonce')
+            ? (string) wp_create_nonce('wp_rest')
+            : '';
         $nonce = function_exists('wp_create_nonce')
             ? (string) wp_create_nonce('bso_survival_registration')
             : '';

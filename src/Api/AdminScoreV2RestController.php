@@ -3,6 +3,7 @@
 namespace BSO\Survival\Api;
 
 use BSO\Survival\Service\AdminScoreService;
+use BSO\Survival\Service\PartConfirmationService;
 use BSO\Survival\Support\ApiResponse;
 use BSO\Survival\Support\Capabilities;
 use InvalidArgumentException;
@@ -17,8 +18,12 @@ class AdminScoreV2RestController {
     /** @var AdminScoreService */
     private $scores;
 
-    public function __construct(AdminScoreService $scores) {
+    /** @var PartConfirmationService|null */
+    private $partConfirmations;
+
+    public function __construct(AdminScoreService $scores, PartConfirmationService $partConfirmations = null) {
         $this->scores = $scores;
+        $this->partConfirmations = $partConfirmations;
     }
 
     public function registerRoutes(): void {
@@ -35,6 +40,18 @@ class AdminScoreV2RestController {
         register_rest_route(self::NAMESPACE, self::UPDATE_ROUTE, [[
             'methods' => 'PATCH',
             'callback' => [$this, 'updateEntry'],
+            'permission_callback' => [$this, 'canManage'],
+        ]]);
+
+        register_rest_route(self::NAMESPACE, '/scores/parts/(?P<part_id>\d+)/status', [[
+            'methods' => 'GET',
+            'callback' => [$this, 'partStatus'],
+            'permission_callback' => [$this, 'canManage'],
+        ]]);
+
+        register_rest_route(self::NAMESPACE, '/scores/parts/(?P<part_id>\d+)/confirm', [[
+            'methods' => 'POST',
+            'callback' => [$this, 'confirmPart'],
             'permission_callback' => [$this, 'canManage'],
         ]]);
     }
@@ -74,6 +91,9 @@ class AdminScoreV2RestController {
                 'event_id' => $this->extractIntParam($request, 'event_id'),
                 'assignment_id' => $this->extractIntParam($request, 'assignment_id'),
                 'raw_value' => $this->extractRawParam($request, 'raw_value'),
+                'bonus_points' => $this->extractRawParam($request, 'bonus_points'),
+                'joker_applied' => $this->extractBoolParam($request, 'joker_applied'),
+                'joker_validated_by' => $this->extractStringParam($request, 'joker_validated_by'),
                 'changed_by' => $this->extractStringParam($request, 'changed_by'),
                 'entered_by_role' => $this->extractStringParam($request, 'entered_by_role'),
             ];
@@ -108,6 +128,9 @@ class AdminScoreV2RestController {
             $payload = [
                 'event_id' => $this->extractIntParam($request, 'event_id'),
                 'raw_value' => $this->extractRawParam($request, 'raw_value'),
+                'bonus_points' => $this->extractRawParam($request, 'bonus_points'),
+                'joker_applied' => $this->extractBoolParam($request, 'joker_applied'),
+                'joker_validated_by' => $this->extractStringParam($request, 'joker_validated_by'),
                 'changed_by' => $this->extractStringParam($request, 'changed_by'),
                 'entered_by_role' => $this->extractStringParam($request, 'entered_by_role'),
             ];
@@ -128,6 +151,61 @@ class AdminScoreV2RestController {
             return ApiResponse::error('score_update_blocked', $exception->getMessage(), 409);
         } catch (Throwable $exception) {
             return ApiResponse::error('score_update_failed', 'Score kon niet worden bijgewerkt.', 500);
+        }
+    }
+
+    /**
+     * @param mixed $request
+     * @return mixed
+     */
+    public function partStatus($request) {
+        if ($this->partConfirmations === null) {
+            return ApiResponse::error('part_confirmation_unavailable', 'Onderdeelbevestiging is niet beschikbaar.', 501);
+        }
+
+        $eventId = $this->extractIntParam($request, 'event_id');
+        $partId = $this->extractIntParam($request, 'part_id');
+
+        try {
+            return ApiResponse::success([
+                'status' => $this->partConfirmations->getPartStatus($eventId, $partId),
+            ]);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_score_input', $exception->getMessage(), 400);
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error('score_update_blocked', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('part_status_failed', 'Status van onderdeel kon niet worden opgehaald.', 500);
+        }
+    }
+
+    /**
+     * @param mixed $request
+     * @return mixed
+     */
+    public function confirmPart($request) {
+        if ($this->partConfirmations === null) {
+            return ApiResponse::error('part_confirmation_unavailable', 'Onderdeelbevestiging is niet beschikbaar.', 501);
+        }
+
+        $eventId = $this->extractIntParam($request, 'event_id');
+        $partId = $this->extractIntParam($request, 'part_id');
+        $confirmNoChanges = $this->extractBoolParam($request, 'confirm_no_changes');
+        $changedBy = $this->extractStringParam($request, 'changed_by');
+
+        if ($changedBy === '') {
+            $changedBy = 'scheidsrechter';
+        }
+
+        try {
+            $result = $this->partConfirmations->confirmPart($eventId, $partId, $changedBy, $confirmNoChanges);
+            return ApiResponse::success(['result' => $result]);
+        } catch (InvalidArgumentException $exception) {
+            return ApiResponse::error('invalid_score_input', $exception->getMessage(), 400);
+        } catch (RuntimeException $exception) {
+            return ApiResponse::error('score_update_blocked', $exception->getMessage(), 409);
+        } catch (Throwable $exception) {
+            return ApiResponse::error('part_confirm_failed', 'Onderdeel kon niet worden bevestigd.', 500);
         }
     }
 
@@ -155,6 +233,25 @@ class AdminScoreV2RestController {
         }
 
         return '';
+    }
+
+    /** @param mixed $request */
+    private function extractBoolParam($request, string $key): bool {
+        $raw = $this->extractRawParam($request, $key);
+
+        if (is_bool($raw)) {
+            return $raw;
+        }
+
+        if (is_int($raw) || is_float($raw)) {
+            return (int) $raw === 1;
+        }
+
+        $normalized = function_exists('mb_strtolower')
+            ? mb_strtolower(trim((string) $raw))
+            : strtolower(trim((string) $raw));
+
+        return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
     }
 
     /**

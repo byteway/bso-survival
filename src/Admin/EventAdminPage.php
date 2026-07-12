@@ -298,6 +298,9 @@ class EventAdminPage {
             .bso-events-main.with-panel{margin-right:380px;}
             .bso-events-toolbar{display:flex;align-items:center;gap:10px;margin:10px 0 14px 0;}
             .bso-events-toolbar-actions{display:inline-flex;gap:8px;flex-wrap:wrap;align-items:center;margin-left:8px;vertical-align:middle;}
+            .bso-events-sort-link{text-decoration:none;display:inline-flex;align-items:center;gap:4px;}
+            .bso-events-sort-arrow{font-size:12px;opacity:1;color:#9ca3af;line-height:1;min-width:10px;display:inline-block;}
+            .bso-events-sort-link.is-active .bso-events-sort-arrow{color:#111827;}
             .bso-events-panel{position:fixed;top:32px;right:0;width:360px;height:calc(100vh - 32px);background:#fff;border-left:1px solid #dcdcde;z-index:999;padding:14px 16px 16px 16px;overflow:auto;box-shadow:-6px 0 20px rgba(0,0,0,.08);}
             .bso-events-panel-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
             .bso-events-panel-title{font-size:20px;font-weight:600;margin:0;}
@@ -666,9 +669,9 @@ class EventAdminPage {
     private function renderPartsSortLink(string $column, string $label, string $currentSortBy, string $currentDirection, int $eventId, string $partFilter, string $panelMode): string {
         $isActive = $column === $currentSortBy;
         $nextDirection = $isActive && $currentDirection === 'asc' ? 'desc' : 'asc';
-        $indicator = '';
+        $indicator = '↕';
         if ($isActive) {
-            $indicator = $currentDirection === 'asc' ? ' ↑' : ' ↓';
+            $indicator = $currentDirection === 'asc' ? '▲' : '▼';
         }
 
         $args = [
@@ -686,7 +689,10 @@ class EventAdminPage {
         }
 
         $url = $this->buildAdminUrl($args);
-        return '<a href="' . esc_url($url) . '">' . esc_html($label . $indicator) . '</a>';
+        return '<a class="bso-events-sort-link' . ($isActive ? ' is-active' : '') . '" href="' . esc_url($url) . '">' .
+            esc_html($label) .
+            '<span class="bso-events-sort-arrow">' . esc_html($indicator) . '</span>' .
+            '</a>';
     }
 
     /**

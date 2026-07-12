@@ -24,4 +24,15 @@ interface ScoreEntryRepositoryInterface {
      * @return array<int, float>
      */
     public function findLatestRawValuesByPart(int $eventId, int $partId): array;
+
+    /**
+     * @return array<int, float>
+     */
+    public function findLatestNormalizedPointsByPart(int $eventId, int $partId): array;
+
+    /**
+     * @param array<int, int> $assignmentIds
+     * @return array<int, int>
+     */
+    public function findAssignmentIdsWithEntries(array $assignmentIds): array;
 }

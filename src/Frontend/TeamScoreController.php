@@ -32,6 +32,7 @@ class TeamScoreController {
      */
     public function render(array $atts = []): string {
         wp_enqueue_style('bso-survival-frontend');
+        wp_enqueue_script('bso-survival-frontend-score');
 
         $attributes = shortcode_atts([
             'title' => __('Team Score', 'bso-survival'),
@@ -40,26 +41,43 @@ class TeamScoreController {
         ], $atts, 'bso_survival_team_score');
 
         $eventId = (int) $attributes['event_id'];
-        $teamId = (int) $attributes['team_id'];
+        $selectedTeamId = isset($_GET['team_id']) ? (int) $_GET['team_id'] : (int) $attributes['team_id'];
 
         try {
-            if ($teamId <= 0) {
-                throw new InvalidArgumentException('team_id is verplicht voor bso_survival_team_score.');
-            }
-
             $event = $this->eventService->getEvent($eventId);
             if ($event === null) {
                 throw new InvalidArgumentException(sprintf('Event %d not found.', $eventId));
             }
 
-            $team = $this->teamService->getTeam($teamId);
-            if ($team === null || (int) ($team->event_id ?? 0) !== $eventId) {
-                throw new InvalidArgumentException(sprintf('Team %d hoort niet bij event %d.', $teamId, $eventId));
+            $teams = $this->teamService->listTeamsForEvent($eventId);
+            if ($teams === []) {
+                throw new InvalidArgumentException(sprintf('Geen teams gevonden voor event %d.', $eventId));
             }
 
-            $overview = $this->scores->getTeamOverview($eventId, $teamId);
+            if ($selectedTeamId <= 0) {
+                $selectedTeamId = (int) ($teams[0]->id ?? 0);
+            }
+
+            $team = null;
+            foreach ($teams as $teamOption) {
+                if ((int) ($teamOption->id ?? 0) === $selectedTeamId) {
+                    $team = $teamOption;
+                    break;
+                }
+            }
+
+            if ($team === null) {
+                $selectedTeamId = (int) ($teams[0]->id ?? 0);
+                $team = $teams[0] ?? null;
+            }
+
+            if ($team === null) {
+                throw new InvalidArgumentException(sprintf('Team %d hoort niet bij event %d.', $selectedTeamId, $eventId));
+            }
+
+            $overview = $this->scores->getTeamOverview($eventId, $selectedTeamId);
         } catch (Throwable $exception) {
-            $message = sprintf(__('Teamscore niet beschikbaar voor event_id %d en team_id %d.', 'bso-survival'), $eventId, $teamId);
+            $message = sprintf(__('Teamscore niet beschikbaar voor event_id %d en team_id %d.', 'bso-survival'), $eventId, $selectedTeamId);
 
             if (function_exists('do_action')) {
                 do_action('bso_survival_teams_render_error', $message, $eventId);
@@ -74,6 +92,7 @@ class TeamScoreController {
         ob_start();
         $title = (string) $attributes['title'];
         $canEditScores = Capabilities::canManageScores();
+        $teamId = $selectedTeamId;
         include __DIR__ . '/../../templates/frontend-team-score.php';
 
         return (string) ob_get_clean();

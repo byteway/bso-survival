@@ -27,7 +27,7 @@ class AssignmentRepository implements AssignmentRepositoryInterface {
         $teams = $this->tableName('teams');
 
         $sql = $this->wpdb->prepare(
-            "SELECT a.*, ts.event_id, p.name AS part_name, t.name AS team_name
+            "SELECT a.*, ts.event_id, ts.start_at AS timeslot_start_at, ts.end_at AS timeslot_end_at, p.name AS part_name, t.name AS team_name
              FROM {$assignments} a
              INNER JOIN {$timeslots} ts ON ts.id = a.timeslot_id
              INNER JOIN {$parts} p ON p.id = a.part_id
@@ -50,7 +50,7 @@ class AssignmentRepository implements AssignmentRepositoryInterface {
         $teams = $this->tableName('teams');
 
         $sql = $this->wpdb->prepare(
-            "SELECT a.*, ts.event_id, p.name AS part_name, t.name AS team_name
+            "SELECT a.*, ts.event_id, ts.start_at AS timeslot_start_at, ts.end_at AS timeslot_end_at, p.name AS part_name, t.name AS team_name
              FROM {$assignments} a
              INNER JOIN {$timeslots} ts ON ts.id = a.timeslot_id
              INNER JOIN {$parts} p ON p.id = a.part_id

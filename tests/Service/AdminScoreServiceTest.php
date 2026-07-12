@@ -68,6 +68,39 @@ class AdminScoreServiceTest extends TestCase {
             'part_id' => 31,
         ]);
     }
+
+    /** @test */
+    public function it_initializes_missing_score_records_and_writes_a_valid_audit_entity_id(): void {
+        $entries = new InMemoryAdminScoreRepositoryForInitialization();
+        $assignments = new FakeAdminAssignmentRepositoryWithRows([
+            (object) ['id' => 101],
+            (object) ['id' => 102],
+        ]);
+        $auditRepo = new InMemoryAdminAuditLogRepository();
+
+        $service = new AdminScoreService(
+            new FakeAdminOverviewService(),
+            $assignments,
+            $entries,
+            new FakeAdminScoreEntryService(),
+            new FakeAdminRankingService(),
+            new AuditLogService($auditRepo)
+        );
+
+        $result = $service->initializeForEvent(7, 'tester');
+
+        $this->assertSame(2, $result['assignment_count']);
+        $this->assertSame(2, $result['created_entries']);
+        $this->assertSame(0, $result['skipped_existing']);
+        $this->assertCount(2, $entries->insertedRows);
+        $this->assertSame(101, (int) $entries->insertedRows[0]['assignment_id']);
+        $this->assertSame(102, (int) $entries->insertedRows[1]['assignment_id']);
+
+        $this->assertCount(1, $auditRepo->rows);
+        $this->assertSame('event', $auditRepo->rows[0]->entity_type);
+        $this->assertSame(7, (int) $auditRepo->rows[0]->entity_id);
+        $this->assertSame('initialized', $auditRepo->rows[0]->action);
+    }
 }
 
 class FakeAdminOverviewService extends DashboardOverviewService {
@@ -91,6 +124,24 @@ class FakeAdminAssignmentRepository implements AssignmentRepositoryInterface {
 
     public function findByEventId(int $eventId): array {
         return [];
+    }
+}
+
+class FakeAdminAssignmentRepositoryWithRows implements AssignmentRepositoryInterface {
+    /** @var array<int, object> */
+    private $rows;
+
+    /** @param array<int, object> $rows */
+    public function __construct(array $rows) {
+        $this->rows = $rows;
+    }
+
+    public function findById(int $id) {
+        return null;
+    }
+
+    public function findByEventId(int $eventId): array {
+        return $this->rows;
     }
 }
 
@@ -123,6 +174,20 @@ class InMemoryAdminScoreRepository implements ScoreEntryRepositoryInterface {
 
     public function findAssignmentIdsWithEntries(array $assignmentIds): array {
         return [];
+    }
+}
+
+class InMemoryAdminScoreRepositoryForInitialization extends InMemoryAdminScoreRepository {
+    /** @var array<int, array<string, mixed>> */
+    public $insertedRows = [];
+
+    public function insert(array $data) {
+        $this->insertedRows[] = $data;
+
+        return (object) [
+            'id' => count($this->insertedRows),
+            'assignment_id' => $data['assignment_id'] ?? 0,
+        ];
     }
 }
 

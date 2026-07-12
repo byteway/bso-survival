@@ -7,6 +7,7 @@
  * @var int $eventId
  * @var object $event
  * @var string $restUrl
+ * @var string $restNonce
  * @var string $nonce
  */
 ?>
@@ -20,6 +21,7 @@
 
     <form id="bso-team-registration-form"
           data-rest-url="<?php echo esc_attr($restUrl); ?>"
+            data-rest-nonce="<?php echo esc_attr($restNonce); ?>"
           data-registration-nonce="<?php echo esc_attr($nonce); ?>"
           data-event-id="<?php echo (int) $eventId; ?>">
         <p>

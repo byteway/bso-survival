@@ -3,6 +3,7 @@
 namespace BSO\Survival\Service;
 
 use BSO\Survival\Contracts\DashboardWidgetInterface;
+use BSO\Survival\Service\DashboardWidgetLayoutService;
 use BSO\Survival\Widgets\ContactFinderWidget;
 use BSO\Survival\Widgets\FallbackScoreWidget;
 use BSO\Survival\Widgets\MessageWidget;
@@ -59,6 +60,7 @@ class DashboardWidgetRegistry {
      */
     public static function renderSection(string $section, array $overview, array $filters = []): string {
         $widgets = self::getWidgetsForSection($section, $filters);
+        $widgetWidths = isset($filters['widget_widths']) && is_array($filters['widget_widths']) ? $filters['widget_widths'] : [];
 
         $safeSection = function_exists('esc_attr')
             ? esc_attr($section)
@@ -70,12 +72,20 @@ class DashboardWidgetRegistry {
                 continue;
             }
 
+            $width = isset($widgetWidths[$widget->getId()]) && is_string($widgetWidths[$widget->getId()])
+                ? (string) $widgetWidths[$widget->getId()]
+                : DashboardWidgetLayoutService::getDefaultWidthForWidget($widget->getId());
+            $span = DashboardWidgetLayoutService::widthToSpan($width);
+            $widthClass = DashboardWidgetLayoutService::widthToCssClass($width);
+
             $context = [
                 'overview' => $overview,
                 'data' => $widget->getData($overview, $filters),
                 'widget_id' => $widget->getId(),
             ];
+            $html .= '<div class="bso-survival-dashboard__widget-shell ' . esc_attr($widthClass) . '" style="grid-column: span ' . (int) $span . ';">';
             $html .= $widget->render($context);
+            $html .= '</div>';
         }
         $html .= '</div>';
 
@@ -98,10 +108,10 @@ class DashboardWidgetRegistry {
 
     public static function initDefaults(): void {
         self::register('main', new TimeslotProgressWidget());
+        self::register('main', new MessageWidget());
         self::register('main', new RegistrationCapacityWidget());
         self::register('main', new TeamRankingWidget());
         self::register('main', new ReportingStatusWidget());
-        self::register('operations', new MessageWidget());
         self::register('operations', new ContactFinderWidget());
         self::register('operations', new FallbackScoreWidget());
 

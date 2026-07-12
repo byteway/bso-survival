@@ -1,18 +1,66 @@
 .bso-survival-dashboard {
-    border: 1px solid #d0d7de;
-    border-radius: 8px;
-    padding: 16px;
-    background: #f6f8fa;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    background: linear-gradient(180deg, #f4f6f8 0%, #eef2f6 100%);
+    color: #1f3b5c;
+}
+
+.bso-survival-dashboard__header {
+    margin-bottom: 24px;
+}
+
+.bso-survival-dashboard__eyebrow {
+    margin: 0 0 8px;
+    color: #607086;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .bso-survival-dashboard__header h2 {
-    margin: 0 0 8px;
-    font-size: 1.25rem;
+    margin: 0 0 6px;
+    font-size: clamp(2rem, 4vw, 3rem);
+    line-height: 1.05;
+    color: #17324d;
+}
+
+.bso-survival-dashboard__event-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0 8px;
+    padding: 8px 10px;
+    border: 1px solid #d0d7de;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.bso-survival-dashboard__event-filter label {
+    color: #43586f;
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.bso-survival-dashboard__event-filter select {
+    min-width: 250px;
+    border: 1px solid #c4cfd9;
+    border-radius: 8px;
+    padding: 6px 8px;
+    color: #17324d;
+    background: #ffffff;
 }
 
 .bso-survival-dashboard__meta {
     margin: 0;
-    color: #57606a;
+    color: #607086;
+    font-size: 1rem;
+}
+
+.bso-survival-dashboard__breadcrumb {
+    margin: 8px 0 0;
+    color: #7a8798;
     font-size: 0.95rem;
 }
 
@@ -42,29 +90,165 @@
     background: #dafbe1;
 }
 
-.bso-survival-dashboard__summary {
+.bso-survival-dashboard__kpis {
     display: grid;
-    gap: 6px;
-    margin: 16px 0;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
+    margin: 24px 0 28px;
 }
 
-.bso-survival-dashboard__summary p {
+.bso-survival-dashboard__kpi-card {
+    padding: 18px;
+    border: 1px solid #d0d7de;
+    border-radius: 14px;
+    background: #ffffff;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.bso-survival-dashboard__kpi-card strong {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 1.6rem;
+    line-height: 1.1;
+    color: #17324d;
+}
+
+.bso-survival-dashboard__kpi-card span {
+    display: block;
+    color: #607086;
+    font-size: 0.95rem;
+}
+
+.bso-survival-dashboard__grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin: 0 0 24px;
+}
+
+.bso-survival-dashboard__widget-shell {
+    min-width: 0;
+}
+
+.bso-survival-dashboard__widget-shell .bso-widget {
+    height: 100%;
+}
+
+.bso-survival-dashboard__widget-shell--width-1-5 {
+    grid-column-end: span 2;
+}
+
+.bso-survival-dashboard__widget-shell--width-1-4 {
+    grid-column-end: span 1;
+}
+
+.bso-survival-dashboard__widget-shell--width-3-4 {
+    grid-column-end: span 3;
+}
+
+.bso-survival-dashboard__widget-shell--width-1 {
+    grid-column-end: span 4;
+}
+
+.bso-survival-dashboard__summary-text {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin: 0 0 20px;
+    color: #607086;
+    font-size: 0.92rem;
+}
+
+.bso-survival-dashboard__summary-text p {
     margin: 0;
 }
 
-.bso-survival-dashboard__lists {
+.bso-survival-dashboard__details {
     display: grid;
     gap: 16px;
 }
 
-.bso-survival-dashboard__list h3 {
-    margin: 0 0 8px;
-    font-size: 1rem;
+.bso-survival-dashboard__details details {
+    margin: 0;
 }
 
-.bso-survival-dashboard__list ul {
+.bso-survival-dashboard__details summary {
+    cursor: pointer;
+    padding: 14px 16px;
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    background: #ffffff;
+    font-weight: 600;
+    color: #17324d;
+}
+
+.bso-survival-dashboard__details ul {
     margin: 0;
-    padding-left: 20px;
+    padding: 15px 35px;
+    border: 1px solid #d0d7de;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background: #ffffff;
+}
+
+.bso-survival-dashboard__details li {
+    margin: 4px 0;
+}
+
+@media (max-width: 1200px) {
+    .bso-survival-dashboard__kpis,
+    .bso-survival-dashboard__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bso-survival-dashboard__widget-shell,
+    .bso-survival-dashboard__widget-shell--width-1-5,
+    .bso-survival-dashboard__widget-shell--width-1-4,
+    .bso-survival-dashboard__widget-shell--width-3-4,
+    .bso-survival-dashboard__widget-shell--width-1 {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 700px) {
+    .bso-survival-dashboard {
+        padding: 20px 16px;
+    }
+
+    .bso-survival-dashboard__event-filter {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .bso-survival-dashboard__event-filter select {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .bso-survival-dashboard__kpis,
+    .bso-survival-dashboard__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .bso-survival-dashboard__summary-text {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .bso-survival-score-selector {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+
+    .bso-survival-score-selector select {
+        width: 100%;
+        min-width: 0;
+    }
 }
 
 .bso-survival-parts {
@@ -199,5 +383,494 @@
     margin: 0 0 12px;
     color: #57606a;
     font-size: 0.95rem;
+}
+
+.bso-survival-score-form__confirm {
+    margin: 12px 0;
+    padding: 12px;
+    border: 1px solid #d8dee4;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.bso-survival-score-form__confirm-text {
+    margin: 0 0 8px;
+}
+
+.bso-survival-team-score {
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f6f8fa;
+}
+
+.bso-survival-team-score__header h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.bso-survival-team-score__meta {
+    margin: 0 0 12px;
+    color: #57606a;
+    font-size: 0.95rem;
+}
+
+.bso-survival-score-selector {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 10px;
+    padding: 8px 10px;
+    border: 1px solid #d8dee4;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.bso-survival-score-selector label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.bso-survival-score-selector select {
+    min-width: 220px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px 8px;
+    background: #fff;
+}
+
+.bso-survival-team-score__summary {
+    display: grid;
+    gap: 6px;
+    margin: 0 0 16px;
+}
+
+.bso-survival-team-score__summary p {
+    margin: 0;
+}
+
+.bso-survival-team-score__table-wrap {
+    overflow-x: auto;
+}
+
+.bso-survival-team-score__table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.bso-survival-team-score__table th,
+.bso-survival-team-score__table td {
+    padding: 10px 12px;
+    border: 1px solid #d8dee4;
+    text-align: left;
+}
+
+.bso-survival-team-score__table th {
+    background: #f0f3f6;
+}
+
+.bso-survival-team-score__table th .bso-sort-link,
+.bso-survival-part-score__table th .bso-sort-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.bso-survival-team-score__table th .bso-sort-link:hover,
+.bso-survival-team-score__table th .bso-sort-link:focus-visible,
+.bso-survival-part-score__table th .bso-sort-link:hover,
+.bso-survival-part-score__table th .bso-sort-link:focus-visible {
+    color: #334155;
+    text-decoration: underline;
+}
+
+.bso-survival-team-score__table .bso-sort-indicator,
+.bso-survival-part-score__table .bso-sort-indicator {
+    font-size: 0.72em;
+    line-height: 1;
+    opacity: 0.45;
+    transform: translateY(-1px);
+}
+
+.bso-survival-team-score__table .bso-sort-indicator--active,
+.bso-survival-part-score__table .bso-sort-indicator--active {
+    opacity: 0.85;
+}
+
+.bso-survival-team-score__table .bso-sort-indicator--inactive,
+.bso-survival-part-score__table .bso-sort-indicator--inactive {
+    opacity: 0.28;
+}
+
+.bso-survival-part-score {
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f6f8fa;
+}
+
+.bso-survival-part-score__header h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.bso-survival-part-score__meta {
+    margin: 0 0 12px;
+    color: #57606a;
+    font-size: 0.95rem;
+}
+
+.bso-survival-part-score__permission-note {
+    margin: 0 0 12px;
+    font-size: 0.9rem;
+}
+
+.bso-survival-part-score__permission-note.is-editor {
+    color: #166534;
+}
+
+.bso-survival-part-score__permission-note.is-readonly {
+    color: #92400e;
+}
+
+.bso-survival-part-score__summary {
+    display: grid;
+    gap: 6px;
+    margin: 0 0 16px;
+}
+
+.bso-survival-part-score__summary p {
+    margin: 0;
+}
+
+.bso-survival-part-score__table-wrap {
+    overflow-x: auto;
+}
+
+.bso-survival-part-score__table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.bso-survival-part-score__table th,
+.bso-survival-part-score__table td {
+    padding: 10px 12px;
+    border: 1px solid #d8dee4;
+    text-align: left;
+}
+
+.bso-survival-part-score__table th {
+    background: #f0f3f6;
+}
+
+.bso-survival-timeslot-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.bso-survival-timeslot-board {
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f6f8fa;
+}
+
+.bso-survival-timeslot-board__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.bso-survival-timeslot-board__title {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+}
+
+.bso-survival-timeslot-board__subtitle,
+.bso-survival-timeslot-board__selection {
+    margin: 0;
+    color: #57606a;
+    font-size: 0.95rem;
+}
+
+.bso-survival-timeslot-board__filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 16px;
+    padding: 12px;
+    border: 1px solid #d8dee4;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.bso-survival-timeslot-board__filter label {
+    font-weight: 600;
+}
+
+.bso-survival-timeslot-board__filter select {
+    min-width: min(100%, 320px);
+    padding: 8px 10px;
+}
+
+.bso-survival-timeslot-board__table-wrap {
+    overflow-x: auto;
+}
+
+.bso-survival-timeslot-board__table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.bso-survival-timeslot-board__table th,
+.bso-survival-timeslot-board__table td {
+    padding: 10px 12px;
+    border: 1px solid #d8dee4;
+    text-align: left;
+    vertical-align: top;
+}
+
+.bso-survival-timeslot-board__table th {
+    background: #f0f3f6;
+}
+
+.bso-survival-timeslot-board__part-name {
+    color: #57606a;
+    font-size: 0.9rem;
+}
+
+.bso-survival-timeslot-board__status-cell {
+    min-width: 200px;
+}
+
+.bso-survival-timeslot-board__status-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 12px;
+    margin-bottom: 6px;
+    white-space: nowrap;
+}
+
+.bso-survival-timeslot-board__led {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.bso-survival-timeslot-board__led.is-on {
+    background: #2da44e;
+}
+
+.bso-survival-timeslot-board__led.is-off {
+    background: #8c959f;
+}
+
+.bso-survival-timeslot-board__status-label {
+    font-size: 0.92rem;
+}
+
+.bso-survival-part-score__editor-hint {
+    margin: 0 0 12px;
+    font-size: 0.92rem;
+    color: #57606a;
+}
+
+.bso-survival-part-score__explanation {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border: 1px solid #d8dee4;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.bso-survival-part-score__explanation p {
+    margin: 0 0 6px;
+    color: #334155;
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.bso-survival-part-score__explanation p:last-child {
+    margin-bottom: 0;
+}
+
+.bso-part-score-row-clickable {
+    cursor: pointer;
+}
+
+.bso-part-score-row-clickable:hover td {
+    background: #eef6ff;
+}
+
+.bso-team-score-row-clickable {
+    cursor: pointer;
+}
+
+.bso-team-score-row-clickable:hover td {
+    background: #eef6ff;
+}
+
+.bso-team-score-editor {
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid #d8dee4;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.bso-team-score-editor[hidden] {
+    display: none;
+}
+
+.bso-team-score-editor__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.bso-team-score-editor__title {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.bso-team-score-editor__context {
+    margin: 8px 0 12px;
+    color: #57606a;
+    font-size: 0.92rem;
+}
+
+.bso-team-score-editor__status {
+    margin: 0 0 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #d0d7de;
+    background: #f6f8fa;
+}
+
+.bso-team-score-editor__status.is-error {
+    border-color: #cf222e;
+    background: #ffebe9;
+    color: #a40e26;
+}
+
+.bso-team-score-editor__status.is-success {
+    border-color: #1a7f37;
+    background: #dafbe1;
+    color: #116329;
+}
+
+.bso-survival-part-score__table .bso-part-score-row--timeslot-break td {
+    border-top: 3px solid #93c5fd;
+}
+
+.bso-part-score-editor {
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid #d8dee4;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.bso-part-score-editor[hidden] {
+    display: none;
+}
+
+.bso-part-score-editor__top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.bso-part-score-editor__title {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.bso-part-score-editor__context {
+    margin: 8px 0 12px;
+    color: #57606a;
+    font-size: 0.92rem;
+}
+
+.bso-part-score-editor__status {
+    margin: 0 0 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #d0d7de;
+    background: #f6f8fa;
+}
+
+.bso-part-score-editor__status.is-error {
+    border-color: #cf222e;
+    background: #ffebe9;
+    color: #a40e26;
+}
+
+.bso-part-score-editor__status.is-success {
+    border-color: #1a7f37;
+    background: #dafbe1;
+    color: #116329;
+}
+
+@media (min-width: 1200px) {
+    .bso-survival-part-score--editable.bso-survival-part-score--editor-open {
+        margin-right: 390px;
+    }
+
+    .bso-survival-team-score--editable.bso-survival-team-score--editor-open {
+        margin-right: 390px;
+    }
+
+    .bso-survival-part-score--editable .bso-part-score-editor {
+        position: fixed;
+        top: 40px;
+        right: 0;
+        width: 360px;
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 40px);
+        overflow: auto;
+        margin-top: 0;
+        border-left: 1px solid #d0d7de;
+        border-radius: 0;
+        box-shadow: -6px 0 20px rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+    }
+
+    .bso-survival-team-score--editable .bso-team-score-editor {
+        position: fixed;
+        top: 40px;
+        right: 0;
+        width: 360px;
+        max-width: calc(100vw - 20px);
+        max-height: calc(100vh - 40px);
+        overflow: auto;
+        margin-top: 0;
+        border-left: 1px solid #d0d7de;
+        border-radius: 0;
+        box-shadow: -6px 0 20px rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+    }
 }
 

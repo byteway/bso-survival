@@ -47,6 +47,7 @@ De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en 
 - Dashboard widget layout admin: [src/Admin/DashboardWidgetAdminPage.php](src/Admin/DashboardWidgetAdminPage.php)
 - Dashboard widget layout service: [src/Service/DashboardWidgetLayoutService.php](src/Service/DashboardWidgetLayoutService.php)
 - Dashboard widget layout REST controller: [src/Api/DashboardWidgetLayoutRestController.php](src/Api/DashboardWidgetLayoutRestController.php)
+- Widgetbreedte per dashboard widget is configureerbaar in de adminlayout met de opties `1/5`, `1/4`, `3/4` en `1` (hele breedte).
 - PartRule configuratie-service: [src/Service/PartRuleConfiguratorService.php](src/Service/PartRuleConfiguratorService.php)
 - Scoreberekening op PartRule: [src/Service/ScoreComputationService.php](src/Service/ScoreComputationService.php)
 - Admin configuratiepagina: [src/Admin/PartRuleAdminPage.php](src/Admin/PartRuleAdminPage.php)
@@ -86,8 +87,19 @@ De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en 
 	- Attributen: `event_id`, `title`, `button_label`
 - `[bso_survival_team_score]`
 	- Attributen: `event_id`, `team_id`, `title`
+	- Zonder `team_id` wordt automatisch het eerste team van het event gekozen; bovenin staat een team-combobox om direct te wisselen.
 - `[bso_survival_part_score]`
 	- Attributen: `event_id`, `part_id`, `title`
+	- Zonder `part_id` wordt automatisch het eerste gekoppelde onderdeel van het event gekozen; bovenin staat een onderdeel-combobox om direct te wisselen.
+- `[bso_survival_timeslot_board]`
+	- Attributen: `event_id`, `part_id`, `title`
+
+Belangrijk voor dashboardpagina's:
+
+- Gebruik altijd `[bso_survival_dashboard]` (niet `[bso_team_dashboard]`).
+- Geef bij voorkeur altijd expliciet `event_id` mee, bijvoorbeeld: `[bso_survival_dashboard event_id="7"]`.
+- Zonder `event_id` kiest de shortcode automatisch het eerstvolgende actieve event vanaf vandaag.
+- Bovenin het dashboard staat een event-combobox met maximaal 5 actieve events vanaf vandaag naar de toekomst.
 
 Voorbeeld:
 
@@ -95,6 +107,7 @@ Voorbeeld:
 [bso_survival_event_overview title="Gecombineerd Overzicht Event 2" event_id="2" compact="yes"]
 [bso_survival_team_score title="Tussentijdse teamscore Team001" event_id="2" team_id="14"]
 [bso_survival_part_score title="Tussentijdse onderdeelscore Kano Bungee" event_id="2" part_id="8"]
+[bso_survival_timeslot_board title="Tijdslot overzicht Event 2" event_id="2" part_id="8"]
 ```
 
 ## Hook index
@@ -128,6 +141,14 @@ Een compacte index van de belangrijkste actions en filters staat ook in [docs/ho
 	"layout": {
 		"main": ["team_ranking"],
 		"operations": ["message_widget"]
+	},
+	"widths": {
+		"main": {
+			"team_ranking": "3/4"
+		},
+		"operations": {
+			"message_widget": "1"
+		}
 	}
 }
 ```
@@ -272,6 +293,9 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 8. Gebruik `Nieuwe score` naast `Laden` als handmatige fallback voor uitzonderingen.
 9. Een extra score op hetzelfde onderdeel voor hetzelfde team is alleen toegestaan via een andere assignment/tijdslot en zolang het totaal aantal scores van alle teams gelijk blijft; anders wordt opslaan geannuleerd.
 10. Voor simulaties zonder handmatige invoer: gebruik het runbook [docs/Runbook_Beheer_Demo_Simulatie.md](docs/Runbook_Beheer_Demo_Simulatie.md).
+11. De scoregrid bevat nu een kolom `Tijdsrange` (sorteerbaar) zodat assignment-context direct zichtbaar is.
+12. Rechtenafhankelijke UI: gebruikers met alleen scorebeheer zien wel invoer/bewerken, maar geen `Initialiseer scores` (alleen volledige beheerrechten).
+13. In de edit flip-over kan `Tijdsrange` nu actief worden gewijzigd via een selectieveld; hiermee wissel je eenvoudig van tijdslot binnen hetzelfde team + onderdeel.
 
 ## Admin Quickstart (toegang en rollen)
 
@@ -290,6 +314,11 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 ## Frontend scorelogica (team/onderdeel)
 
 - Onderdeelscore (`[bso_survival_part_score]`) toont alle teams voor het geselecteerde onderdeel.
+- Onderdeelscore bevat een extra kolom `Tijdsrange` (sorteerbaar) in het grid.
+- Tijdslot-overzicht (`[bso_survival_timeslot_board]`) toont per tijdslot welke teams tegenover elkaar staan, met een groene of grijze status-led per team op basis van score-aanwezigheid.
+- Voor gebruikers met scorebeheerrechten (`manage_survival_scores`) zijn score-rijen in onderdeelscore aanklikbaar en opent rechts een bewerk flip-over.
+- Zonder scorebeheerrechten toont onderdeelscore een duidelijke alleen-lezen UI en is bewerken uitgeschakeld.
+- Teamscore hanteert nu hetzelfde gridgedrag als onderdeelscore: voor scorebeheerders aanklikbare rijen met rechter bewerkpaneel; voor read-only gebruikers alleen weergave.
 - Posities worden per onderdeel opnieuw berekend op basis van ruwe score en onderdeelregel (`lower_raw_wins` / `higher_raw_wins`, of `time` als lagere score wint).
 - Bij gelijke ruwe score geldt bonus als tie-break (meer bonus = hogere positie); pas bij gelijke bonus volgt alfabetische fallback op teamnaam.
 - Per team wordt een tussentijdse waarde berekend met:
@@ -298,6 +327,7 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 - Positie in het grid blijft de originele rangorde (1, 2, 3, ...).
 - Voor de tussentijdse score wordt intern een omgekeerde weging gebruikt (bij 7 teams: beste rij telt als 7, laagste rij als 1).
 - Teamscore (`[bso_survival_team_score]`) toont voor het geselecteerde team per onderdeel:
+	- tijdsrange
 	- ruwe score
 	- bonuspunten
 	- berekende positie binnen dat onderdeel
@@ -412,6 +442,21 @@ Volledige beheerstappen en checks staan in [docs/Runbook_Beheer_Demo_Simulatie.m
 - Nieuwe adminpagina `Survival -> Toegang` toegevoegd met per-gebruiker override-profielen.
 - Plugin gebruikt nu eigen capabilities voor settings, toegang, scorebeheer en meldingenbeheer.
 - Settings-gebonden adminpagina's en relevante REST beheeracties respecteren toegewezen survival-caps.
+
+### 0.5.15 - Timeslotkolommen en rechtenafhankelijke score-UI
+
+- `Survival -> Score Invoer` toont nu een sorteerbare `Tijdsrange` kolom in de scoregrid en in assignmentcontext.
+- `Survival -> Score Invoer` UI differentieert rechten: scorebeheer vs volledige beheerrechten (initialisatieknop alleen voor volledige rechten).
+- `Survival -> Score Invoer` edit flip-over ondersteunt nu tijdslotwissel via selecteerbare tijdsrange.
+- `[bso_survival_part_score]` toont nu een `Tijdsrange` kolom, inclusief sorteermogelijkheid en editorcontext met range-label.
+- `[bso_survival_team_score]` toont nu ook de `Tijdsrange` per rij.
+
+### 0.5.16 - Score-shortcode pariteit en tijdslotpairing
+
+- `[bso_survival_part_score]` gebruikt nu assignment/tijdslot-niveau rows, zodat per tijdslot beide teams zichtbaar blijven.
+- `[bso_survival_part_score]` sorteert standaard op tijdsrange en toont visuele scheiding tussen tijdslotblokken.
+- `[bso_survival_team_score]` gebruikt hetzelfde rechtenafhankelijke gridgedrag als onderdeelscore (click-to-edit voor scorebeheer).
+- `[bso_survival_team_score]` forceert voor tijdsrange altijd oplopende sortering (vroeg naar laat), ook bij oude URL-sortparams.
 
 ## Ontwikkelcommando's
 

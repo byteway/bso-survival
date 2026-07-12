@@ -11,6 +11,8 @@
  * @var array<int, object> $assignments
  * @var string $restUrl
  * @var string $nonce
+ * @var string $partStatusRestBase
+ * @var string $restNonce
  */
 ?>
 <section class="bso-survival-score-form">
@@ -42,6 +44,8 @@
     <form id="bso-score-form"
           data-rest-url="<?php echo esc_attr($restUrl); ?>"
           data-score-nonce="<?php echo esc_attr($nonce); ?>"
+            data-part-status-base="<?php echo esc_attr($partStatusRestBase); ?>"
+            data-rest-nonce="<?php echo esc_attr($restNonce); ?>"
           data-event-id="<?php echo (int) $eventId; ?>"
           data-is-read-only="<?php echo $isReadOnly ? '1' : '0'; ?>"
           <?php echo empty($assignments) ? 'data-has-assignments="0"' : 'data-has-assignments="1"'; ?> >
@@ -50,7 +54,7 @@
             <select id="bso-score-assignment-id" name="assignment_id" <?php echo $isReadOnly || empty($assignments) ? 'disabled="disabled"' : ''; ?> required="required">
                 <option value=""><?php esc_html_e('Kies een assignment', 'bso-survival'); ?></option>
                 <?php foreach ($assignments as $assignment) : ?>
-                    <option value="<?php echo (int) $assignment->id; ?>">
+                    <option value="<?php echo (int) $assignment->id; ?>" data-part-id="<?php echo (int) ($assignment->part_id ?? 0); ?>">
                         <?php echo esc_html(sprintf('%s - %s', (string) ($assignment->team_name ?? 'Onbekend team'), (string) ($assignment->part_name ?? 'Onbekend onderdeel'))); ?>
                     </option>
                 <?php endforeach; ?>
@@ -65,6 +69,13 @@
         <p>
             <button id="bso-score-submit" type="submit" class="button button-primary" <?php echo $isReadOnly || empty($assignments) ? 'disabled="disabled"' : ''; ?>><?php echo esc_html($buttonLabel); ?></button>
         </p>
+
+        <div id="bso-score-confirm-wrap" class="bso-survival-score-form__confirm" hidden="hidden">
+            <p id="bso-score-confirm-text" class="bso-survival-score-form__confirm-text"></p>
+            <p>
+                <button id="bso-score-confirm-button" type="button" class="button button-secondary"><?php esc_html_e('Onderdeel bevestigen', 'bso-survival'); ?></button>
+            </p>
+        </div>
 
         <div id="bso-score-status" class="bso-survival-status-notice" style="display:none;"><p></p></div>
     </form>

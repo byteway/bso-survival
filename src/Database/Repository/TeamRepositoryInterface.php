@@ -23,4 +23,10 @@ interface TeamRepositoryInterface {
      * @return object|null
      */
     public function create(array $data);
+
+    /**
+     * @param array<string, mixed> $data
+     * @return object|null
+     */
+    public function updateById(int $id, array $data);
 }

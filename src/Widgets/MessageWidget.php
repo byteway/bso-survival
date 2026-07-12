@@ -16,7 +16,7 @@ class MessageWidget implements DashboardWidgetInterface {
 
     public function getId(): string { return 'message_widget'; }
     public function getTitle(): string { return 'Meldingen'; }
-    public function getPriority(): int { return 40; }
+    public function getPriority(): int { return 12; }
     public function getCapabilities(): array { return ['read']; }
 
     public function getData(array $overview, array $filters = []): array {
@@ -52,9 +52,11 @@ class MessageWidget implements DashboardWidgetInterface {
         if (is_array($items) && $items !== []) {
             $html = '<article class="bso-widget bso-widget-message"><h3>' . esc_html($this->getTitle()) . '</h3><ul>';
             foreach ($items as $item) {
-                $type = esc_html((string) ($item['type'] ?? 'info'));
+                $rawType = (string) ($item['type'] ?? 'info');
+                $type = esc_html($rawType);
                 $text = esc_html((string) ($item['text'] ?? ''));
-                $html .= '<li><strong>' . $type . '</strong>: ' . $text . '</li>';
+                $typeClass = $this->typeClass($rawType);
+                $html .= '<li><strong class="bso-widget-message__type ' . esc_attr($typeClass) . '">' . $type . '</strong>: ' . $text . '</li>';
             }
             $html .= '</ul></article>';
 
@@ -63,6 +65,24 @@ class MessageWidget implements DashboardWidgetInterface {
 
         return '<article class="bso-widget bso-widget-message"><h3>' . esc_html($this->getTitle()) . '</h3><p>' .
             esc_html((string) ($context['data']['message'] ?? '')) . '</p></article>';
+    }
+
+    private function typeClass(string $type): string {
+        $normalized = function_exists('mb_strtolower') ? mb_strtolower(trim($type)) : strtolower(trim($type));
+
+        if (in_array($normalized, ['urgent', 'urgente', 'error', 'fout'], true)) {
+            return 'is-urgent';
+        }
+
+        if (in_array($normalized, ['warning', 'waarschuwing'], true)) {
+            return 'is-warning';
+        }
+
+        if (in_array($normalized, ['success', 'succes'], true)) {
+            return 'is-success';
+        }
+
+        return 'is-info';
     }
 
     public function getScriptDependencies(): array { return []; }

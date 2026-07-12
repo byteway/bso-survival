@@ -20,14 +20,16 @@ class ScoreEntryService {
 
     /**
      * @param mixed $rawValue
+     * @param mixed $bonusPoints
      * @param array<string, mixed> $context
      * @return object
      */
-    public function submit(int $partId, int $assignmentId, $rawValue, string $enteredByRole, array $context = []) {
+    public function submit(int $partId, int $assignmentId, $rawValue, $bonusPoints, string $enteredByRole, array $context = []) {
         $entry = [
             'part_id' => $partId,
             'assignment_id' => $assignmentId,
             'raw_value' => $rawValue,
+            'bonus_points' => $bonusPoints,
             'entered_by_role' => $enteredByRole,
             'context' => $context,
         ];
@@ -36,12 +38,14 @@ class ScoreEntryService {
             do_action('bso_survival_before_score_validation', $entry);
         }
 
-        $this->validateSubmission($partId, $assignmentId, $rawValue, $enteredByRole);
+        $this->validateSubmission($partId, $assignmentId, $rawValue, $bonusPoints, $enteredByRole);
 
-        $normalizedPoints = $this->scoring->normalizeRawValueForPart($partId, $rawValue);
+        $normalizedBase = $this->scoring->normalizeRawValueForPart($partId, $rawValue);
+        $normalizedPoints = $this->composeNormalizedPoints($normalizedBase, $bonusPoints);
         $stored = $this->entries->insert([
             'assignment_id' => $assignmentId,
             'raw_value' => $rawValue,
+            'bonus_points' => (float) $bonusPoints,
             'normalized_points' => $normalizedPoints,
             'position' => null,
             'rank_points' => null,
@@ -66,10 +70,11 @@ class ScoreEntryService {
 
     /**
      * @param mixed $rawValue
+     * @param mixed $bonusPoints
      * @param array<string, mixed> $context
      * @return object
      */
-    public function updateEntry(int $scoreEntryId, int $partId, int $assignmentId, $rawValue, string $enteredByRole, array $context = []) {
+    public function updateEntry(int $scoreEntryId, int $partId, int $assignmentId, $rawValue, $bonusPoints, string $enteredByRole, array $context = []) {
         if ($scoreEntryId <= 0) {
             throw new InvalidArgumentException('score_entry_id must be a positive integer.');
         }
@@ -84,6 +89,7 @@ class ScoreEntryService {
             'part_id' => $partId,
             'assignment_id' => $assignmentId,
             'raw_value' => $rawValue,
+            'bonus_points' => $bonusPoints,
             'entered_by_role' => $enteredByRole,
             'context' => $context,
         ];
@@ -92,11 +98,14 @@ class ScoreEntryService {
             do_action('bso_survival_before_score_validation', $entry);
         }
 
-        $this->validateSubmission($partId, $assignmentId, $rawValue, $enteredByRole);
+        $this->validateSubmission($partId, $assignmentId, $rawValue, $bonusPoints, $enteredByRole);
 
-        $normalizedPoints = $this->scoring->normalizeRawValueForPart($partId, $rawValue);
+        $normalizedBase = $this->scoring->normalizeRawValueForPart($partId, $rawValue);
+        $normalizedPoints = $this->composeNormalizedPoints($normalizedBase, $bonusPoints);
         $updated = $this->entries->updateById($scoreEntryId, [
+            'assignment_id' => $assignmentId,
             'raw_value' => $rawValue,
+            'bonus_points' => (float) $bonusPoints,
             'normalized_points' => $normalizedPoints,
             'entered_by_role' => $enteredByRole,
             'updated_at' => gmdate('Y-m-d H:i:s'),
@@ -114,9 +123,17 @@ class ScoreEntryService {
     }
 
     /**
-     * @param mixed $rawValue
+     * @return array<int, int>
      */
-    private function validateSubmission(int $partId, int $assignmentId, $rawValue, string $enteredByRole): void {
+    public function consumeAutoCreatedPartIds(): array {
+        return $this->scoring->consumeAutoCreatedPartIds();
+    }
+
+    /**
+     * @param mixed $rawValue
+     * @param mixed $bonusPoints
+     */
+    private function validateSubmission(int $partId, int $assignmentId, $rawValue, $bonusPoints, string $enteredByRole): void {
         if ($partId <= 0) {
             throw new InvalidArgumentException('part id must be a positive integer.');
         }
@@ -129,8 +146,21 @@ class ScoreEntryService {
             throw new InvalidArgumentException('raw value must be numeric.');
         }
 
+        if (!is_numeric($bonusPoints) || (float) $bonusPoints < 0) {
+            throw new InvalidArgumentException('bonus_points must be numeric and >= 0.');
+        }
+
         if (trim($enteredByRole) === '') {
             throw new InvalidArgumentException('entered_by_role is required.');
         }
+    }
+
+    /**
+     * @param mixed $bonusPoints
+     */
+    private function composeNormalizedPoints(float $normalizedBase, $bonusPoints): float {
+        $bonus = is_numeric($bonusPoints) ? (float) $bonusPoints : 0.0;
+
+        return $normalizedBase + max(0.0, $bonus);
     }
 }

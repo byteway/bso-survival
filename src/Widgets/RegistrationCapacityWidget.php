@@ -33,8 +33,8 @@ class RegistrationCapacityWidget implements DashboardWidgetInterface {
             : sprintf('%d / ?', $registered);
 
         $badge = $isFull
-            ? '<span class="bso-widget-badge bso-widget-badge--full">VOL</span>'
-            : '';
+            ? '<span class="bso-widget-badge bso-widget-badge--full"><span class="bso-widget-badge__dot" aria-hidden="true"></span>VOL</span>'
+            : '<span class="bso-widget-badge bso-widget-badge--available"><span class="bso-widget-badge__dot" aria-hidden="true"></span>Beschikbaar</span>';
 
         return '<article class="bso-widget bso-widget-registration-capacity"><h3>' . esc_html($this->getTitle()) . '</h3><p>' . esc_html($value) . '</p>' . $badge . '</article>';
     }

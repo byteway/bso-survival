@@ -80,6 +80,9 @@ class AdminScoreRestController {
             'event_id' => $this->extractIntParam($request, 'event_id'),
             'assignment_id' => $this->extractIntParam($request, 'assignment_id'),
             'raw_value' => $this->extractRawParam($request, 'raw_value'),
+            'bonus_points' => $this->extractRawParam($request, 'bonus_points'),
+            'joker_applied' => $this->extractBoolParam($request, 'joker_applied'),
+            'joker_validated_by' => $this->extractStringParam($request, 'joker_validated_by'),
             'changed_by' => $this->extractStringParam($request, 'changed_by'),
             'entered_by_role' => $this->extractStringParam($request, 'entered_by_role'),
         ];
@@ -105,6 +108,9 @@ class AdminScoreRestController {
         $payload = [
             'event_id' => $this->extractIntParam($request, 'event_id'),
             'raw_value' => $this->extractRawParam($request, 'raw_value'),
+            'bonus_points' => $this->extractRawParam($request, 'bonus_points'),
+            'joker_applied' => $this->extractBoolParam($request, 'joker_applied'),
+            'joker_validated_by' => $this->extractStringParam($request, 'joker_validated_by'),
             'changed_by' => $this->extractStringParam($request, 'changed_by'),
             'entered_by_role' => $this->extractStringParam($request, 'entered_by_role'),
         ];
@@ -168,6 +174,25 @@ class AdminScoreRestController {
         }
 
         return '';
+    }
+
+    /** @param mixed $request */
+    private function extractBoolParam($request, string $key): bool {
+        $raw = $this->extractRawParam($request, $key);
+
+        if (is_bool($raw)) {
+            return $raw;
+        }
+
+        if (is_int($raw) || is_float($raw)) {
+            return (int) $raw === 1;
+        }
+
+        $normalized = function_exists('mb_strtolower')
+            ? mb_strtolower(trim((string) $raw))
+            : strtolower(trim((string) $raw));
+
+        return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
     }
 
     /**

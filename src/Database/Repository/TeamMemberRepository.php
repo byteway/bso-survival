@@ -51,6 +51,63 @@ class TeamMemberRepository implements TeamMemberRepositoryInterface {
         return $created;
     }
 
+    /**
+     * @return array<int, object>
+     */
+    public function findByTeamId(int $teamId): array {
+        if ($teamId <= 0) {
+            return [];
+        }
+
+        $table = $this->tableName();
+        $sql = $this->wpdb->prepare(
+            "SELECT * FROM {$table} WHERE team_id = %d ORDER BY id ASC",
+            $teamId
+        );
+
+        return $this->wpdb->get_results($sql) ?: [];
+    }
+
+    public function deleteByTeamId(int $teamId): int {
+        if ($teamId <= 0) {
+            return 0;
+        }
+
+        $table = $this->tableName();
+        $deleted = $this->wpdb->delete($table, ['team_id' => $teamId], ['%d']);
+
+        return $deleted === false ? 0 : (int) $deleted;
+    }
+
+    /**
+     * @param array<int, string> $names
+     */
+    public function replaceForTeam(int $teamId, array $names): int {
+        if ($teamId <= 0) {
+            return 0;
+        }
+
+        $this->deleteByTeamId($teamId);
+
+        $rows = [];
+        $now = gmdate('Y-m-d H:i:s');
+        foreach ($names as $name) {
+            $cleanName = trim((string) $name);
+            if ($cleanName === '') {
+                continue;
+            }
+
+            $rows[] = [
+                'team_id' => $teamId,
+                'name' => $cleanName,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        return $this->createBatch($rows);
+    }
+
     private function tableName(): string {
         return $this->wpdb->prefix . 'bso_survival_team_members';
     }

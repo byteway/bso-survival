@@ -78,6 +78,49 @@ class DashboardOverviewService {
         ];
     }
 
+    /**
+     * @return array<int, object>
+     */
+    public function listUpcomingActiveEvents(int $limit = 5): array {
+        $limit = max(1, $limit);
+        $today = gmdate('Y-m-d');
+
+        $events = array_values(array_filter($this->events->listActiveEvents(), static function ($event) use ($today): bool {
+            if (!is_object($event)) {
+                return false;
+            }
+
+            $eventDate = trim((string) ($event->event_date ?? ''));
+            if ($eventDate === '') {
+                return false;
+            }
+
+            return strcmp($eventDate, $today) >= 0;
+        }));
+
+        usort($events, static function ($left, $right): int {
+            $leftDate = (string) ($left->event_date ?? '');
+            $rightDate = (string) ($right->event_date ?? '');
+            $dateCompare = strcmp($leftDate, $rightDate);
+            if ($dateCompare !== 0) {
+                return $dateCompare;
+            }
+
+            return ((int) ($left->id ?? 0)) <=> ((int) ($right->id ?? 0));
+        });
+
+        return array_slice($events, 0, $limit);
+    }
+
+    public function resolveDefaultDashboardEventId(): int {
+        $upcoming = $this->listUpcomingActiveEvents(1);
+        if ($upcoming !== []) {
+            return (int) ($upcoming[0]->id ?? 0);
+        }
+
+        return 0;
+    }
+
     private function extractMaxTeams(string $metaData): int {
         if ($metaData === '') {
             return 0;

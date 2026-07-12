@@ -3,8 +3,8 @@
 namespace BSO\Survival\Api;
 
 use BSO\Survival\Service\DashboardWidgetLayoutService;
-use BSO\Survival\Support\Capabilities;
 use BSO\Survival\Support\ApiResponse;
+use BSO\Survival\Support\Capabilities;
 use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
@@ -132,19 +132,30 @@ class DashboardWidgetLayoutRestController {
 
     /**
      * @param mixed $request
-     * @return array<string, array<int, string>>
+     * @return array<string, mixed>
      */
     private function extractLayoutPayload($request): array {
         if (is_object($request) && method_exists($request, 'get_param')) {
             $layout = $request->get_param('layout');
-            return is_array($layout) ? $layout : [];
+            $payload = is_array($layout) ? $layout : [];
+
+            $widths = $request->get_param('widths');
+            if (is_array($widths)) {
+                $payload['widths'] = $widths;
+            }
+
+            return $payload;
         }
 
         if (is_array($request) && isset($request['layout']) && is_array($request['layout'])) {
-            return $request['layout'];
+            $payload = $request['layout'];
+            if (isset($request['widths']) && is_array($request['widths'])) {
+                $payload['widths'] = $request['widths'];
+            }
+
+            return $payload;
         }
 
         return [];
     }
-
 }

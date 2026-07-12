@@ -139,12 +139,18 @@ class PublicationNotificationService {
      */
     private function buildTemplateContext(int $eventId, array $publication): array {
         $topThree = isset($publication['top_3']) && is_array($publication['top_3']) ? $publication['top_3'] : [];
+        $finalStandings = isset($publication['final_standings']) && is_array($publication['final_standings'])
+            ? $publication['final_standings']
+            : [];
+        $appreciation = trim((string) ($publication['appreciation_message'] ?? ''));
 
         return [
             'event_id' => $eventId,
             'headline' => (string) ($publication['headline'] ?? 'Eindstand gepubliceerd'),
             'published_at' => (string) ($publication['published_at'] ?? gmdate('c')),
             'top_3_html' => $this->buildTopThreeHtml($topThree),
+            'final_standings_html' => $this->buildFinalStandingsHtml($finalStandings),
+            'appreciation_message' => $appreciation !== '' ? $appreciation : 'Dank aan iedereen die heeft meegeholpen aan dit event.',
         ];
     }
 
@@ -169,6 +175,30 @@ class PublicationNotificationService {
         }
 
         $html .= '</ol>';
+        return $html;
+    }
+
+    /**
+     * @param array<int, mixed> $standings
+     */
+    private function buildFinalStandingsHtml(array $standings): string {
+        if ($standings === []) {
+            return '<p>Geen volledige eindstand beschikbaar.</p>';
+        }
+
+        $html = '<table><thead><tr><th>Plek</th><th>Team</th><th>Punten</th></tr></thead><tbody>';
+        foreach ($standings as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $rank = (int) ($item['rank'] ?? 0);
+            $teamName = (string) ($item['team_name'] ?? 'Onbekend team');
+            $points = (float) ($item['points'] ?? 0);
+            $html .= '<tr><td>' . esc_html((string) $rank) . '</td><td>' . esc_html($teamName) . '</td><td>' . esc_html(number_format($points, 2, '.', '')) . '</td></tr>';
+        }
+
+        $html .= '</tbody></table>';
         return $html;
     }
 
@@ -218,6 +248,10 @@ class PublicationNotificationService {
         $topThree = isset($publication['top_3']) && is_array($publication['top_3'])
             ? $publication['top_3']
             : [];
+        $finalStandings = isset($publication['final_standings']) && is_array($publication['final_standings'])
+            ? $publication['final_standings']
+            : [];
+        $appreciation = trim((string) ($publication['appreciation_message'] ?? ''));
 
         $body = '<h2>' . esc_html($headline) . '</h2>';
         $body .= '<p>De eindstand van het event is gepubliceerd.</p>';
@@ -236,6 +270,15 @@ class PublicationNotificationService {
                 $body .= '<li>' . esc_html($line) . '</li>';
             }
             $body .= '</ol>';
+        }
+
+        if ($finalStandings !== []) {
+            $body .= '<h3>Volledige eindstand</h3>';
+            $body .= $this->buildFinalStandingsHtml($finalStandings);
+        }
+
+        if ($appreciation !== '') {
+            $body .= '<p>' . esc_html($appreciation) . '</p>';
         }
 
         return $body;

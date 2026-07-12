@@ -27,13 +27,30 @@ class DashboardControllerTest extends TestCase {
 
         $this->assertStringContainsString('Dashboard titel', $output);
         $this->assertStringContainsString('Event #7 - Dash Event', $output);
-        $this->assertStringContainsString('Onderdelen: 2', $output);
-        $this->assertStringContainsString('Teams: 3', $output);
-        $this->assertStringContainsString('Klaar voor planning: ja', $output);
+        $this->assertStringContainsString('Onderdelen', $output);
+        $this->assertStringContainsString('Teams', $output);
+        $this->assertStringContainsString('Klaar voor planning', $output);
         $this->assertStringContainsString('Kanovaren', $output);
         $this->assertStringContainsString('Team003', $output);
         $this->assertStringContainsString('Tijdslot voortgang', $output);
         $this->assertStringContainsString('Meldingen', $output);
+        $this->assertTrue(strpos($output, 'Tijdslot voortgang') < strpos($output, 'Meldingen'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_falls_back_to_first_upcoming_active_event_when_event_id_is_missing(): void {
+        $controller = new DashboardController(new FakeDashboardOverviewService());
+
+        $output = $controller->render([
+            'title' => 'Dashboard zonder event_id',
+        ]);
+
+        $this->assertStringContainsString('Dashboard zonder event_id', $output);
+        $this->assertStringContainsString('Event #9 - Dash Event', $output);
+        $this->assertStringContainsString('name="event_id"', $output);
+        $this->assertStringContainsString('value="9" selected="selected"', $output);
     }
 
     /**
@@ -58,6 +75,10 @@ class DashboardControllerTest extends TestCase {
                 7 => [
                     'main' => ['team_ranking'],
                     'operations' => ['message_widget'],
+                    'widths' => [
+                        'main' => ['team_ranking' => '3/4'],
+                        'operations' => ['message_widget' => '1'],
+                    ],
                 ],
             ])
         );
@@ -72,6 +93,40 @@ class DashboardControllerTest extends TestCase {
         $this->assertStringContainsString('Teampositieoverzicht', $output);
         $this->assertStringContainsString('Meldingen', $output);
         $this->assertStringNotContainsString('Tijdslot voortgang', $output);
+        $this->assertStringContainsString('bso-survival-dashboard__widget--width-3-4', $output);
+        $this->assertStringContainsString('bso-survival-dashboard__widget--width-1', $output);
+    }
+
+    /**
+     * @test
+     */
+    public function it_moves_legacy_message_widget_from_operations_to_main_directly_after_timeslot(): void {
+        $layoutService = new DashboardWidgetLayoutService(
+            new FakeDashboardWidgetLayoutRepository([
+                7 => [
+                    'main' => ['timeslot_progress', 'team_ranking'],
+                    'operations' => ['message_widget', 'contact_finder', 'fallback_score'],
+                    'widths' => [
+                        'main' => ['timeslot_progress' => '1', 'team_ranking' => '1/4'],
+                        'operations' => ['message_widget' => '1', 'contact_finder' => '1/4', 'fallback_score' => '1/4'],
+                    ],
+                ],
+            ])
+        );
+
+        $controller = new DashboardController(new FakeDashboardOverviewService(), $layoutService);
+
+        $output = $controller->render([
+            'title' => 'Dashboard legacy layout test',
+            'event_id' => 7,
+        ]);
+
+        $this->assertStringContainsString('Tijdslot voortgang', $output);
+        $this->assertStringContainsString('Meldingen', $output);
+        $this->assertStringContainsString('Contactzoeker', $output);
+        $this->assertTrue(strpos($output, 'Tijdslot voortgang') < strpos($output, 'Meldingen'));
+        $this->assertTrue(strpos($output, 'Meldingen') < strpos($output, 'Contactzoeker'));
+        $this->assertSame(1, substr_count($output, '<h3>Meldingen</h3>'));
     }
 
     /**
@@ -86,7 +141,8 @@ class DashboardControllerTest extends TestCase {
         ]);
 
         $this->assertStringContainsString('Dit event is read-only afgesloten.', $output);
-        $this->assertStringNotContainsString('Meldingen', $output);
+        $this->assertStringContainsString('Meldingen', $output);
+        $this->assertStringNotContainsString('Contactzoeker', $output);
     }
 }
 
@@ -125,6 +181,20 @@ class FakeDashboardOverviewService extends DashboardOverviewService {
             ],
         ];
     }
+
+    /**
+     * @return array<int, object>
+     */
+    public function listUpcomingActiveEvents(int $limit = 5): array {
+        return array_slice([
+            (object) ['id' => 9, 'name' => 'Actief Event Vandaag', 'event_date' => gmdate('Y-m-d')],
+            (object) ['id' => 12, 'name' => 'Actief Event Morgen', 'event_date' => gmdate('Y-m-d', strtotime('+1 day'))],
+        ], 0, $limit);
+    }
+
+    public function resolveDefaultDashboardEventId(): int {
+        return 9;
+    }
 }
 
 class ThrowingDashboardOverviewService extends DashboardOverviewService {
@@ -136,6 +206,17 @@ class ThrowingDashboardOverviewService extends DashboardOverviewService {
      */
     public function getOverviewForEvent(int $eventId): array {
         throw new InvalidArgumentException(sprintf('Event %d not found.', $eventId));
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function listUpcomingActiveEvents(int $limit = 5): array {
+        return [];
+    }
+
+    public function resolveDefaultDashboardEventId(): int {
+        return 0;
     }
 }
 
@@ -158,6 +239,19 @@ class ClosedDashboardOverviewService extends DashboardOverviewService {
                 'is_published' => true,
             ],
         ];
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function listUpcomingActiveEvents(int $limit = 5): array {
+        return array_slice([
+            (object) ['id' => 8, 'name' => 'Closed Event', 'event_date' => gmdate('Y-m-d')],
+        ], 0, $limit);
+    }
+
+    public function resolveDefaultDashboardEventId(): int {
+        return 8;
     }
 }
 
