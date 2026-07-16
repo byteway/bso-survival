@@ -5,6 +5,7 @@ namespace BSO\Survival\Frontend;
 use BSO\Survival\Database\Repository\EventRepository;
 use BSO\Survival\Database\Repository\EventPublicationRepository;
 use BSO\Survival\Database\Repository\PartRepository;
+use BSO\Survival\Database\Repository\PartHelpRepository;
 use BSO\Survival\Database\Repository\PartRuleRepository;
 use BSO\Survival\Database\Repository\TeamRepository;
 use BSO\Survival\Service\DashboardOverviewService;
@@ -13,6 +14,7 @@ use BSO\Survival\Service\EventPublicationService;
 use BSO\Survival\Database\Repository\AssignmentRepository;
 use BSO\Survival\Service\InterimTeamScoreService;
 use BSO\Survival\Service\PartService;
+use BSO\Survival\Service\PartHelpService;
 use BSO\Survival\Service\TeamService;
 
 class ShortcodeController {
@@ -141,11 +143,13 @@ class ShortcodeController {
     private function buildPartsController(): PartsController {
         $eventRepository = new EventRepository();
         $partRepository = new PartRepository();
+        $partHelpRepository = new PartHelpRepository();
 
         $eventService = new EventService($eventRepository);
         $partService = new PartService($partRepository);
+        $partHelpService = new PartHelpService($partHelpRepository);
 
-        return new PartsController($eventService, $partService);
+        return new PartsController($eventService, $partService, $partHelpService);
     }
 
     private function buildTeamsController(): TeamsController {

@@ -34,6 +34,7 @@ use BSO\Survival\Database\Repository\EventPublicationRepository;
 use BSO\Survival\Database\Repository\EventRepository;
 use BSO\Survival\Database\Repository\PartRepository;
 use BSO\Survival\Database\Repository\PartAdminRepository;
+use BSO\Survival\Database\Repository\PartHelpRepository;
 use BSO\Survival\Database\Repository\PartRuleRepository;
 use BSO\Survival\Database\Repository\RegistrationWindowRepository;
 use BSO\Survival\Database\Repository\ScoreEntryRepository;
@@ -59,6 +60,7 @@ use BSO\Survival\Service\PartConfirmationService;
 use BSO\Survival\Service\PartAdminService;
 use BSO\Survival\Service\PartRuleConfiguratorService;
 use BSO\Survival\Service\PartService;
+use BSO\Survival\Service\PartHelpService;
 use BSO\Survival\Service\PublicationNotificationService;
 use BSO\Survival\Service\RegistrationConfirmationService;
 use BSO\Survival\Service\ScoringMethodRegistry;
@@ -429,7 +431,8 @@ class Plugin {
 
     private function buildPartAdminPage(): PartAdminPage {
         return new PartAdminPage(
-            new PartAdminService(new PartAdminRepository(), new EventRepository())
+            new PartAdminService(new PartAdminRepository(), new EventRepository()),
+            new PartHelpService(new PartHelpRepository())
         );
     }
 

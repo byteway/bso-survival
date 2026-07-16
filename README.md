@@ -223,8 +223,11 @@ De task `Auto WP Runtime Smoke on Folder Open` draait automatisch bij openen van
 2. Maak een nieuw onderdeel aan met minimaal naam en status.
 3. Leg optioneel GPS-coordinaten en uitbreidbare `meta_data` JSON vast.
 4. Gebruik `Bewerken` om bestaand onderdeel inhoudelijk te wijzigen.
-5. Importeer een JSON-lijst voor bulktoevoeging of exporteer de huidige set als herbruikbaar JSON-bestand.
-6. Verwijderen faalt veilig als het onderdeel nog aan een actief event gekoppeld is.
+5. Per onderdeel kun je nu een `Help HTML-template` vastleggen met placeholders: `{part_id}`, `{part_name}`, `{event_id}`, `{latitude}`, `{longitude}`, `{meta_json}`.
+6. Voeg help-afbeeldingen toe via attachment IDs of URLs (JSON-array, komma-gescheiden of regel-per-regel).
+7. Op frontend shortcode `[bso_survival_parts]` kun je door helpteksten bladeren via onderdelenlijst (desktop), selector (mobiel) en `Vorige/Volgende onderdeel` knoppen.
+8. Importeer een JSON-lijst voor bulktoevoeging of exporteer de huidige set als herbruikbaar JSON-bestand.
+9. Verwijderen faalt veilig als het onderdeel nog aan een actief event gekoppeld is.
 
 Handleiding: [docs/Admin_Eventbeheer.md](docs/Admin_Eventbeheer.md)
 

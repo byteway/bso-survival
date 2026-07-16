@@ -3,6 +3,7 @@
 namespace BSO\Survival\Admin;
 
 use BSO\Survival\Service\PartAdminService;
+use BSO\Survival\Service\PartHelpService;
 use BSO\Survival\Support\Capabilities;
 
 class PartAdminPage {
@@ -18,8 +19,12 @@ class PartAdminPage {
     /** @var PartAdminService */
     private $parts;
 
-    public function __construct(PartAdminService $parts) {
+    /** @var PartHelpService */
+    private $partHelp;
+
+    public function __construct(PartAdminService $parts, PartHelpService $partHelp) {
         $this->parts = $parts;
+        $this->partHelp = $partHelp;
     }
 
     public function registerMenu(): void {
@@ -51,14 +56,22 @@ class PartAdminPage {
             'longitude' => isset($_POST['longitude']) ? sanitize_text_field(wp_unslash((string) $_POST['longitude'])) : '',
             'meta_data' => isset($_POST['meta_data']) ? wp_unslash((string) $_POST['meta_data']) : '',
         ];
+        $helpTemplate = isset($_POST['help_template']) ? (string) wp_unslash($_POST['help_template']) : '';
+        $helpImages = isset($_POST['help_images']) ? (string) wp_unslash($_POST['help_images']) : '';
+
+        if (function_exists('wp_kses_post')) {
+            $helpTemplate = wp_kses_post($helpTemplate);
+        }
 
         try {
             if ($partId > 0) {
                 $part = $this->parts->updatePart($partId, $payload);
+                $this->partHelp->saveForPart((int) ($part->id ?? $partId), $helpTemplate, $helpImages);
                 $this->redirectWithStatus('updated', (int) ($part->id ?? $partId));
             }
 
             $part = $this->parts->createPart($payload);
+            $this->partHelp->saveForPart((int) ($part->id ?? 0), $helpTemplate, $helpImages);
             $this->redirectWithStatus('created', (int) ($part->id ?? 0));
         } catch (\Throwable $exception) {
             $this->redirectWithStatus('error', $partId, $exception->getMessage(), 'edit');
@@ -137,6 +150,7 @@ class PartAdminPage {
         $parts = $this->parts->listPartsFilteredSorted($search, $sortBy, $sortDirection);
         $selectedPartId = isset($_GET['part_id']) ? (int) $_GET['part_id'] : 0;
         $selectedPart = $selectedPartId > 0 ? $this->parts->getPart($selectedPartId) : null;
+        $selectedHelp = is_object($selectedPart) ? $this->partHelp->getByPartId($selectedPartId) : null;
 
         $newPartUrl = $this->buildAdminUrl([
             'panel' => 'edit',
@@ -317,7 +331,7 @@ class PartAdminPage {
         echo '</div>';
 
         if ($panel !== '') {
-            $this->renderSidePanel($panel, $selectedPart, $selectedPartId, $search, $sortBy, $sortDirection);
+            $this->renderSidePanel($panel, $selectedPart, $selectedHelp, $selectedPartId, $search, $sortBy, $sortDirection);
         }
 
         echo '</div>';
@@ -427,8 +441,11 @@ class PartAdminPage {
         return add_query_arg(array_merge($baseArgs, $args), admin_url('admin.php'));
     }
 
-    /** @param object|null $selectedPart */
-    private function renderSidePanel(string $panel, $selectedPart, int $selectedPartId, string $search, string $sortBy, string $sortDirection): void {
+    /**
+     * @param object|null $selectedPart
+     * @param object|null $selectedHelp
+     */
+    private function renderSidePanel(string $panel, $selectedPart, $selectedHelp, int $selectedPartId, string $search, string $sortBy, string $sortDirection): void {
         $closePanelUrl = $this->buildAdminUrl([
             'part_search' => $search,
             'sort_by' => $sortBy,
@@ -446,16 +463,25 @@ class PartAdminPage {
         if ($panel === 'import') {
             $this->renderImportPanel($closePanelUrl);
         } else {
-            $this->renderEditPanel($selectedPart, $selectedPartId, $closePanelUrl);
+            $this->renderEditPanel($selectedPart, $selectedHelp, $selectedPartId, $closePanelUrl);
         }
 
         echo '</aside>';
     }
 
-    /** @param object|null $selectedPart */
-    private function renderEditPanel($selectedPart, int $selectedPartId, string $closePanelUrl): void {
+    /**
+     * @param object|null $selectedPart
+     * @param object|null $selectedHelp
+     */
+    private function renderEditPanel($selectedPart, $selectedHelp, int $selectedPartId, string $closePanelUrl): void {
         $part = is_object($selectedPart) ? $selectedPart : (object) [];
         $currentStatus = (string) ($part->status ?? 'actief');
+        $help = is_object($selectedHelp) ? $selectedHelp : (object) [
+            'help_text' => '',
+            'image_urls' => '[]',
+        ];
+        $allowedHelpPlaceholders = $this->partHelp->allowedPlaceholders();
+        $imagesPreview = (string) ($help->image_urls ?? '');
 
         echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
         echo '<input type="hidden" name="action" value="bso_survival_part_save" />';
@@ -481,7 +507,34 @@ class PartAdminPage {
         echo '<tr><th scope="row"><label for="bso-part-meta">' . esc_html__('Meta JSON', 'bso-survival') . '</label></th>';
         echo '<td><textarea id="bso-part-meta" name="meta_data" rows="8" class="large-text code">' . esc_textarea((string) ($part->meta_data ?? '')) . '</textarea>';
         echo '<p class="description">' . esc_html__('Gebruik geldig JSON voor uitbreidbare onderdeelmetadata.', 'bso-survival') . '</p></td></tr>';
+
+        echo '<tr><th scope="row"><label for="bso-part-help-template">' . esc_html__('Help HTML-template', 'bso-survival') . '</label></th>';
+        echo '<td><textarea id="bso-part-help-template" name="help_template" rows="10" class="large-text code">' . esc_textarea((string) ($help->help_text ?? '')) . '</textarea>';
+        echo '<p class="description">' . esc_html__('Beschikbare placeholders', 'bso-survival') . ': ';
+        $first = true;
+        foreach ($allowedHelpPlaceholders as $placeholder) {
+            if (!$first) {
+                echo ', ';
+            }
+            $first = false;
+            echo '<code>{' . esc_html($placeholder) . '}</code>';
+        }
+        echo '</p></td></tr>';
+
+        echo '<tr><th scope="row"><label for="bso-part-help-images">' . esc_html__('Help-afbeeldingen', 'bso-survival') . '</label></th>';
+        echo '<td><textarea id="bso-part-help-images" name="help_images" rows="4" class="large-text code">' . esc_textarea($imagesPreview) . '</textarea>';
+        echo '<p class="description">' . esc_html__('Gebruik JSON-array, comma-separated waarden of 1 regel per afbeelding. Een waarde mag een attachment ID of URL zijn.', 'bso-survival') . '</p></td></tr>';
         echo '</tbody></table>';
+
+        if ($selectedPartId > 0) {
+            try {
+                $rendered = $this->partHelp->renderForPart($part);
+                echo '<h3>' . esc_html__('Preview helptekst', 'bso-survival') . '</h3>';
+                echo '<div style="background:#fff;border:1px solid #ccd0d4;padding:10px;margin:8px 0 14px 0;">' . wp_kses_post((string) ($rendered['html'] ?? '')) . '</div>';
+            } catch (\Throwable $exception) {
+                echo '<p class="description" style="color:#b42318;">' . esc_html($exception->getMessage()) . '</p>';
+            }
+        }
 
         echo '<p>';
         echo '<button class="button button-primary">' . esc_html($selectedPartId > 0 ? __('Onderdeel opslaan', 'bso-survival') : __('Onderdeel aanmaken', 'bso-survival')) . '</button> ';

@@ -258,6 +258,128 @@
     background: #f6f8fa;
 }
 
+.bso-survival-parts__layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 16px;
+}
+
+.bso-survival-parts__menu {
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 8px;
+    max-height: 520px;
+    overflow: auto;
+}
+
+.bso-survival-parts__item {
+    display: block;
+    padding: 9px 10px;
+    border-radius: 6px;
+    color: #17324d;
+    text-decoration: none;
+    border: 1px solid transparent;
+}
+
+.bso-survival-parts__item:hover {
+    background: #edf4ff;
+}
+
+.bso-survival-parts__item.is-active {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    font-weight: 600;
+}
+
+.bso-survival-parts__detail {
+    border: 1px solid #d0d7de;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 14px;
+}
+
+.bso-survival-parts__detail-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.bso-survival-parts__detail-header p {
+    margin: 5px 0 0;
+    color: #57606a;
+    font-size: 0.95rem;
+}
+
+.bso-survival-parts__help-body {
+    margin-top: 12px;
+    line-height: 1.55;
+}
+
+.bso-survival-parts__gallery {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.bso-survival-parts__figure {
+    margin: 0;
+}
+
+.bso-survival-parts__figure img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    display: block;
+    border: 1px solid #d0d7de;
+    background: #f8fafc;
+}
+
+.bso-survival-parts__pager {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.bso-survival-parts__pager-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #c4cfd9;
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: #f8fafc;
+    color: #17324d;
+    text-decoration: none;
+    min-width: 160px;
+}
+
+.bso-survival-parts__pager-btn.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.bso-survival-parts__mobile-select-wrap {
+    display: none;
+    margin-bottom: 12px;
+}
+
+.bso-survival-parts__mobile-select-wrap label {
+    display: block;
+    margin-bottom: 4px;
+    color: #57606a;
+    font-size: 0.9rem;
+}
+
+.bso-survival-parts__mobile-select {
+    width: 100%;
+    border: 1px solid #c4cfd9;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 8px;
+}
+
 .bso-survival-parts__header h2 {
     margin: 0 0 8px;
     font-size: 1.25rem;
@@ -271,7 +393,35 @@
 
 .bso-survival-parts__list {
     margin: 0;
-    padding-left: 20px;
+    padding-left: 0;
+    list-style: none;
+}
+
+@media (max-width: 700px) {
+    .bso-survival-parts__mobile-select-wrap {
+        display: block;
+    }
+
+    .bso-survival-parts__layout {
+        grid-template-columns: 1fr;
+    }
+
+    .bso-survival-parts__menu {
+        display: none;
+    }
+
+    .bso-survival-parts__gallery {
+        grid-template-columns: 1fr;
+    }
+
+    .bso-survival-parts__pager {
+        flex-direction: column;
+    }
+
+    .bso-survival-parts__pager-btn {
+        width: 100%;
+        min-width: 0;
+    }
 }
 
 .bso-survival-teams {
