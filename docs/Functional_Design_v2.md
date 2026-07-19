@@ -790,6 +790,27 @@ flowchart TD
 | Onderdeeluitleg | Vrijwilliger, teamlid | Helptekst en afbeeldingen voor snelle instructie |
 | Meldingenfeed | Iedereen | Actuele operationele meldingen en bijzonderheden |
 
+### Widgetbeschrijving - Contactzoeker
+
+#### Doel
+
+De widget Contactzoeker helpt deelnemers, teamleiders, ouders, vrijwilligers en organisatoren om snel contactgegevens van relevante personen binnen de Survival-omgeving te vinden.
+
+#### Functionaliteit
+
+- Zoeken op naam, team of rol.
+- Tonen van contactgegevens van de gevonden persoon.
+- Ondersteuning voor rollen zoals teamleider, scheidsrechter, organisatielid en survivalcoordinator.
+- Direct inzicht in naam, telefoonnummer, e-mailadres en functie/rol.
+
+#### Gebruikersdoel
+
+Tijdens de survivaldag moeten deelnemers en vrijwilligers snel kunnen communiceren. De Contactzoeker voorkomt dat contactgegevens handmatig gezocht moeten worden in documenten, chatgroepen of papieren overzichten.
+
+#### Resultaat
+
+Met enkele klikken vindt een gebruiker de juiste contactpersoon en kan direct contact worden opgenomen. Hierdoor verbetert de bereikbaarheid van de organisatie en verloopt de communicatie tijdens de survival efficiënter.
+
 ### Mobiele eisen
 
 | Eis | Uitwerking |

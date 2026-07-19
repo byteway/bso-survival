@@ -111,7 +111,12 @@ Belangrijk voor dashboardpagina's:
 - De kaart `Inschrijving` toont een registratie-statusicoon uit `assets/images/registration-status/`; de status-tekst verschijnt op hover/focus, terwijl de teller zichtbaar blijft.
 - De widget `Onderdelen` linkt per onderdeel naar de helpweergave met `event_id` + `part_id`.
 - De widget `Teams` linkt per team naar de teamscore-weergave met `event_id` + `team_id`.
+- De widget `Contactzoeker` ondersteunt zoeken op naam, team en rol en toont beschikbare contactinformatie zoals naam, telefoonnummer, e-mailadres en functie.
 - In `Survival -> Dashboard Widgets` kun je per event instellen op welke pagina de links `Onderdelen` en `Teams` moeten openen.
+
+Korte documentatieversie Contactzoeker:
+
+> De Contactzoeker is een widget waarmee bezoekers snel contactgegevens van teamleiders, scheidsrechters en andere betrokkenen binnen de Survival-organisatie kunnen opzoeken. De widget ondersteunt zoeken op naam, team en rol en toont beschikbare contactinformatie zoals telefoonnummer, e-mailadres en functie.
 
 Optionele URL-overrides (filters):
 
