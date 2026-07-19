@@ -812,6 +812,36 @@ Tijdens de survivaldag moeten deelnemers en vrijwilligers snel kunnen communicer
 
 Met enkele klikken vindt een gebruiker de juiste contactpersoon en kan direct contact worden opgenomen via e-mail of WhatsApp. Hierdoor verbetert de bereikbaarheid van de organisatie en verloopt de communicatie tijdens de survival efficienter.
 
+### Widgetbeschrijving - Inschrijfcapaciteit
+
+#### Doel
+
+De widget Inschrijfcapaciteit geeft bezoekers inzicht in de actuele beschikbaarheid van plaatsen voor de Survival en ondersteunt het inschrijfproces door zichtbaar te maken hoeveel capaciteit nog over is.
+
+#### Functionaliteit
+
+- Toont de verhouding tussen het aantal geregistreerde inschrijvingen en de maximale capaciteit.
+- Toont het huidige aantal inschrijvingen.
+- Toont het aantal resterende beschikbare plaatsen wanneer een maximum is ingesteld.
+- Toont een statusbadge voor de actuele inschrijfstatus: open, beperkt aantal plaatsen beschikbaar, volgeboekt of inschrijvingen gesloten.
+- Toont een visuele indicator van de bezettingsgraad.
+
+#### Gebruikersdoel
+
+Bezoekers kunnen zonder aanvullende communicatie direct beoordelen of deelname nog mogelijk is. Dat voorkomt onnodige inschrijfpogingen zodra de capaciteit is bereikt en stimuleert tijdige aanmelding zolang er nog plaatsen beschikbaar zijn.
+
+#### Resultaat
+
+De widget maakt de beschikbare capaciteit transparant en helpt de organisatie het maximale aantal deelnemers te bewaken. Daarmee wordt het inschrijfproces duidelijker voor bezoekers en eenvoudiger te beheren.
+
+#### Korte versie voor documentatie
+
+> De widget Inschrijfcapaciteit toont de actuele beschikbaarheid van plaatsen voor de Survival. Bezoekers zien hoeveel inschrijvingen reeds zijn ontvangen, hoeveel plaatsen nog beschikbaar zijn en of inschrijven nog mogelijk is.
+
+#### Zeer korte versie (voor een overzichtstabel)
+
+> Inschrijfcapaciteit: toont het aantal beschikbare plaatsen en de actuele status van de inschrijvingen.
+
 ### Widgetbeschrijving - Fallback-scoreinvoer
 
 #### Doel

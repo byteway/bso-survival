@@ -1137,8 +1137,9 @@ Dashboard teller ontwerp:
     - `counts.max_teams`
     - `status.is_registration_full`
 - nieuwe widget: `RegistrationCapacityWidget`
-    - tekst: `Inschrijving: x / max_teams`
-    - badge `VOL` zodra capaciteit bereikt is
+    - tekst: `x / max_teams` met actuele bezettingsindicator
+    - badge voor status: `Open`, `Beschikbaar`, `VOL` of `Gesloten`
+    - toont resterende capaciteit zodra `max_teams` beschikbaar is
 
 Validatiechecklist 6.1.B:
 - [x] Vrijwilliger kan team met leden succesvol inschrijven

@@ -112,12 +112,43 @@ Belangrijk voor dashboardpagina's:
 - De widget `Onderdelen` linkt per onderdeel naar de helpweergave met `event_id` + `part_id`.
 - De widget `Teams` linkt per team naar de teamscore-weergave met `event_id` + `team_id`.
 - De widget `Contactzoeker` ondersteunt zoeken op team, contactnaam, e-mail, telefoon en status; zonder zoekterm worden geen resultaten getoond. Per team toont de widget direct klikbare e-mail en WhatsApp-contactlinks, plus een `x`-knop om het filter direct te wissen.
+- De widget `Inschrijfcapaciteit` toont de actuele verhouding tussen geregistreerde teams en maximale capaciteit, inclusief bezettingsindicator en statusbadge voor open, beperkt, volgeboekt of gesloten inschrijving.
 - De widget `Fallback-scoreinvoer` is alleen zichtbaar voor gebruikers met `manage_options` en toont op dit moment een noodinstructiekaart: gebruik alleen bij storing van de reguliere scoreflow.
 - In `Survival -> Dashboard Widgets` kun je per event instellen op welke pagina de links `Onderdelen` en `Teams` moeten openen.
 
 Korte documentatieversie Contactzoeker:
 
 > De Contactzoeker is een widget waarmee bezoekers snel teamcontacten kunnen vinden. Zonder zoekterm toont de widget geen resultaten. De widget ondersteunt zoeken op team, contactnaam, e-mail, telefoon en status, opent telefoonnummers via WhatsApp-chat en heeft naast het zoekveld een `x`-knop om het filter direct te wissen.
+
+## Functionele beschrijving: Inschrijfcapaciteit
+
+Doel
+
+De widget `Inschrijfcapaciteit` geeft bezoekers inzicht in de actuele beschikbaarheid van plaatsen voor de Survival en ondersteunt het inschrijfproces door direct zichtbaar te maken hoeveel capaciteit nog over is.
+
+Functionaliteit
+
+- Toont de verhouding tussen het aantal geregistreerde inschrijvingen en de maximale capaciteit.
+- Toont het huidige aantal inschrijvingen.
+- Toont het aantal resterende beschikbare plaatsen wanneer een maximum is ingesteld.
+- Toont een statusbadge voor de actuele inschrijfstatus: open, beperkt aantal plaatsen beschikbaar, volgeboekt of inschrijvingen gesloten.
+- Toont een visuele indicator van de bezettingsgraad.
+
+Gebruikersdoel
+
+Bezoekers kunnen zonder aanvullende communicatie direct beoordelen of deelname nog mogelijk is. Dat voorkomt onnodige inschrijfpogingen zodra de capaciteit is bereikt en stimuleert tijdige aanmelding zolang er nog plaatsen beschikbaar zijn.
+
+Resultaat
+
+De widget maakt de beschikbare capaciteit transparant en helpt de organisatie het maximale aantal deelnemers te bewaken. Daarmee wordt het inschrijfproces duidelijker voor bezoekers en eenvoudiger te beheren.
+
+Korte versie voor documentatie
+
+> De widget `Inschrijfcapaciteit` toont de actuele beschikbaarheid van plaatsen voor de Survival. Bezoekers zien hoeveel inschrijvingen reeds zijn ontvangen, hoeveel plaatsen nog beschikbaar zijn en of inschrijven nog mogelijk is.
+
+Zeer korte versie (voor een overzichtstabel)
+
+> `Inschrijfcapaciteit`: toont het aantal beschikbare plaatsen en de actuele status van de inschrijvingen.
 
 ## Functionele beschrijving: Fallback-scoreinvoer
 
@@ -325,7 +356,7 @@ Response bevat o.a. `registration_id`, `team_id`, `status`, en `counts.registere
 1. Plaats shortcode `[bso_survival_team_registration event_id="14"]` op een frontend-pagina.
 2. Laat vrijwilliger team + teamleden invoeren en submitten.
 3. Controleer in admin `BSO Rules -> Inschrijvingen` de teller `x / max_teams` en vensterstatus.
-4. Controleer in dashboard de widget `Inschrijfcapaciteit` en eventuele `VOL` badge.
+4. Controleer in dashboard de widget `Inschrijfcapaciteit`, de verhouding `x / max_teams`, de bezettingsindicator en de statusbadge (`open`, `beperkt`, `VOL`, `gesloten`).
 
 ## Admin Quickstart (dagafsluiting)
 
