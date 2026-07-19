@@ -33,12 +33,14 @@ Gedrag:
 3. WP-CLI is beschikbaar.
 4. De command wordt uitgevoerd met juiste WordPress pad en DB environment vars.
 
+Gebruik in gedeelde documentatie nooit echte wachtwoorden. Vervang `<DB_PASSWORD>` altijd lokaal met een eigen secret of laad deze uit een niet-geversioneerd env-bestand.
+
 ## Stap 1 - Event en tijdsloten controleren
 
 Controleer of het event tijdsloten heeft:
 
 ```bash
-mysql -h wordpress-db -u wordpress -pDitIsNiet4Jou! wordpress -e "
+mysql -h wordpress-db -u wordpress -p'<DB_PASSWORD>' wordpress -e "
 SELECT id, name FROM wp_bso_survival_events ORDER BY id;
 SELECT id, event_id, start_at, end_at
 FROM wp_bso_survival_timeslots
@@ -51,7 +53,7 @@ ORDER BY start_at;" 2>/dev/null
 Controleer of er score-records bestaan voor het event:
 
 ```bash
-mysql -h wordpress-db -u wordpress -pDitIsNiet4Jou! wordpress -e "
+mysql -h wordpress-db -u wordpress -p'<DB_PASSWORD>' wordpress -e "
 SELECT COUNT(*) AS score_records
 FROM wp_bso_survival_score_entries se
 JOIN wp_bso_survival_assignments a ON a.id = se.assignment_id
@@ -70,7 +72,7 @@ cd /config/workspace/projects/bso-survival
 WORDPRESS_DB_HOST=wordpress-db \
 WORDPRESS_DB_NAME=wordpress \
 WORDPRESS_DB_USER=wordpress \
-WORDPRESS_DB_PASSWORD='DitIsNiet4Jou!' \
+WORDPRESS_DB_PASSWORD='<DB_PASSWORD>' \
 wp --path=/var/www/html --allow-root bso-survival seed-demo-scores --event-id=7
 ```
 
@@ -81,7 +83,7 @@ cd /config/workspace/projects/bso-survival
 WORDPRESS_DB_HOST=wordpress-db \
 WORDPRESS_DB_NAME=wordpress \
 WORDPRESS_DB_USER=wordpress \
-WORDPRESS_DB_PASSWORD='DitIsNiet4Jou!' \
+WORDPRESS_DB_PASSWORD='<DB_PASSWORD>' \
 wp --path=/var/www/html --allow-root bso-survival seed-demo-scores --slot=1,6,9,12 --event-id=7
 ```
 
@@ -94,11 +96,11 @@ Belangrijk:
 ### 4.1 Aantal score-records onveranderd (idempotent check)
 
 ```bash
-before=$(mysql -h wordpress-db -u wordpress -pDitIsNiet4Jou! wordpress -N -e "SELECT COUNT(*) FROM wp_bso_survival_score_entries;")
+before=$(mysql -h wordpress-db -u wordpress -p'<DB_PASSWORD>' wordpress -N -e "SELECT COUNT(*) FROM wp_bso_survival_score_entries;")
 cd /config/workspace/projects/bso-survival
-WORDPRESS_DB_HOST=wordpress-db WORDPRESS_DB_NAME=wordpress WORDPRESS_DB_USER=wordpress WORDPRESS_DB_PASSWORD='DitIsNiet4Jou!' \
+WORDPRESS_DB_HOST=wordpress-db WORDPRESS_DB_NAME=wordpress WORDPRESS_DB_USER=wordpress WORDPRESS_DB_PASSWORD='<DB_PASSWORD>' \
 wp --path=/var/www/html --allow-root bso-survival seed-demo-scores --slot=1,2,3,4,5,6 --event-id=7 >/tmp/seed_demo_out.txt
-after=$(mysql -h wordpress-db -u wordpress -pDitIsNiet4Jou! wordpress -N -e "SELECT COUNT(*) FROM wp_bso_survival_score_entries;")
+after=$(mysql -h wordpress-db -u wordpress -p'<DB_PASSWORD>' wordpress -N -e "SELECT COUNT(*) FROM wp_bso_survival_score_entries;")
 echo "before=$before after=$after"
 cat /tmp/seed_demo_out.txt
 ```
@@ -111,7 +113,7 @@ Verwachting:
 ### 4.2 Controle per tijdslot
 
 ```bash
-mysql -h wordpress-db -u wordpress -pDitIsNiet4Jou! wordpress -e "
+mysql -h wordpress-db -u wordpress -p'<DB_PASSWORD>' wordpress -e "
 SELECT
   ROW_NUMBER() OVER (ORDER BY ts.start_at) AS slot_nr,
   ts.id AS timeslot_id,
@@ -127,7 +129,7 @@ ORDER BY ts.start_at;" 2>/dev/null
 ### 4.3 Bonusvelden controleren
 
 ```bash
-mysql -h wordpress-db -u wordpress -pDitIsNiet4Jou! wordpress -e "
+mysql -h wordpress-db -u wordpress -p'<DB_PASSWORD>' wordpress -e "
 SELECT se.id, a.team_id, a.part_id, se.raw_value, se.bonus_points, se.joker_applied
 FROM wp_bso_survival_score_entries se
 JOIN wp_bso_survival_assignments a ON a.id = se.assignment_id

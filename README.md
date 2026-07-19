@@ -429,9 +429,9 @@ Uitgebreide handleiding: [docs/Dagafsluiting_Voorbereiding.md](docs/Dagafsluitin
 ## CLI Quickstart (demo simulatie)
 
 - Alle tijdsloten van een event seeden (standaardgedrag als `--slot` ontbreekt):
-	- `WORDPRESS_DB_HOST=wordpress-db WORDPRESS_DB_NAME=wordpress WORDPRESS_DB_USER=wordpress WORDPRESS_DB_PASSWORD='DitIsNiet4Jou!' wp --path=/var/www/html --allow-root bso-survival seed-demo-scores --event-id=7`
+	- `WORDPRESS_DB_HOST=wordpress-db WORDPRESS_DB_NAME=wordpress WORDPRESS_DB_USER=wordpress WORDPRESS_DB_PASSWORD='<DB_PASSWORD>' wp --path=/var/www/html --allow-root bso-survival seed-demo-scores --event-id=7`
 - Alleen specifieke tijdsloten seeden:
-	- `WORDPRESS_DB_HOST=wordpress-db WORDPRESS_DB_NAME=wordpress WORDPRESS_DB_USER=wordpress WORDPRESS_DB_PASSWORD='DitIsNiet4Jou!' wp --path=/var/www/html --allow-root bso-survival seed-demo-scores --slot=1,6,9,12 --event-id=7`
+	- `WORDPRESS_DB_HOST=wordpress-db WORDPRESS_DB_NAME=wordpress WORDPRESS_DB_USER=wordpress WORDPRESS_DB_PASSWORD='<DB_PASSWORD>' wp --path=/var/www/html --allow-root bso-survival seed-demo-scores --slot=1,6,9,12 --event-id=7`
 - Idempotent gedrag:
 	- de command werkt update-only op bestaande score-records;
 	- er worden geen nieuwe score-entries toegevoegd door demo-seeding.
