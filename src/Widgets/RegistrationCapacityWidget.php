@@ -44,6 +44,9 @@ class RegistrationCapacityWidget implements DashboardWidgetInterface {
         $registered = (int) ($overview['counts']['registered_teams'] ?? $overview['counts']['teams'] ?? 0);
         $maxTeams = (int) ($overview['counts']['max_teams'] ?? 0);
         $eventId = (int) ($filters['event_id'] ?? ($overview['event']->id ?? 0));
+        $registrationPageUrl = isset($filters['registration_page_url']) && is_string($filters['registration_page_url'])
+            ? trim($filters['registration_page_url'])
+            : '';
         $isOpen = $this->registrationWindows->isOpenForEvent($eventId);
         $remaining = $maxTeams > 0 ? max(0, $maxTeams - $registered) : null;
         $utilization = $maxTeams > 0
@@ -74,6 +77,8 @@ class RegistrationCapacityWidget implements DashboardWidgetInterface {
             'status_class' => 'is-' . $status,
             'status_badge' => $status === 'full' ? 'VOL' : ($status === 'closed' ? 'Gesloten' : ($status === 'limited' ? 'Beperkt' : 'Open')),
             'is_full' => $isFull,
+            'registration_page_url' => $registrationPageUrl,
+            'show_registration_link' => $registrationPageUrl !== '' && $status !== 'full' && $status !== 'closed' && ($remaining === null || $remaining > 0),
         ];
     }
 
@@ -87,6 +92,8 @@ class RegistrationCapacityWidget implements DashboardWidgetInterface {
         $statusLabel = (string) ($data['status_label'] ?? 'Inschrijvingen gesloten');
         $statusClass = (string) ($data['status_class'] ?? 'is-closed');
         $statusBadge = (string) ($data['status_badge'] ?? 'Gesloten');
+        $registrationPageUrl = (string) ($data['registration_page_url'] ?? '');
+        $showRegistrationLink = !empty($data['show_registration_link']);
 
         $value = $maxTeams > 0
             ? sprintf('%d / %d', $registered, $maxTeams)
@@ -123,6 +130,15 @@ class RegistrationCapacityWidget implements DashboardWidgetInterface {
         $html .= '<span class="bso-widget-registration-capacity__progress-fill"' . $progressStyle . '></span>';
         $html .= '</div>';
         $html .= '<p class="bso-widget-registration-capacity__status">' . esc_html($statusLabel) . '</p>';
+        if ($showRegistrationLink && $registrationPageUrl !== '') {
+            $escapeUrl = function_exists('esc_url')
+                ? static function (string $url): string { return esc_url($url); }
+                : static function (string $url): string { return htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); };
+            $label = function_exists('__') ? __('Inschrijven', 'bso-survival') : 'Inschrijven';
+            $label = function_exists('esc_html') ? esc_html($label) : htmlspecialchars((string) $label, ENT_QUOTES, 'UTF-8');
+
+            $html .= '<p class="bso-widget-registration-capacity__cta"><a class="button button-primary" href="' . $escapeUrl($registrationPageUrl) . '">' . $label . '</a></p>';
+        }
         $html .= '</article>';
 
         return $html;

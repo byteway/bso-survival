@@ -102,6 +102,7 @@ class DashboardWidgetAdminPage {
         $navigation = isset($layout['navigation']) && is_array($layout['navigation']) ? $layout['navigation'] : [];
         $partsHelpPageId = isset($navigation['parts_help_page_id']) ? (int) $navigation['parts_help_page_id'] : 0;
         $teamScorePageId = isset($navigation['team_score_page_id']) ? (int) $navigation['team_score_page_id'] : 0;
+        $registrationPageId = isset($navigation['registration_page_id']) ? (int) $navigation['registration_page_id'] : 0;
         $pages = $this->listPublishedPages();
 
         echo '<div class="wrap">';
@@ -174,6 +175,22 @@ class DashboardWidgetAdminPage {
             }
 
             $selected = selected($teamScorePageId, $pageId, false);
+            $title = (string) ($page->post_title ?? '');
+            echo '<option value="' . $pageId . '" ' . $selected . '>' . esc_html(sprintf('#%d - %s', $pageId, $title !== '' ? $title : __('(geen titel)', 'bso-survival'))) . '</option>';
+        }
+        echo '</select></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="bso-dashboard-registration-page-id">' . esc_html__('Inschrijfpagina', 'bso-survival') . '</label></th>';
+        echo '<td><select id="bso-dashboard-registration-page-id" name="navigation[registration_page_id]">';
+        echo '<option value="0">' . esc_html__('Geen inschrijflink tonen', 'bso-survival') . '</option>';
+        foreach ($pages as $page) {
+            $pageId = (int) ($page->ID ?? 0);
+            if ($pageId <= 0) {
+                continue;
+            }
+
+            $selected = selected($registrationPageId, $pageId, false);
             $title = (string) ($page->post_title ?? '');
             echo '<option value="' . $pageId . '" ' . $selected . '>' . esc_html(sprintf('#%d - %s', $pageId, $title !== '' ? $title : __('(geen titel)', 'bso-survival'))) . '</option>';
         }
@@ -289,6 +306,7 @@ class DashboardWidgetAdminPage {
         $layout['navigation'] = [
             'parts_help_page_id' => isset($_POST['navigation']['parts_help_page_id']) ? (int) $_POST['navigation']['parts_help_page_id'] : 0,
             'team_score_page_id' => isset($_POST['navigation']['team_score_page_id']) ? (int) $_POST['navigation']['team_score_page_id'] : 0,
+            'registration_page_id' => isset($_POST['navigation']['registration_page_id']) ? (int) $_POST['navigation']['registration_page_id'] : 0,
         ];
 
         return $layout;

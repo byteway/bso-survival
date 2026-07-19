@@ -20,6 +20,7 @@ class DashboardWidgetLayoutService {
     private const NAVIGATION_KEYS = [
         'parts_help_page_id',
         'team_score_page_id',
+        'registration_page_id',
     ];
 
     /** @var DashboardWidgetLayoutRepositoryInterface */

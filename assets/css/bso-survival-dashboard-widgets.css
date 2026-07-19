@@ -329,6 +329,77 @@
     color: #607086;
 }
 
+.bso-widget-registration-capacity__value {
+    margin: 0;
+    font-size: 1.55rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: #17324d;
+}
+
+.bso-widget-registration-capacity__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.bso-widget-registration-capacity__remaining {
+    font-weight: 700;
+    color: #415266;
+}
+
+.bso-widget-registration-capacity__progress {
+    position: relative;
+    overflow: hidden;
+    height: 10px;
+    margin-top: 12px;
+    border-radius: 999px;
+    background: #e5e7eb;
+}
+
+.bso-widget-registration-capacity__progress-fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.bso-widget-registration-capacity__status {
+    margin-top: 10px;
+    font-weight: 700;
+    color: #17324d;
+}
+
+.bso-widget-registration-capacity__cta {
+    margin-top: 12px;
+}
+
+.bso-widget-registration-capacity__cta .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bso-widget-badge--limited {
+    background: #fff4d6;
+    color: #9a6700;
+}
+
+.bso-widget-badge--limited .bso-widget-badge__dot {
+    background: #9a6700;
+}
+
+.bso-widget-badge--closed {
+    background: #eceff3;
+    color: #556477;
+}
+
+.bso-widget-badge--closed .bso-widget-badge__dot {
+    background: #556477;
+}
+
 @media (max-width: 700px) {
     .bso-widget-timeslot__metrics {
         grid-template-columns: 1fr;

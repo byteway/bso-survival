@@ -825,6 +825,7 @@ De widget Inschrijfcapaciteit geeft bezoekers inzicht in de actuele beschikbaarh
 - Toont het aantal resterende beschikbare plaatsen wanneer een maximum is ingesteld.
 - Toont een statusbadge voor de actuele inschrijfstatus: open, beperkt aantal plaatsen beschikbaar, volgeboekt of inschrijvingen gesloten.
 - Toont een visuele indicator van de bezettingsgraad.
+- Wanneer een inschrijfpagina is ingesteld en er nog plaatsen beschikbaar zijn, toont de widget een directe `Inschrijven`-knop naar het formulier.
 
 #### Gebruikersdoel
 
@@ -832,15 +833,15 @@ Bezoekers kunnen zonder aanvullende communicatie direct beoordelen of deelname n
 
 #### Resultaat
 
-De widget maakt de beschikbare capaciteit transparant en helpt de organisatie het maximale aantal deelnemers te bewaken. Daarmee wordt het inschrijfproces duidelijker voor bezoekers en eenvoudiger te beheren.
+De widget maakt de beschikbare capaciteit transparant en helpt de organisatie het maximale aantal deelnemers te bewaken. Zodra een inschrijfpagina is ingesteld en er nog plaats is, kan de bezoeker direct door naar het inschrijfformulier.
 
 #### Korte versie voor documentatie
 
-> De widget Inschrijfcapaciteit toont de actuele beschikbaarheid van plaatsen voor de Survival. Bezoekers zien hoeveel inschrijvingen reeds zijn ontvangen, hoeveel plaatsen nog beschikbaar zijn en of inschrijven nog mogelijk is.
+> De widget Inschrijfcapaciteit toont de actuele beschikbaarheid van plaatsen voor de Survival. Bezoekers zien hoeveel inschrijvingen reeds zijn ontvangen, hoeveel plaatsen nog beschikbaar zijn en kunnen, zodra een inschrijfpagina is ingesteld, direct doorklikken naar het inschrijfformulier.
 
 #### Zeer korte versie (voor een overzichtstabel)
 
-> Inschrijfcapaciteit: toont het aantal beschikbare plaatsen en de actuele status van de inschrijvingen.
+> Inschrijfcapaciteit: toont het aantal beschikbare plaatsen, de actuele status van de inschrijvingen en eventueel een directe inschrijflink.
 
 ### Widgetbeschrijving - Fallback-scoreinvoer
 

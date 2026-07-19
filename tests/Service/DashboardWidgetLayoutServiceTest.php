@@ -93,6 +93,7 @@ class DashboardWidgetLayoutServiceTest extends TestCase {
             'navigation' => [
                 'parts_help_page_id' => 15,
                 'team_score_page_id' => -8,
+                'registration_page_id' => 21,
             ],
         ]);
 
@@ -102,6 +103,11 @@ class DashboardWidgetLayoutServiceTest extends TestCase {
             $this->assertSame(15, $saved['navigation']['parts_help_page_id']);
         }
         $this->assertSame(0, $saved['navigation']['team_score_page_id']);
+        if (function_exists('get_post')) {
+            $this->assertSame(0, $saved['navigation']['registration_page_id']);
+        } else {
+            $this->assertSame(21, $saved['navigation']['registration_page_id']);
+        }
     }
 }
 

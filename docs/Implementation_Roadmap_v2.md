@@ -1140,6 +1140,7 @@ Dashboard teller ontwerp:
     - tekst: `x / max_teams` met actuele bezettingsindicator
     - badge voor status: `Open`, `Beschikbaar`, `VOL` of `Gesloten`
     - toont resterende capaciteit zodra `max_teams` beschikbaar is
+    - opent bij beschikbare capaciteit een configurabele inschrijfpagina via dashboardnavigatie
 
 Validatiechecklist 6.1.B:
 - [x] Vrijwilliger kan team met leden succesvol inschrijven

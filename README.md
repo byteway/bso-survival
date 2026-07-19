@@ -114,7 +114,7 @@ Belangrijk voor dashboardpagina's:
 - De widget `Contactzoeker` ondersteunt zoeken op team, contactnaam, e-mail, telefoon en status; zonder zoekterm worden geen resultaten getoond. Per team toont de widget direct klikbare e-mail en WhatsApp-contactlinks, plus een `x`-knop om het filter direct te wissen.
 - De widget `Inschrijfcapaciteit` toont de actuele verhouding tussen geregistreerde teams en maximale capaciteit, inclusief bezettingsindicator en statusbadge voor open, beperkt, volgeboekt of gesloten inschrijving.
 - De widget `Fallback-scoreinvoer` is alleen zichtbaar voor gebruikers met `manage_options` en toont op dit moment een noodinstructiekaart: gebruik alleen bij storing van de reguliere scoreflow.
-- In `Survival -> Dashboard Widgets` kun je per event instellen op welke pagina de links `Onderdelen` en `Teams` moeten openen.
+- In `Survival -> Dashboard Widgets` kun je per event instellen op welke pagina de links `Onderdelen`, `Teams` en `Inschrijfcapaciteit` moeten openen.
 
 Korte documentatieversie Contactzoeker:
 
@@ -144,11 +144,11 @@ De widget maakt de beschikbare capaciteit transparant en helpt de organisatie he
 
 Korte versie voor documentatie
 
-> De widget `Inschrijfcapaciteit` toont de actuele beschikbaarheid van plaatsen voor de Survival. Bezoekers zien hoeveel inschrijvingen reeds zijn ontvangen, hoeveel plaatsen nog beschikbaar zijn en of inschrijven nog mogelijk is.
+> De widget `Inschrijfcapaciteit` toont de actuele beschikbaarheid van plaatsen voor de Survival. Bezoekers zien hoeveel inschrijvingen reeds zijn ontvangen, hoeveel plaatsen nog beschikbaar zijn en kunnen, zodra een inschrijfpagina is ingesteld, direct doorklikken naar het inschrijfformulier.
 
 Zeer korte versie (voor een overzichtstabel)
 
-> `Inschrijfcapaciteit`: toont het aantal beschikbare plaatsen en de actuele status van de inschrijvingen.
+> `Inschrijfcapaciteit`: toont het aantal beschikbare plaatsen, de actuele status van de inschrijvingen en eventueel een directe inschrijflink.
 
 ## Functionele beschrijving: Fallback-scoreinvoer
 

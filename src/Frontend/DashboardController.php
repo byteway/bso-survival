@@ -28,6 +28,8 @@ class DashboardController {
     public function render(array $atts = []): string {
         wp_enqueue_style('bso-survival-frontend');
         wp_enqueue_script('bso-survival-frontend');
+        wp_enqueue_style('bso-survival-dashboard-widgets');
+        wp_enqueue_script('bso-survival-dashboard-widgets');
 
         $attributes = shortcode_atts([
             'title' => __('BSO Survival Dashboard', 'bso-survival'),
@@ -71,6 +73,8 @@ class DashboardController {
 
         $layout = $this->layoutService->getLayoutForEvent($eventId);
         $dashboardNavigation = isset($layout['navigation']) && is_array($layout['navigation']) ? $layout['navigation'] : [];
+        $registrationPageId = isset($dashboardNavigation['registration_page_id']) ? (int) $dashboardNavigation['registration_page_id'] : 0;
+        $registrationPageUrl = ($registrationPageId > 0 && function_exists('get_permalink')) ? (string) get_permalink($registrationPageId) : '';
         $mainWidgetIds = $layout['main'] ?? DashboardWidgetRegistry::getSectionWidgetIds('main');
         $mainWidgetWidths = isset($layout['widths']['main']) && is_array($layout['widths']['main']) ? $layout['widths']['main'] : [];
         $mainWidgetIds = array_values(array_filter($mainWidgetIds, 'is_string'));
@@ -87,7 +91,12 @@ class DashboardController {
             ? []
             : (isset($layout['widths']['operations']) && is_array($layout['widths']['operations']) ? $layout['widths']['operations'] : []);
 
-        $mainFilters = ['event_id' => $eventId, 'widget_ids' => $mainWidgetIds, 'widget_widths' => $mainWidgetWidths];
+        $mainFilters = [
+            'event_id' => $eventId,
+            'widget_ids' => $mainWidgetIds,
+            'widget_widths' => $mainWidgetWidths,
+            'registration_page_url' => $registrationPageUrl,
+        ];
         $operationsFilters = ['event_id' => $eventId, 'widget_ids' => $operationsWidgetIds, 'widget_widths' => $operationsWidgetWidths];
 
         $this->enqueueWidgetDependencies('main', $mainFilters);

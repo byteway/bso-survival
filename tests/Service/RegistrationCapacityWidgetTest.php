@@ -21,6 +21,7 @@ class RegistrationCapacityWidgetTest extends TestCase {
             'status' => [],
         ], [
             'event_id' => 1,
+            'registration_page_url' => 'http://example.test/inschrijven',
         ]);
 
         $this->assertSame(10, $data['registered']);
@@ -35,6 +36,8 @@ class RegistrationCapacityWidgetTest extends TestCase {
         $this->assertStringContainsString('20 beschikbare plaatsen', $html);
         $this->assertStringContainsString('Open voor inschrijvingen', $html);
         $this->assertStringContainsString('bso-widget-registration-capacity--is-open', $html);
+        $this->assertStringContainsString('href="http://example.test/inschrijven"', $html);
+        $this->assertStringContainsString('Inschrijven', $html);
     }
 
     /** @test */
@@ -50,6 +53,7 @@ class RegistrationCapacityWidgetTest extends TestCase {
             'status' => [],
         ], [
             'event_id' => 2,
+            'registration_page_url' => 'http://example.test/inschrijven',
         ]);
 
         $this->assertSame(4, $data['remaining']);
@@ -61,6 +65,7 @@ class RegistrationCapacityWidgetTest extends TestCase {
         $this->assertStringContainsString('4 beschikbare plaatsen', $html);
         $this->assertStringContainsString('Beperkt', $html);
         $this->assertStringContainsString('bso-widget-registration-capacity--is-limited', $html);
+        $this->assertStringContainsString('href="http://example.test/inschrijven"', $html);
     }
 
     /** @test */
@@ -76,6 +81,7 @@ class RegistrationCapacityWidgetTest extends TestCase {
             'status' => [],
         ], [
             'event_id' => 3,
+            'registration_page_url' => 'http://example.test/inschrijven',
         ]);
 
         $this->assertSame(0, $data['remaining']);
@@ -87,6 +93,7 @@ class RegistrationCapacityWidgetTest extends TestCase {
         $this->assertStringContainsString('VOL', $html);
         $this->assertStringContainsString('Volgeboekt', $html);
         $this->assertStringContainsString('bso-widget-registration-capacity--is-full', $html);
+        $this->assertStringNotContainsString('href="http://example.test/inschrijven"', $html);
     }
 
     /** @test */
@@ -102,6 +109,7 @@ class RegistrationCapacityWidgetTest extends TestCase {
             'status' => [],
         ], [
             'event_id' => 4,
+            'registration_page_url' => 'http://example.test/inschrijven',
         ]);
 
         $this->assertSame('closed', $data['status']);
@@ -111,6 +119,28 @@ class RegistrationCapacityWidgetTest extends TestCase {
         $this->assertStringContainsString('12 / 30', $html);
         $this->assertStringContainsString('Inschrijvingen gesloten', $html);
         $this->assertStringContainsString('bso-widget-registration-capacity--is-closed', $html);
+        $this->assertStringNotContainsString('href="http://example.test/inschrijven"', $html);
+    }
+
+    /** @test */
+    public function it_keeps_capacity_widget_without_cta_when_no_registration_page_is_configured(): void {
+        $widget = new RegistrationCapacityWidget(new RegistrationWindowService(new FakeRegistrationWindowRepository([5 => true])));
+
+        $data = $widget->getData([
+            'event' => (object) ['id' => 5],
+            'counts' => [
+                'registered_teams' => 8,
+                'max_teams' => 30,
+            ],
+            'status' => [],
+        ], [
+            'event_id' => 5,
+        ]);
+
+        $html = $widget->render(['data' => $data]);
+
+        $this->assertStringNotContainsString('button-primary', $html);
+        $this->assertStringNotContainsString('href="http://example.test/inschrijven"', $html);
     }
 }
 
