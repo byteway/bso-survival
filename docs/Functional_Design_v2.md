@@ -594,22 +594,27 @@ Doelen:
 Toepassing:
 - De instructietijd wordt in het rooster meegenomen als voorbereidende fase per onderdeel voordat score-invoer start.
 - Bij het configureren van parameters moeten start- en eindtijd van de survivaldag worden ingesteld; het systeem berekent daarna hoe veel rondes mogelijk zijn.
+- Voor automatische planning wordt een vaste tijdslotmatrix gebruikt (14 slots), met een hard pauzeslot op 12:05 - 12:35.
+- Teamselectie voor planning gebruikt uitsluitend tijdige inschrijvingen: team `created_at` moet <= `closes_at` van het laatste registratievenster voor het event.
+- Alleen teamstatus `ingeschreven` en `bevestigd` telt mee voor planningsdeelname.
+- Als de benodigde planningscapaciteit groter is dan de beschikbare wedstrijdsloten (exclusief pauze), stopt planning met een foutmelding en zonder gedeeltelijke planning.
 
 ### Voorbeeld dagrooster met fase-indeling (genormaliseerd)
 
-1. Ronde 1: 09:00 - 09:30 (uitleg 5, actief 20, wissel 5)
-2. Ronde 2: 09:30 - 10:00 (uitleg 5, actief 20, wissel 5)
-3. Ronde 3: 10:00 - 10:30 (uitleg 5, actief 20, wissel 5)
-4. Ronde 4: 10:30 - 11:00 (uitleg 5, actief 20, wissel 5)
-5. Ronde 5: 11:00 - 11:30 (uitleg 5, actief 20, wissel 5)
-6. Operationele buffer: 11:30 - 11:55
-7. Pauze: 11:55 - 13:00
-8. Ronde 6: 13:00 - 13:30 (uitleg 5, actief 20, wissel 5)
-9. Ronde 7: 13:30 - 14:00 (uitleg 5, actief 20, wissel 5)
-10. Ronde 8: 14:00 - 14:30 (uitleg 5, actief 20, wissel 5)
-11. Ronde 9: 14:30 - 15:00 (uitleg 5, actief 20, wissel 5)
-12. Ronde 10: 15:00 - 15:30 (uitleg 5, actief 20, wissel 5)
-13. Dagafsluiting en afronding: 15:30 - 15:55
+1. Slot 1: 09:00 - 09:30 (wedstrijd)
+2. Slot 2: 09:35 - 10:05 (wedstrijd)
+3. Slot 3: 10:10 - 10:40 (wedstrijd)
+4. Slot 4: 10:45 - 11:15 (wedstrijd)
+5. Slot 5: 11:20 - 11:50 (wedstrijd)
+6. Slot 6: 12:05 - 12:35 (vaste pauze)
+7. Slot 7: 12:40 - 13:10 (wedstrijd)
+8. Slot 8: 13:15 - 13:45 (wedstrijd)
+9. Slot 9: 13:50 - 14:20 (wedstrijd)
+10. Slot 10: 14:25 - 14:55 (wedstrijd)
+11. Slot 11: 15:00 - 15:30 (wedstrijd)
+12. Slot 12: 15:35 - 16:05 (wedstrijd)
+13. Slot 13: 16:10 - 16:40 (wedstrijd)
+14. Slot 14: 16:45 - 17:15 (wedstrijd)
 
 ### Optimalisatieflow
 

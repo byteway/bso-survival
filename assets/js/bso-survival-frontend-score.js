@@ -373,9 +373,12 @@
 
                 if (context) {
                     var labelA = String(row.getAttribute('data-team-name') || '');
+                    var opponentName = String(row.getAttribute('data-opponent-name') || '');
                     var labelB = String(row.getAttribute('data-part-name') || '');
                     var timeslot = String(row.getAttribute('data-timeslot-label') || '-');
-                    if (labelB !== '') {
+                    if (labelA !== '' && opponentName !== '') {
+                        context.textContent = 'Team: ' + labelA + ' vs ' + opponentName + ' | ' + timeslot + ' | Score ID #' + scoreEntryId;
+                    } else if (labelB !== '') {
                         context.textContent = 'Onderdeel: ' + labelB + ' | ' + timeslot + ' | Score ID #' + scoreEntryId;
                     } else {
                         context.textContent = 'Team: ' + (labelA || '-') + ' | ' + timeslot + ' | Score ID #' + scoreEntryId;

@@ -109,6 +109,34 @@ $sortIndicator = static function (string $columnKey) use ($activeSortBy, $active
 $positionRuleText = $rawDefaultDir === 'asc'
     ? __('Voor dit onderdeel geldt: de laagste ruwe score krijgt positie 1.', 'bso-survival')
     : __('Voor dit onderdeel geldt: de hoogste ruwe score krijgt positie 1.', 'bso-survival');
+
+$timeslotGroups = [];
+foreach ($rows as $row) {
+    $timeslotKey = (string) ($row['timeslot_id'] ?? $row['timeslot_range'] ?? '');
+    if (!isset($timeslotGroups[$timeslotKey])) {
+        $timeslotGroups[$timeslotKey] = [
+            'timeslot_range' => (string) ($row['timeslot_range'] ?? __('Geen tijdslot', 'bso-survival')),
+            'timeslot_sort' => (int) ($row['timeslot_sort'] ?? 0),
+            'rows' => [],
+        ];
+    }
+
+    $timeslotGroups[$timeslotKey]['rows'][] = $row;
+}
+
+foreach ($timeslotGroups as &$timeslotGroup) {
+    usort($timeslotGroup['rows'], static function (array $left, array $right): int {
+        $leftName = trim((string) ($left['team_name'] ?? ''));
+        $rightName = trim((string) ($right['team_name'] ?? ''));
+        $cmp = strcasecmp($leftName, $rightName);
+        if ($cmp !== 0) {
+            return $cmp;
+        }
+
+        return ((int) ($left['assignment_id'] ?? 0)) <=> ((int) ($right['assignment_id'] ?? 0));
+    });
+}
+unset($timeslotGroup);
 ?>
 <section class="bso-survival-part-score<?php echo $canEditScores ? ' bso-survival-part-score--editable' : ''; ?>" id="<?php echo esc_attr($editorId); ?>" data-part-score-editor="1" data-can-edit="<?php echo $canEditScores ? '1' : '0'; ?>" data-event-id="<?php echo (int) $event->id; ?>" data-rest-update-base="<?php echo esc_attr($restUpdateBase); ?>" data-rest-nonce="<?php echo esc_attr($restNonce); ?>">
     <header class="bso-survival-part-score__header">
@@ -170,51 +198,79 @@ $positionRuleText = $rawDefaultDir === 'asc'
         </div>
 
         <div class="bso-survival-score-cards bso-survival-score-cards--part">
-            <?php foreach ($rows as $row) : ?>
+            <?php foreach ($timeslotGroups as $timeslotGroup) : ?>
                 <?php
-                $scoreEntryId = (int) ($row['score_entry_id'] ?? 0);
-                $isRowEditable = $canEditScores && $scoreEntryId > 0;
-                $timeslotLabel = (string) ($row['timeslot_range'] ?? __('Geen tijdslot', 'bso-survival'));
-                $rawLabel = !empty($row['is_completed']) ? number_format((float) $row['raw_value'], 4, '.', '') : '-';
-                $bonusLabel = !empty($row['is_completed']) ? number_format((float) ($row['bonus_points'] ?? 0), 2, '.', '') : '-';
-                $jokerLabel = !empty($row['joker_applied']) ? __('Ja', 'bso-survival') : __('Nee', 'bso-survival');
-                $positionLabel = (string) (int) ($row['provisional_position'] ?? 0);
-                $interimLabel = (string) (int) ($row['interim_score'] ?? 0);
+                $groupRows = is_array($timeslotGroup['rows'] ?? null) ? $timeslotGroup['rows'] : [];
+                if ($groupRows === []) {
+                    continue;
+                }
+
+                $timeslotLabel = (string) ($timeslotGroup['timeslot_range'] ?? __('Geen tijdslot', 'bso-survival'));
+                $teamNames = [];
+                foreach ($groupRows as $groupRow) {
+                    $teamNames[] = trim((string) ($groupRow['team_name'] ?? ''));
+                }
                 ?>
-                <article class="bso-survival-score-card<?php echo $isRowEditable ? ' bso-part-score-row-clickable' : ''; ?>" data-score-entry-id="<?php echo $scoreEntryId; ?>" data-team-name="<?php echo esc_attr((string) ($row['team_name'] ?? '')); ?>" data-timeslot-label="<?php echo esc_attr($timeslotLabel); ?>" data-raw-value="<?php echo esc_attr((string) ($row['raw_value'] ?? '0')); ?>" data-bonus-points="<?php echo esc_attr((string) ($row['bonus_points'] ?? '0')); ?>" data-joker-applied="<?php echo !empty($row['joker_applied']) ? '1' : '0'; ?>" data-editable="<?php echo $isRowEditable ? '1' : '0'; ?>">
+                <article class="bso-survival-score-card bso-survival-part-score-card">
                     <div class="bso-survival-score-card__row bso-survival-score-card__row--timeslot">
                         <span class="bso-survival-score-card__row-label"><?php esc_html_e('Tijdsrange', 'bso-survival'); ?></span>
                         <span class="bso-survival-timeslot-tag"><?php echo esc_html($timeslotLabel); ?></span>
                     </div>
-                    <div class="bso-survival-score-card__row bso-survival-score-card__row--subject">
-                        <span class="bso-survival-score-card__row-label"><?php esc_html_e('Team', 'bso-survival'); ?></span>
-                        <strong class="bso-survival-score-card__subject-value"><?php echo esc_html((string) ($row['team_name'] ?? '')); ?></strong>
-                    </div>
-                    <div class="bso-survival-score-card__metrics<?php echo $canEditScores ? ' is-editable' : ''; ?>">
-                        <div class="bso-survival-score-card__metric">
-                            <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Ruwe score', 'bso-survival'); ?></span>
-                            <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($rawLabel); ?></strong>
-                        </div>
-                        <?php if ($canEditScores) : ?>
-                            <div class="bso-survival-score-card__metric">
-                                <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Bonus', 'bso-survival'); ?></span>
-                                <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($bonusLabel); ?></strong>
-                            </div>
-                        <?php endif; ?>
-                        <div class="bso-survival-score-card__metric">
-                            <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Joker', 'bso-survival'); ?></span>
-                            <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($jokerLabel); ?></strong>
-                        </div>
-                        <div class="bso-survival-score-card__metric">
-                            <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Positie', 'bso-survival'); ?></span>
-                            <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($positionLabel); ?></strong>
-                        </div>
-                        <?php if ($canEditScores) : ?>
-                            <div class="bso-survival-score-card__metric">
-                                <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Tussentijdse score', 'bso-survival'); ?></span>
-                                <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($interimLabel); ?></strong>
-                            </div>
-                        <?php endif; ?>
+
+                    <div class="bso-survival-part-score-card__teams">
+                        <?php foreach ($groupRows as $groupRow) : ?>
+                            <?php
+                            $scoreEntryId = (int) ($groupRow['score_entry_id'] ?? 0);
+                            $isRowEditable = $canEditScores && $scoreEntryId > 0;
+                            $currentTeamName = trim((string) ($groupRow['team_name'] ?? ''));
+                            $opponentNames = [];
+                            foreach ($teamNames as $candidateTeamName) {
+                                if ($candidateTeamName !== '' && strcasecmp($candidateTeamName, $currentTeamName) !== 0) {
+                                    $opponentNames[] = $candidateTeamName;
+                                }
+                            }
+
+                            $opponentLabel = $opponentNames === [] ? __('Nog niet gekoppeld', 'bso-survival') : implode(' / ', $opponentNames);
+                            $rawLabel = !empty($groupRow['is_completed']) ? number_format((float) $groupRow['raw_value'], 4, '.', '') : '-';
+                            $bonusLabel = !empty($groupRow['is_completed']) ? number_format((float) ($groupRow['bonus_points'] ?? 0), 2, '.', '') : '-';
+                            $jokerLabel = !empty($groupRow['joker_applied']) ? __('Ja', 'bso-survival') : __('Nee', 'bso-survival');
+                            $positionLabel = (string) (int) ($groupRow['provisional_position'] ?? 0);
+                            $interimLabel = (string) (int) ($groupRow['interim_score'] ?? 0);
+                            ?>
+                            <section class="bso-survival-part-score-card__team<?php echo $isRowEditable ? ' bso-part-score-row-clickable' : ''; ?>" data-score-entry-id="<?php echo $scoreEntryId; ?>" data-team-name="<?php echo esc_attr($currentTeamName); ?>" data-opponent-name="<?php echo esc_attr($opponentLabel); ?>" data-part-name="<?php echo esc_attr((string) ($groupRow['part_name'] ?? '')); ?>" data-timeslot-label="<?php echo esc_attr($timeslotLabel); ?>" data-raw-value="<?php echo esc_attr((string) ($groupRow['raw_value'] ?? '0')); ?>" data-bonus-points="<?php echo esc_attr((string) ($groupRow['bonus_points'] ?? '0')); ?>" data-joker-applied="<?php echo !empty($groupRow['joker_applied']) ? '1' : '0'; ?>" data-editable="<?php echo $isRowEditable ? '1' : '0'; ?>">
+                                <div class="bso-survival-part-score-card__team-header">
+                                    <span class="bso-survival-score-card__row-label"><?php esc_html_e('Team', 'bso-survival'); ?></span>
+                                    <strong class="bso-survival-score-card__subject-value"><?php echo esc_html($currentTeamName); ?></strong>
+                                </div>
+
+                                <div class="bso-survival-part-score-card__team-scores">
+                                    <div class="bso-survival-part-score-card__score-box">
+                                        <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Ruwe score', 'bso-survival'); ?></span>
+                                        <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($rawLabel); ?></strong>
+                                    </div>
+                                    <?php if ($canEditScores) : ?>
+                                        <div class="bso-survival-part-score-card__score-box">
+                                            <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Bonus', 'bso-survival'); ?></span>
+                                            <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($bonusLabel); ?></strong>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div class="bso-survival-part-score-card__score-box">
+                                        <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Joker', 'bso-survival'); ?></span>
+                                        <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($jokerLabel); ?></strong>
+                                    </div>
+                                    <div class="bso-survival-part-score-card__score-box">
+                                        <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Positie', 'bso-survival'); ?></span>
+                                        <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($positionLabel); ?></strong>
+                                    </div>
+                                    <?php if ($canEditScores) : ?>
+                                        <div class="bso-survival-part-score-card__score-box">
+                                            <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Tussentijdse score', 'bso-survival'); ?></span>
+                                            <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($interimLabel); ?></strong>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </section>
+                        <?php endforeach; ?>
                     </div>
                 </article>
             <?php endforeach; ?>

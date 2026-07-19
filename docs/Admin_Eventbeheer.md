@@ -33,7 +33,7 @@ Functionaliteit:
 - Score Invoer ondersteunt jokerregistratie via checkbox per score; joker telt de genormaliseerde score dubbel en is maximaal 1x inzetbaar per team per event
 - Score Invoer ondersteunt een numeriek bonusveld per score-entry voor tie-resolutie en extra weging
 - Toegangspagina ondersteunt per gebruiker override-profielen voor Survival rechten (settings, toegang, score, meldingen)
-- Event-create demo-opbouw gebruikt bij scoregeneratie een round-robin-achtige planning zodat teams zo min mogelijk direct dezelfde tegenstander treffen binnen de automatisch gegenereerde rondes.
+- Event-create demo-opbouw gebruikt bij scoregeneratie de Circle Method (Bergertabel) als basis voor eerlijke team-tegen-team roulatie.
 - WP-CLI demo-simulatie voor scoreverloop is beschikbaar via `wp bso-survival seed-demo-scores`.
 - Frontend shortcodes voor tussentijdse scores rekenen nu per onderdeel opnieuw de teamposities uit op basis van de ruwe score en onderdeelregel.
 - In frontend onderdeelscore zijn score-rijen voor geautoriseerde scorebeheerders aanklikbaar; bewerken gebeurt via een rechter flip-over.
@@ -63,6 +63,10 @@ Functionaliteit:
 - Een joker kan slechts op één score-entry per team binnen hetzelfde event actief zijn; tweede inzet wordt server-side geweigerd.
 - Bij het uitzetten van een eerder ingestelde joker op een score-entry wordt de jokerregistratie direct verwijderd.
 - De create-optie `Planning + score-records genereren` werkt alleen als het event teams en gekoppelde onderdelen heeft; op een nieuw event betekent dit praktisch dat `Demo teams aanmaken` en `Alle beschikbare onderdelen koppelen` samen gebruikt moeten worden.
+- Planning gebruikt een vaste tijdslotlijst met een hard pauzeslot van `12:05 - 12:35`; in dit slot worden geen assignments aangemaakt.
+- Teams voor planning worden gefilterd op tijdige inschrijving via het registratievenster: `teams.created_at <= registration_windows.closes_at` (laatst opgeslagen venster van het event).
+- Alleen teams met status `ingeschreven` of `bevestigd` tellen mee voor planningsdeelname.
+- Bij onvoldoende wedstrijdsloten voor het benodigde aantal rondes faalt planning met een validatiefout; er worden dan geen gedeeltelijke assignments opgeslagen.
 - Demo-seeding werkt idempotent: bestaande score-records worden geupdate op `raw_value`, er worden geen nieuwe score-records aangemaakt.
 - Als `--slot` niet is opgegeven bij `seed-demo-scores`, worden standaard alle tijdsloten van het event geupdate.
 

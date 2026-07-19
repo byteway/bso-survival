@@ -633,7 +633,7 @@ class EventAdminService {
      * @return array{timeslots_created: int, assignments_created: int, assignment_ids: array<int, int>}
      */
     private function generateDemoScheduleForEvent(int $eventId, string $eventDate): array {
-        $teams = $this->loadTeamsForEvent($eventId);
+        $teams = $this->loadPlanningTeamsForEvent($eventId);
         $parts = $this->listAssignedPartsForEvent($eventId);
 
         if (count($teams) < 2) {
@@ -654,77 +654,117 @@ class EventAdminService {
         $now = gmdate('Y-m-d H:i:s');
         $eventDay = $this->isValidDate($eventDate) ? $eventDate : gmdate('Y-m-d');
 
-        $rounds = $this->buildRoundRobinPairs($teams, count($parts));
+        $rounds = $this->buildRoundRobinPairs($teams);
+        $fixedSlots = $this->buildFixedTimeslotWindows($eventDay);
         $timeslotsCreated = 0;
         $assignmentsCreated = 0;
         $assignmentIds = [];
-        $slotIndex = 0;
         $partCount = count($parts);
+        $slotWorkloads = [];
 
         foreach ($rounds as $roundIndex => $pairs) {
             $batches = array_chunk($pairs, $partCount);
             foreach ($batches as $batchIndex => $batchPairs) {
-                $window = $this->buildTimeslotWindow($eventDay, $slotIndex);
-                $inserted = $wpdb->insert($timeslotsTable, [
-                    'event_id' => $eventId,
-                    'start_at' => $window['start_at'],
-                    'end_at' => $window['end_at'],
-                    'transfer_minutes' => 5,
-                    'status' => 'planned',
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]);
-
-                if ($inserted === false) {
-                    throw new RuntimeException('Kon geen timeslot genereren voor demo event.');
+                if ($batchPairs === []) {
+                    continue;
                 }
 
-                $timeslotId = (int) $wpdb->insert_id;
-                $timeslotsCreated++;
+                $slotWorkloads[] = [
+                    'round_index' => $roundIndex,
+                    'batch_index' => $batchIndex,
+                    'pairs' => $batchPairs,
+                ];
+            }
+        }
 
-                foreach ($batchPairs as $pairOffset => $pair) {
-                    $part = $parts[($roundIndex + $batchIndex + $pairOffset) % $partCount] ?? null;
-                    $partId = is_object($part) ? (int) ($part->id ?? 0) : 0;
-                    if ($partId <= 0) {
+        $playableSlots = array_values(array_filter($fixedSlots, static function (array $slot): bool {
+            return empty($slot['is_pause']);
+        }));
+
+        if (count($slotWorkloads) > count($playableSlots)) {
+            throw new RuntimeException(sprintf(
+                'Onvoldoende vaste wedstrijdsloten: %d benodigde sloten voor %d rondes, maar slechts %d beschikbaar (pauze 12:05-12:35 is geblokkeerd).',
+                count($slotWorkloads),
+                count($rounds),
+                count($playableSlots)
+            ));
+        }
+
+        $playableTimeslotIds = [];
+
+        foreach ($fixedSlots as $slot) {
+            $inserted = $wpdb->insert($timeslotsTable, [
+                'event_id' => $eventId,
+                'start_at' => (string) ($slot['start_at'] ?? ''),
+                'end_at' => (string) ($slot['end_at'] ?? ''),
+                'transfer_minutes' => !empty($slot['is_pause']) ? 0 : 5,
+                'status' => !empty($slot['is_pause']) ? 'break' : 'planned',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            if ($inserted === false) {
+                throw new RuntimeException('Kon geen timeslot genereren voor planning.');
+            }
+
+            $timeslotId = (int) $wpdb->insert_id;
+            $timeslotsCreated++;
+
+            if (empty($slot['is_pause']) && $timeslotId > 0) {
+                $playableTimeslotIds[] = $timeslotId;
+            }
+        }
+
+        foreach ($slotWorkloads as $workloadIndex => $workload) {
+            $timeslotId = (int) ($playableTimeslotIds[$workloadIndex] ?? 0);
+            if ($timeslotId <= 0) {
+                break;
+            }
+
+            $roundIndex = (int) ($workload['round_index'] ?? 0);
+            $batchIndex = (int) ($workload['batch_index'] ?? 0);
+            $batchPairs = is_array($workload['pairs'] ?? null) ? $workload['pairs'] : [];
+
+            foreach ($batchPairs as $pairOffset => $pair) {
+                $part = $parts[($roundIndex + $batchIndex + $pairOffset) % $partCount] ?? null;
+                $partId = is_object($part) ? (int) ($part->id ?? 0) : 0;
+                if ($partId <= 0) {
+                    continue;
+                }
+
+                foreach ($pair as $team) {
+                    $teamId = is_object($team) ? (int) ($team->id ?? 0) : 0;
+                    if ($teamId <= 0) {
                         continue;
                     }
 
-                    foreach ($pair as $team) {
-                        $teamId = is_object($team) ? (int) ($team->id ?? 0) : 0;
-                        if ($teamId <= 0) {
-                            continue;
-                        }
+                    $assignmentInserted = $wpdb->insert($assignmentsTable, [
+                        'timeslot_id' => $timeslotId,
+                        'part_id' => $partId,
+                        'team_id' => $teamId,
+                        'referee_primary_id' => null,
+                        'referee_secondary_id' => null,
+                        'source' => 'planner_demo',
+                        'status' => 'planned',
+                        'meta_data' => wp_json_encode([
+                            'seed' => true,
+                            'source' => 'event_create_demo',
+                            'round' => $roundIndex + 1,
+                        ]),
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
 
-                        $assignmentInserted = $wpdb->insert($assignmentsTable, [
-                            'timeslot_id' => $timeslotId,
-                            'part_id' => $partId,
-                            'team_id' => $teamId,
-                            'referee_primary_id' => null,
-                            'referee_secondary_id' => null,
-                            'source' => 'planner_demo',
-                            'status' => 'planned',
-                            'meta_data' => wp_json_encode([
-                                'seed' => true,
-                                'source' => 'event_create_demo',
-                                'round' => $roundIndex + 1,
-                            ]),
-                            'created_at' => $now,
-                            'updated_at' => $now,
-                        ]);
-
-                        if ($assignmentInserted === false) {
-                            throw new RuntimeException(sprintf('Kon assignment niet genereren voor team #%d.', $teamId));
-                        }
-
-                        $assignmentId = (int) $wpdb->insert_id;
-                        if ($assignmentId > 0) {
-                            $assignmentIds[] = $assignmentId;
-                        }
-                        $assignmentsCreated++;
+                    if ($assignmentInserted === false) {
+                        throw new RuntimeException(sprintf('Kon assignment niet genereren voor team #%d.', $teamId));
                     }
-                }
 
-                $slotIndex++;
+                    $assignmentId = (int) $wpdb->insert_id;
+                    if ($assignmentId > 0) {
+                        $assignmentIds[] = $assignmentId;
+                    }
+                    $assignmentsCreated++;
+                }
             }
         }
 
@@ -881,17 +921,27 @@ class EventAdminService {
     /**
      * @return array<int, object>
      */
-    private function loadTeamsForEvent(int $eventId): array {
+    private function loadPlanningTeamsForEvent(int $eventId): array {
         global $wpdb;
         if (!isset($wpdb) || !is_object($wpdb)) {
             throw new RuntimeException('WordPress database object is not available.');
         }
 
+        $deadline = $this->findRegistrationDeadlineForEvent($eventId);
+        if ($deadline === '') {
+            throw new RuntimeException('Planning vereist een registratievenster met sluitdatum (closes_at).');
+        }
+
         $table = $wpdb->prefix . 'bso_survival_teams';
         $sql = $wpdb->prepare(
-            "SELECT * FROM {$table} WHERE event_id = %d AND status <> %s ORDER BY id ASC",
+            "SELECT *
+             FROM {$table}
+             WHERE event_id = %d
+               AND LOWER(COALESCE(status, '')) IN ('ingeschreven', 'bevestigd')
+               AND created_at <= %s
+             ORDER BY id ASC",
             $eventId,
-            'verwijderd'
+            $deadline
         );
 
         return $wpdb->get_results($sql) ?: [];
@@ -901,15 +951,14 @@ class EventAdminService {
      * @param array<int, object> $teams
      * @return array<int, array<int, array<int, object>>>
      */
-    private function buildRoundRobinPairs(array $teams, int $requestedRounds): array {
+    private function buildRoundRobinPairs(array $teams): array {
         $pool = array_values($teams);
         if (count($pool) % 2 !== 0) {
             $pool[] = null;
         }
 
         $teamCount = count($pool);
-        $maxRounds = max(1, $teamCount - 1);
-        $roundsToGenerate = max(1, min($requestedRounds, $maxRounds));
+        $roundsToGenerate = max(1, $teamCount - 1);
         $rounds = [];
 
         for ($round = 0; $round < $roundsToGenerate; $round++) {
@@ -936,22 +985,58 @@ class EventAdminService {
         return $rounds;
     }
 
-    /**
-     * @return array{start_at: string, end_at: string}
-     */
-    private function buildTimeslotWindow(string $eventDate, int $slotIndex): array {
-        $base = \DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $eventDate . ' 09:00:00', new \DateTimeZone('UTC'));
-        if ($base === false) {
-            $base = new \DateTimeImmutable(gmdate('Y-m-d') . ' 09:00:00', new \DateTimeZone('UTC'));
+    private function findRegistrationDeadlineForEvent(int $eventId): string {
+        if ($eventId <= 0) {
+            return '';
         }
 
-        $start = $base->modify('+' . ($slotIndex * 35) . ' minutes');
-        $end = $start->modify('+30 minutes');
+        global $wpdb;
+        if (!isset($wpdb) || !is_object($wpdb)) {
+            throw new RuntimeException('WordPress database object is not available.');
+        }
 
-        return [
-            'start_at' => $start->format('Y-m-d H:i:s'),
-            'end_at' => $end->format('Y-m-d H:i:s'),
+        $table = $wpdb->prefix . 'bso_survival_registration_windows';
+        $sql = $wpdb->prepare(
+            "SELECT closes_at FROM {$table} WHERE event_id = %d ORDER BY id DESC LIMIT 1",
+            $eventId
+        );
+
+        $deadline = (string) ($wpdb->get_var($sql) ?? '');
+        return trim($deadline);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildFixedTimeslotWindows(string $eventDate): array {
+        $day = $this->isValidDate($eventDate) ? $eventDate : gmdate('Y-m-d');
+        $slots = [
+            ['09:00:00', '09:30:00', false],
+            ['09:35:00', '10:05:00', false],
+            ['10:10:00', '10:40:00', false],
+            ['10:45:00', '11:15:00', false],
+            ['11:20:00', '11:50:00', false],
+            ['12:05:00', '12:35:00', true],
+            ['12:40:00', '13:10:00', false],
+            ['13:15:00', '13:45:00', false],
+            ['13:50:00', '14:20:00', false],
+            ['14:25:00', '14:55:00', false],
+            ['15:00:00', '15:30:00', false],
+            ['15:35:00', '16:05:00', false],
+            ['16:10:00', '16:40:00', false],
+            ['16:45:00', '17:15:00', false],
         ];
+
+        $result = [];
+        foreach ($slots as $slot) {
+            $result[] = [
+                'start_at' => $day . ' ' . (string) $slot[0],
+                'end_at' => $day . ' ' . (string) $slot[1],
+                'is_pause' => (bool) $slot[2],
+            ];
+        }
+
+        return $result;
     }
 
     /**

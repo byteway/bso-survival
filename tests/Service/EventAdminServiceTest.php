@@ -293,6 +293,63 @@ class EventAdminServiceTest extends TestCase {
         $this->assertCount(1, $filtered);
         $this->assertSame(701, (int) ($filtered[0]->id ?? 0));
     }
+
+    /** @test */
+    public function it_builds_fixed_timeslot_matrix_with_hard_pause_slot(): void {
+        $service = new EventAdminService(
+            new InMemoryEventReadRepository(),
+            new InMemoryEventAdminRepository(new InMemoryEventReadRepository()),
+            new InMemoryPartAdminRepository(),
+            new InMemoryEventPublicationRepository()
+        );
+
+        $method = new \ReflectionMethod(EventAdminService::class, 'buildFixedTimeslotWindows');
+        $method->setAccessible(true);
+
+        /** @var array<int, array<string, mixed>> $slots */
+        $slots = $method->invoke($service, '2026-10-05');
+
+        $this->assertCount(14, $slots);
+        $this->assertSame('2026-10-05 09:00:00', (string) ($slots[0]['start_at'] ?? ''));
+        $this->assertSame('2026-10-05 09:30:00', (string) ($slots[0]['end_at'] ?? ''));
+
+        $this->assertSame('2026-10-05 12:05:00', (string) ($slots[5]['start_at'] ?? ''));
+        $this->assertSame('2026-10-05 12:35:00', (string) ($slots[5]['end_at'] ?? ''));
+        $this->assertTrue((bool) ($slots[5]['is_pause'] ?? false));
+
+        $this->assertSame('2026-10-05 16:45:00', (string) ($slots[13]['start_at'] ?? ''));
+        $this->assertSame('2026-10-05 17:15:00', (string) ($slots[13]['end_at'] ?? ''));
+    }
+
+    /** @test */
+    public function it_generates_full_round_robin_round_count_for_even_team_pool(): void {
+        $service = new EventAdminService(
+            new InMemoryEventReadRepository(),
+            new InMemoryEventAdminRepository(new InMemoryEventReadRepository()),
+            new InMemoryPartAdminRepository(),
+            new InMemoryEventPublicationRepository()
+        );
+
+        $teams = [
+            (object) ['id' => 1],
+            (object) ['id' => 2],
+            (object) ['id' => 3],
+            (object) ['id' => 4],
+            (object) ['id' => 5],
+            (object) ['id' => 6],
+        ];
+
+        $method = new \ReflectionMethod(EventAdminService::class, 'buildRoundRobinPairs');
+        $method->setAccessible(true);
+
+        /** @var array<int, array<int, array<int, object>>> $rounds */
+        $rounds = $method->invoke($service, $teams);
+
+        $this->assertCount(5, $rounds);
+        foreach ($rounds as $round) {
+            $this->assertCount(3, $round);
+        }
+    }
 }
 
 class InMemoryEventReadRepository implements EventRepositoryInterface {
