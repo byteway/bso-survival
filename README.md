@@ -112,11 +112,41 @@ Belangrijk voor dashboardpagina's:
 - De widget `Onderdelen` linkt per onderdeel naar de helpweergave met `event_id` + `part_id`.
 - De widget `Teams` linkt per team naar de teamscore-weergave met `event_id` + `team_id`.
 - De widget `Contactzoeker` ondersteunt zoeken op team, contactnaam, e-mail, telefoon en status; zonder zoekterm worden geen resultaten getoond. Per team toont de widget direct klikbare e-mail en WhatsApp-contactlinks, plus een `x`-knop om het filter direct te wissen.
+- De widget `Fallback-scoreinvoer` is alleen zichtbaar voor gebruikers met `manage_options` en toont op dit moment een noodinstructiekaart: gebruik alleen bij storing van de reguliere scoreflow.
 - In `Survival -> Dashboard Widgets` kun je per event instellen op welke pagina de links `Onderdelen` en `Teams` moeten openen.
 
 Korte documentatieversie Contactzoeker:
 
 > De Contactzoeker is een widget waarmee bezoekers snel teamcontacten kunnen vinden. Zonder zoekterm toont de widget geen resultaten. De widget ondersteunt zoeken op team, contactnaam, e-mail, telefoon en status, opent telefoonnummers via WhatsApp-chat en heeft naast het zoekveld een `x`-knop om het filter direct te wissen.
+
+## Functionele beschrijving: Fallback-scoreinvoer
+
+Doel
+
+De widget `Fallback-scoreinvoer` is een operationele noodkaart voor leiding wanneer de reguliere scoreflow tijdelijk niet bruikbaar is.
+
+Functionaliteit (huidige implementatie)
+
+- Widgettitel `Fallback-scoreinvoer` in de dashboardsectie `operations`.
+- Alleen zichtbaar voor gebruikers met capability `manage_options`.
+- Toont een expliciete instructietekst: gebruik alleen bij storing van reguliere scoreflow.
+- Geen eigen handmatige score-invoerformulier in deze widgetversie; scoreverwerking loopt via de bestaande scorekanalen.
+
+Gebruikersdoel
+
+Tijdens een storing ziet leiding direct dat fallback-procedure geldt en kan operationeel schakelen zonder verwarring over de normale scoreflow.
+
+Resultaat
+
+De continuiteit van het proces wordt ondersteund door duidelijke noodcommunicatie in het dashboard, terwijl technische score-opslag via de reguliere paden bewaakt blijft.
+
+Korte versie voor documentatie
+
+> De Fallback-scoreinvoer is een leiding-only noodwidget die bij storing een duidelijke fallback-instructie toont. In de huidige versie bevat deze widget nog geen eigen handmatige score-invoer UI.
+
+Zeer korte beschrijving (voor overzichtstabel)
+
+> `Fallback-scoreinvoer`: leiding-only noodkaart met fallback-instructie bij uitval van de reguliere scoreflow.
 
 Optionele URL-overrides (filters):
 

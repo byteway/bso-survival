@@ -812,6 +812,36 @@ Tijdens de survivaldag moeten deelnemers en vrijwilligers snel kunnen communicer
 
 Met enkele klikken vindt een gebruiker de juiste contactpersoon en kan direct contact worden opgenomen via e-mail of WhatsApp. Hierdoor verbetert de bereikbaarheid van de organisatie en verloopt de communicatie tijdens de survival efficienter.
 
+### Widgetbeschrijving - Fallback-scoreinvoer
+
+#### Doel
+
+De widget Fallback-scoreinvoer ondersteunt leiding bij operationele storingen door direct zichtbaar te maken dat de fallback-procedure actief moet worden gebruikt.
+
+#### Functionaliteit
+
+- Widget-id `fallback_score` en titel `Fallback-scoreinvoer`.
+- Alleen zichtbaar voor gebruikers met capability `manage_options`.
+- Geplaatst in de dashboardsectie `operations`.
+- Toont een duidelijke noodtekst: gebruik alleen bij storing van reguliere scoreflow.
+- Bevat in de huidige versie geen eigen formulier voor handmatige score-opslag.
+
+#### Gebruikersdoel
+
+Wanneer de reguliere score-invoer tijdelijk stokt, heeft leiding direct een ondubbelzinnige fallback-indicatie in het dashboard en kan zij coordineren zonder ruis in het proces.
+
+#### Resultaat
+
+De operationele continuiteit van de dag blijft geborgd door expliciete fallback-communicatie. De daadwerkelijke score-opslag blijft in deze versie afhankelijk van de bestaande scoreflows.
+
+#### Korte versie voor documentatie
+
+> De Fallback-scoreinvoer is een leiding-only noodwidget die bij storing een fallback-instructie toont. Deze widget bevat momenteel nog geen eigen handmatige score-invoer UI.
+
+#### Zeer korte beschrijving (voor overzichtstabel)
+
+> Fallback-scoreinvoer: leiding-only noodkaart met fallback-instructie bij uitval van reguliere scoreflow.
+
 ### Mobiele eisen
 
 | Eis | Uitwerking |
@@ -932,7 +962,7 @@ waarbij:
 | Teampositieoverzicht | Actuele ranking op basis van ingevoerde scores |
 | Contactzoeker | Vrijwilliger snel opzoeken voor overleg |
 | Meldingenbeheer | Dashboardmeldingen aanpassen of oplossen |
-| Fallback-scoreinvoer | Scores registreren bij operationele storingen |
+| Fallback-scoreinvoer | Leiding-only noodkaart met fallback-instructie bij operationele storing |
 | Scheidsrechter-navraag | Contact opnemen met scheidsrechters van ontbrekende onderdelen |
 
 ---
