@@ -129,6 +129,33 @@ class DashboardWidgetRegistryTest extends TestCase {
     /**
      * @test
      */
+    public function it_renders_public_dashboard_widgets_for_visitors_without_read_capability(): void {
+        set_test_current_user_caps([
+            'read' => false,
+            'manage_options' => false,
+        ]);
+
+        DashboardWidgetRegistry::initDefaults();
+
+        $overview = [
+            'event' => (object) ['id' => 2, 'name' => 'Public Event'],
+            'parts' => [],
+            'teams' => [],
+            'counts' => ['parts' => 0, 'teams' => 0],
+            'status' => ['has_parts' => false],
+        ];
+
+        $html = DashboardWidgetRegistry::renderSection('main', $overview);
+
+        $this->assertStringContainsString('Inschrijfcapaciteit', $html);
+        $this->assertStringContainsString('Teampositieoverzicht', $html);
+        $this->assertStringContainsString('Tijdslot voortgang', $html);
+        $this->assertStringNotContainsString('Fallback-scoreinvoer', $html);
+    }
+
+    /**
+     * @test
+     */
     public function it_supports_custom_widget_registration_via_init_hook(): void {
         add_action('bso_survival_dashboard_widgets_init', function ($registryClass): void {
             $registryClass::register('operations', new TestCustomDashboardWidget());

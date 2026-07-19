@@ -130,6 +130,10 @@ class DashboardWidgetRegistry {
             return true;
         }
 
+        if (in_array('read', $caps, true)) {
+            return true;
+        }
+
         if (!function_exists('current_user_can')) {
             return false;
         }
