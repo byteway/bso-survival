@@ -350,6 +350,115 @@ class EventAdminServiceTest extends TestCase {
             $this->assertCount(3, $round);
         }
     }
+
+    /** @test */
+    public function it_filters_planning_teams_by_registration_deadline(): void {
+        $service = new EventAdminService(
+            new InMemoryEventReadRepository(),
+            new InMemoryEventAdminRepository(new InMemoryEventReadRepository()),
+            new InMemoryPartAdminRepository(),
+            new InMemoryEventPublicationRepository()
+        );
+
+        $wpdbBefore = $GLOBALS['wpdb'] ?? null;
+        $GLOBALS['wpdb'] = new FakePlanningWpdb([
+            (object) ['id' => 1, 'event_id' => 44, 'status' => 'ingeschreven', 'created_at' => '2026-07-19 11:59:59'],
+            (object) ['id' => 2, 'event_id' => 44, 'status' => 'bevestigd', 'created_at' => '2026-07-19 12:00:00'],
+            (object) ['id' => 3, 'event_id' => 44, 'status' => 'ingeschreven', 'created_at' => '2026-07-19 12:00:01'],
+        ], '2026-07-19 12:00:00');
+
+        try {
+            $method = new \ReflectionMethod(EventAdminService::class, 'loadPlanningTeamsForEvent');
+            $method->setAccessible(true);
+
+            /** @var array<int, object> $teams */
+            $teams = $method->invoke($service, 44);
+
+            $teamIds = array_map(static function ($team): int {
+                return (int) ($team->id ?? 0);
+            }, $teams);
+
+            $this->assertSame([1, 2], $teamIds);
+        } finally {
+            $GLOBALS['wpdb'] = $wpdbBefore;
+        }
+    }
+
+    /** @test */
+    public function it_filters_planning_teams_by_status_whitelist(): void {
+        $service = new EventAdminService(
+            new InMemoryEventReadRepository(),
+            new InMemoryEventAdminRepository(new InMemoryEventReadRepository()),
+            new InMemoryPartAdminRepository(),
+            new InMemoryEventPublicationRepository()
+        );
+
+        $wpdbBefore = $GLOBALS['wpdb'] ?? null;
+        $GLOBALS['wpdb'] = new FakePlanningWpdb([
+            (object) ['id' => 10, 'event_id' => 55, 'status' => 'ingeschreven', 'created_at' => '2026-07-19 10:00:00'],
+            (object) ['id' => 11, 'event_id' => 55, 'status' => 'bevestigd', 'created_at' => '2026-07-19 10:00:00'],
+            (object) ['id' => 12, 'event_id' => 55, 'status' => 'afgemeld', 'created_at' => '2026-07-19 10:00:00'],
+            (object) ['id' => 13, 'event_id' => 55, 'status' => 'verwijderd', 'created_at' => '2026-07-19 10:00:00'],
+        ], '2026-07-19 12:00:00');
+
+        try {
+            $method = new \ReflectionMethod(EventAdminService::class, 'loadPlanningTeamsForEvent');
+            $method->setAccessible(true);
+
+            /** @var array<int, object> $teams */
+            $teams = $method->invoke($service, 55);
+
+            $teamIds = array_map(static function ($team): int {
+                return (int) ($team->id ?? 0);
+            }, $teams);
+
+            $this->assertSame([10, 11], $teamIds);
+        } finally {
+            $GLOBALS['wpdb'] = $wpdbBefore;
+        }
+    }
+
+    /** @test */
+    public function it_stops_on_overflow_without_writing_partial_planning_data(): void {
+        $events = new InMemoryEventReadRepository();
+        $events->seed((object) ['id' => 77, 'name' => 'Overflow Event', 'status' => 'concept']);
+
+        $parts = new InMemoryPartAdminRepository();
+        $parts->seed((object) ['id' => 9001, 'name' => 'Onderdeel 1', 'event_id' => 77, 'status' => 'actief']);
+
+        $service = new EventAdminService(
+            $events,
+            new InMemoryEventAdminRepository($events),
+            $parts,
+            new InMemoryEventPublicationRepository()
+        );
+
+        $teams = [];
+        for ($i = 1; $i <= 22; $i++) {
+            $teams[] = (object) [
+                'id' => $i,
+                'event_id' => 77,
+                'status' => 'ingeschreven',
+                'created_at' => '2026-07-19 10:00:00',
+            ];
+        }
+
+        $fakeWpdb = new FakePlanningWpdb($teams, '2026-07-19 12:00:00');
+        $wpdbBefore = $GLOBALS['wpdb'] ?? null;
+        $GLOBALS['wpdb'] = $fakeWpdb;
+
+        try {
+            $method = new \ReflectionMethod(EventAdminService::class, 'generateDemoScheduleForEvent');
+            $method->setAccessible(true);
+
+            $this->expectException(\RuntimeException::class);
+            $this->expectExceptionMessage('Onvoldoende vaste wedstrijdsloten');
+            $method->invoke($service, 77, '2026-10-05');
+        } finally {
+            $this->assertCount(0, $fakeWpdb->insertCalls);
+            $GLOBALS['wpdb'] = $wpdbBefore;
+        }
+    }
 }
 
 class InMemoryEventReadRepository implements EventRepositoryInterface {
@@ -521,5 +630,98 @@ class InMemoryEventPublicationRepository implements EventPublicationRepositoryIn
 
     public function seed(int $eventId, object $row): void {
         $this->rows[$eventId] = $row;
+    }
+}
+
+class FakePlanningWpdb {
+    /** @var string */
+    public $prefix = 'wp_';
+
+    /** @var int */
+    public $insert_id = 0;
+
+    /** @var array<int, array<string, mixed>> */
+    public $insertCalls = [];
+
+    /** @var array<int, object> */
+    private $teams;
+
+    /** @var string */
+    private $deadline;
+
+    /** @var array<string, array<int, mixed>> */
+    private $preparedArgsByQuery = [];
+
+    /** @var int */
+    private $autoIncrement = 1000;
+
+    /**
+     * @param array<int, object> $teams
+     */
+    public function __construct(array $teams, string $deadline) {
+        $this->teams = $teams;
+        $this->deadline = $deadline;
+    }
+
+    /**
+     * @param mixed ...$args
+     */
+    public function prepare(string $query, ...$args): string {
+        $this->preparedArgsByQuery[$query] = $args;
+        return $query;
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    public function get_results(string $query): array {
+        if (strpos($query, 'FROM ' . $this->prefix . 'bso_survival_teams') === false) {
+            return [];
+        }
+
+        $args = $this->preparedArgsByQuery[$query] ?? [];
+        $eventId = (int) ($args[0] ?? 0);
+        $deadline = (string) ($args[1] ?? '');
+        $filtered = array_values(array_filter($this->teams, static function ($team) use ($eventId, $deadline): bool {
+            $teamEventId = (int) ($team->event_id ?? 0);
+            $status = strtolower(trim((string) ($team->status ?? '')));
+            $createdAt = (string) ($team->created_at ?? '');
+
+            return $teamEventId === $eventId
+                && in_array($status, ['ingeschreven', 'bevestigd'], true)
+                && $createdAt <= $deadline;
+        }));
+
+        usort($filtered, static function ($left, $right): int {
+            return ((int) ($left->id ?? 0)) <=> ((int) ($right->id ?? 0));
+        });
+
+        return $filtered;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function get_var(string $query) {
+        if (strpos($query, 'SELECT closes_at FROM ' . $this->prefix . 'bso_survival_registration_windows') !== false) {
+            return $this->deadline;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function insert(string $table, array $data): int {
+        $this->insertCalls[] = [
+            'table' => $table,
+            'data' => $data,
+        ];
+
+        $this->insert_id = $this->autoIncrement;
+        $this->autoIncrement++;
+
+        return 1;
     }
 }
