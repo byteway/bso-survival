@@ -21,14 +21,16 @@
             var items = list.querySelectorAll('[data-bso-contact-item]');
             var countNode = widget.querySelector('[data-bso-contact-count]');
             var emptyNode = widget.querySelector('[data-bso-contact-empty]');
+            var clearButton = widget.querySelector('[data-bso-contact-clear]');
 
             var applyFilter = function () {
                 var term = String(input.value || '').trim().toLowerCase();
                 var visibleCount = 0;
+                var hasTerm = term !== '';
 
                 items.forEach(function (item) {
                     var haystack = String(item.getAttribute('data-contact-search') || '').toLowerCase();
-                    var matches = term === '' || haystack.indexOf(term) !== -1;
+                    var matches = hasTerm && haystack.indexOf(term) !== -1;
 
                     item.hidden = !matches;
                     if (matches) {
@@ -36,16 +38,31 @@
                     }
                 });
 
+                list.hidden = !hasTerm;
+
                 if (countNode) {
                     countNode.textContent = formatResultCount(visibleCount);
                 }
 
                 if (emptyNode) {
-                    emptyNode.hidden = visibleCount !== 0;
+                    emptyNode.hidden = !hasTerm || visibleCount !== 0;
+                }
+
+                if (clearButton) {
+                    clearButton.hidden = !hasTerm;
                 }
             };
 
             input.addEventListener('input', applyFilter);
+
+            if (clearButton) {
+                clearButton.addEventListener('click', function () {
+                    input.value = '';
+                    applyFilter();
+                    input.focus();
+                });
+            }
+
             applyFilter();
         });
     }

@@ -60,8 +60,11 @@ class ContactFinderWidget implements DashboardWidgetInterface {
         $html = '<article class="bso-widget bso-widget-contact" data-bso-contact-widget="1">';
         $html .= '<h3>' . esc_html($this->getTitle()) . '</h3>';
         $html .= '<label class="bso-widget-contact__label" for="' . esc_attr($searchInputId) . '">' . esc_html(__('Zoeken', 'bso-survival')) . '</label>';
-        $html .= '<input id="' . esc_attr($searchInputId) . '" class="bso-widget-contact__search" type="search" placeholder="' . esc_attr(__('Zoek op team, contact, e-mail, telefoon of status', 'bso-survival')) . '" data-bso-contact-search="1" />';
-        $html .= '<p class="bso-widget-contact__meta" data-bso-contact-count="1">' . esc_html($this->formatResultCount(count($contacts))) . '</p>';
+            $html .= '<div class="bso-widget-contact__search-row">';
+            $html .= '<input id="' . esc_attr($searchInputId) . '" class="bso-widget-contact__search" type="search" placeholder="' . esc_attr(__('Zoek op team, contact, e-mail, telefoon of status', 'bso-survival')) . '" data-bso-contact-search="1" />';
+            $html .= '<button type="button" class="bso-widget-contact__clear" data-bso-contact-clear="1" aria-label="' . esc_attr(__('Wis zoekfilter', 'bso-survival')) . '">x</button>';
+            $html .= '</div>';
+            $html .= '<p class="bso-widget-contact__meta" data-bso-contact-count="1">' . esc_html($this->formatResultCount(0)) . '</p>';
 
         if ($contacts === []) {
             $html .= '<p class="bso-widget-contact__empty">' . esc_html(__('Geen contactgegevens beschikbaar voor dit event.', 'bso-survival')) . '</p>';
@@ -69,7 +72,7 @@ class ContactFinderWidget implements DashboardWidgetInterface {
             return $html;
         }
 
-        $html .= '<ul class="bso-widget-contact__list" data-bso-contact-list="1">';
+        $html .= '<ul class="bso-widget-contact__list" data-bso-contact-list="1" hidden="hidden">';
         foreach ($contacts as $contact) {
             if (!is_array($contact)) {
                 continue;
@@ -94,8 +97,14 @@ class ContactFinderWidget implements DashboardWidgetInterface {
             }
 
             if ($contactPhone !== '') {
-                $phoneHref = preg_replace('/\s+/', '', $contactPhone);
-                $html .= '<p class="bso-widget-contact__line"><span>' . esc_html(__('Telefoon', 'bso-survival')) . ':</span> <a href="tel:' . esc_attr((string) $phoneHref) . '">' . esc_html($contactPhone) . '</a></p>';
+                    $phoneHref = (string) preg_replace('/\D+/', '', $contactPhone);
+                    if (substr($phoneHref, 0, 2) === '00') {
+                        $phoneHref = substr($phoneHref, 2);
+                    } elseif (substr($phoneHref, 0, 1) === '0') {
+                        $phoneHref = '31' . substr($phoneHref, 1);
+                    }
+
+                    $html .= '<p class="bso-widget-contact__line"><span>' . esc_html(__('WhatsApp', 'bso-survival')) . ':</span> <a href="https://wa.me/' . esc_attr($phoneHref) . '" target="_blank" rel="noopener noreferrer">' . esc_html($contactPhone) . '</a></p>';
             }
 
             if ($status !== '') {
@@ -105,7 +114,7 @@ class ContactFinderWidget implements DashboardWidgetInterface {
             $html .= '</li>';
         }
         $html .= '</ul>';
-        $html .= '<p class="bso-widget-contact__empty" data-bso-contact-empty="1" hidden="hidden">' . esc_html(__('Geen resultaten voor deze zoekopdracht.', 'bso-survival')) . '</p>';
+            $html .= '<p class="bso-widget-contact__empty" data-bso-contact-empty="1" hidden="hidden">' . esc_html(__('Geen resultaten voor deze zoekopdracht.', 'bso-survival')) . '</p>';
         $html .= '</article>';
 
         return $html;

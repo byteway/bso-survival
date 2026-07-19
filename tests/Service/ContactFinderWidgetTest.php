@@ -58,11 +58,14 @@ class ContactFinderWidgetTest extends TestCase {
         ]);
 
         $this->assertStringContainsString('data-bso-contact-search="1"', $html);
+        $this->assertStringContainsString('data-bso-contact-clear="1"', $html);
         $this->assertStringContainsString('data-bso-contact-item="1"', $html);
         $this->assertStringContainsString('mailto:olaf@example.test', $html);
-        $this->assertStringContainsString('tel:0611112222', $html);
+        $this->assertStringContainsString('https://wa.me/31611112222', $html);
         $this->assertStringContainsString('Team Orion', $html);
         $this->assertStringContainsString('Zoek op team, contact, e-mail, telefoon of status', $html);
+        $this->assertStringContainsString('data-bso-contact-list="1" hidden="hidden"', $html);
+        $this->assertStringContainsString('0 resultaten', $html);
     }
 
     /** @test */

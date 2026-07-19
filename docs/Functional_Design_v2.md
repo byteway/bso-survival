@@ -798,10 +798,11 @@ De widget Contactzoeker helpt deelnemers, teamleiders, ouders, vrijwilligers en 
 
 #### Functionaliteit
 
-- Zoeken op naam, team of rol.
-- Tonen van contactgegevens van de gevonden persoon.
-- Ondersteuning voor rollen zoals teamleider, scheidsrechter, organisatielid en survivalcoordinator.
-- Direct inzicht in naam, telefoonnummer, e-mailadres en functie/rol.
+- Zoeken op team, contactnaam, e-mail, telefoon en status.
+- Zonder filterwaarde worden geen resultaten getoond; de resultatenlijst opent pas na invoer.
+- Een `x`-knop naast het zoekveld wist direct het actieve filter en reset de resultaten.
+- Telefoonlinks openen direct een WhatsApp-chat (`wa.me`), e-mail opent via `mailto`.
+- Per resultaat direct inzicht in team, contactpersoon, status en contactgegevens.
 
 #### Gebruikersdoel
 
@@ -809,7 +810,7 @@ Tijdens de survivaldag moeten deelnemers en vrijwilligers snel kunnen communicer
 
 #### Resultaat
 
-Met enkele klikken vindt een gebruiker de juiste contactpersoon en kan direct contact worden opgenomen. Hierdoor verbetert de bereikbaarheid van de organisatie en verloopt de communicatie tijdens de survival efficiënter.
+Met enkele klikken vindt een gebruiker de juiste contactpersoon en kan direct contact worden opgenomen via e-mail of WhatsApp. Hierdoor verbetert de bereikbaarheid van de organisatie en verloopt de communicatie tijdens de survival efficienter.
 
 ### Mobiele eisen
 
