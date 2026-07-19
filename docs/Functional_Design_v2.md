@@ -776,6 +776,8 @@ flowchart TD
 
 | Component | Voor wie | Toelichting |
 |---|---|---|
+| Eventstatuskaart | Iedereen | Toont eventstatus via SVG-icoon; statuslabel verschijnt op hover/focus |
+| Registratiestatuskaart | Iedereen | Toont registratie-open/gesloten via SVG-icoon; statuslabel verschijnt op hover/focus |
 | Huidig tijdslot | Iedereen | Actief tijdslot en voortgang ten opzichte van totaal |
 | Tussenstand | Iedereen | Actuele teampositie op basis van ingevoerde scores |
 | Teamplanning | Vrijwilliger, teamlid, leiding | Reeds afgerond en komende onderdelen met tijden |
@@ -805,6 +807,13 @@ graph TD
     D --> F
     E --> F
 ```
+
+  ### Dashboard detailnavigatie
+
+  - Widget `Onderdelen`: elk onderdeel is klikbaar en opent de helpweergave op basis van `event_id` + `part_id`.
+  - Widget `Teams`: elk team is klikbaar en opent direct de teamscore-weergave op basis van `event_id` + `team_id`.
+  - Beheer stelt per event in via `Dashboard Widgets` welke pagina als doel dient voor `Onderdelen` en `Teams` links.
+  - Kernwaarden gebruiken live tellingen uit eventgebonden data (onderdelen, teams, geregistreerde teams, max teams).
 
 ---
 

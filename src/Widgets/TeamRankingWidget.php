@@ -6,7 +6,7 @@ use BSO\Survival\Contracts\DashboardWidgetInterface;
 
 class TeamRankingWidget implements DashboardWidgetInterface {
     public function getId(): string { return 'team_ranking'; }
-    public function getTitle(): string { return 'Teampositieoverzicht'; }
+    public function getTitle(): string { return 'Podiumplekken'; }
     public function getPriority(): int { return 20; }
     public function getCapabilities(): array { return ['read']; }
 

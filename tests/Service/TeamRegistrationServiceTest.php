@@ -176,6 +176,16 @@ class RegistrationTeamRepository implements TeamRepositoryInterface {
         return count($this->findByEventId($eventId));
     }
 
+    public function countRegisteredByEventId(int $eventId): int {
+        $teams = $this->findByEventId($eventId);
+
+        return count(array_filter($teams, static function ($team): bool {
+            $status = strtolower(trim((string) ($team->status ?? 'ingeschreven')));
+
+            return !in_array($status, ['verwijderd', 'deleted', 'afgemeld', 'uitgeschreven', 'cancelled', 'canceled'], true);
+        }));
+    }
+
     public function findByEventIdAndName(int $eventId, string $name) {
         foreach ($this->rows as $row) {
             if ((int) ($row->event_id ?? 0) === $eventId && (string) ($row->name ?? '') === $name) {

@@ -114,6 +114,75 @@
     color: #17324d;
 }
 
+.bso-survival-dashboard__kpi-visual {
+    position: relative;
+    min-height: 56px;
+}
+
+.bso-survival-dashboard__kpi-icon {
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+}
+
+.bso-survival-dashboard__kpi-hover-text {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 6px);
+    transform: translateX(-50%);
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #17324d;
+    color: #ffffff;
+    font-size: 0.78rem;
+    line-height: 1.25;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 140ms ease, visibility 140ms ease;
+    z-index: 5;
+}
+
+.bso-survival-dashboard__kpi-hover-text::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #17324d;
+}
+
+.bso-survival-dashboard__kpi-visual:hover .bso-survival-dashboard__kpi-hover-text,
+.bso-survival-dashboard__kpi-visual:focus .bso-survival-dashboard__kpi-hover-text,
+.bso-survival-dashboard__kpi-visual:focus-visible .bso-survival-dashboard__kpi-hover-text {
+    opacity: 1;
+    visibility: visible;
+}
+
+.bso-survival-dashboard__kpi-subvalue {
+    display: block;
+    margin-top: 2px;
+    margin-bottom: 6px;
+    color: #17324d;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.bso-survival-dashboard__kpi-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.bso-survival-dashboard__kpi-value {
+    font-size: 1.6rem;
+    line-height: 1.1;
+    color: #17324d;
+}
+
 .bso-survival-dashboard__kpi-card span {
     display: block;
     color: #607086;
@@ -194,6 +263,17 @@
 
 .bso-survival-dashboard__details li {
     margin: 4px 0;
+}
+
+.bso-survival-dashboard__details li a {
+    color: #0c4a94;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.bso-survival-dashboard__details li a:hover,
+.bso-survival-dashboard__details li a:focus-visible {
+    text-decoration: underline;
 }
 
 @media (max-width: 1200px) {
@@ -604,6 +684,139 @@
     overflow-x: auto;
 }
 
+.bso-survival-score-sortbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border: 1px solid #d8dee4;
+    border-radius: 8px;
+    background: #ffffff;
+}
+
+.bso-survival-score-sortbar__label {
+    color: #334155;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.bso-survival-score-sortbar .bso-sort-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: 1px solid #d8dee4;
+    border-radius: 999px;
+    color: #334155;
+    text-decoration: none;
+    background: #f8fafc;
+    font-size: 0.86rem;
+}
+
+.bso-survival-score-sortbar .bso-sort-link:hover,
+.bso-survival-score-sortbar .bso-sort-link:focus-visible {
+    text-decoration: none;
+    border-color: #93c5fd;
+    background: #eff6ff;
+}
+
+.bso-survival-score-sortbar .bso-sort-indicator {
+    font-size: 0.74em;
+    line-height: 1;
+    opacity: 0.45;
+}
+
+.bso-survival-score-sortbar .bso-sort-indicator--active {
+    opacity: 0.85;
+}
+
+.bso-survival-score-sortbar .bso-sort-indicator--inactive {
+    opacity: 0.3;
+}
+
+.bso-survival-score-cards {
+    display: grid;
+    gap: 12px;
+}
+
+.bso-survival-score-card {
+    border: 1px solid #d8dee4;
+    border-radius: 10px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.bso-survival-score-card__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+}
+
+.bso-survival-score-card__row--timeslot {
+    border-bottom: 1px solid #e5eaf0;
+    background: #f8fafc;
+}
+
+.bso-survival-score-card__row--subject {
+    border-bottom: 1px solid #e5eaf0;
+}
+
+.bso-survival-score-card__row-label {
+    min-width: 98px;
+    color: #64748b;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.bso-survival-score-card__subject-value {
+    color: #0f172a;
+    font-size: 1rem;
+    line-height: 1.3;
+}
+
+.bso-survival-score-card__metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+}
+
+.bso-survival-score-card__metrics.is-editable {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.bso-survival-score-card__metric {
+    padding: 12px;
+    border-right: 1px solid #e5eaf0;
+}
+
+.bso-survival-score-card__metric:last-child {
+    border-right: none;
+}
+
+.bso-survival-score-card__metric-label {
+    display: block;
+    color: #64748b;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.25;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.bso-survival-score-card__metric-value {
+    display: block;
+    margin-top: 6px;
+    color: #0f172a;
+    font-size: 1.04rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
 .bso-survival-team-score__table {
     width: 100%;
     border-collapse: collapse;
@@ -880,6 +1093,12 @@
     background: #eef6ff;
 }
 
+.bso-team-score-row-clickable:hover,
+.bso-part-score-row-clickable:hover {
+    border-color: #93c5fd;
+    background: #f8fbff;
+}
+
 .bso-team-score-editor {
     margin-top: 14px;
     padding: 14px;
@@ -1021,6 +1240,60 @@
         border-radius: 0;
         box-shadow: -6px 0 20px rgba(0, 0, 0, 0.08);
         z-index: 1000;
+    }
+}
+
+@media (min-width: 1100px) {
+    .bso-survival-score-card__metric-label {
+        writing-mode: horizontal-tb;
+        transform: none;
+        white-space: normal;
+        margin-bottom: 4px;
+    }
+}
+
+@media (max-width: 900px) {
+    .bso-survival-score-card__row {
+        flex-wrap: wrap;
+    }
+
+    .bso-survival-score-card__row-label {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .bso-survival-score-card__metrics,
+    .bso-survival-score-card__metrics.is-editable {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bso-survival-score-card__metric:nth-child(2n) {
+        border-right: none;
+    }
+}
+
+@media (max-width: 560px) {
+    .bso-survival-score-sortbar {
+        gap: 6px;
+        padding: 8px 10px;
+    }
+
+    .bso-survival-score-sortbar .bso-sort-link {
+        font-size: 0.8rem;
+    }
+
+    .bso-survival-score-card__metrics,
+    .bso-survival-score-card__metrics.is-editable {
+        grid-template-columns: 1fr;
+    }
+
+    .bso-survival-score-card__metric {
+        border-right: none;
+        border-bottom: 1px solid #e5eaf0;
+    }
+
+    .bso-survival-score-card__metric:last-child {
+        border-bottom: none;
     }
 }
 

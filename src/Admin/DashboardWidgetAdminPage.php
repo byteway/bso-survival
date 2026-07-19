@@ -99,6 +99,10 @@ class DashboardWidgetAdminPage {
         }
 
         $layout = $eventId > 0 ? $this->layoutService->getLayoutForEvent($eventId) : [];
+        $navigation = isset($layout['navigation']) && is_array($layout['navigation']) ? $layout['navigation'] : [];
+        $partsHelpPageId = isset($navigation['parts_help_page_id']) ? (int) $navigation['parts_help_page_id'] : 0;
+        $teamScorePageId = isset($navigation['team_score_page_id']) ? (int) $navigation['team_score_page_id'] : 0;
+        $pages = $this->listPublishedPages();
 
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('BSO Survival Dashboard Widgets', 'bso-survival') . '</h1>';
@@ -139,6 +143,44 @@ class DashboardWidgetAdminPage {
         echo '<input type="hidden" name="event_id" value="' . (int) $eventId . '" />';
         wp_nonce_field(self::SAVE_NONCE_ACTION, self::SAVE_NONCE_FIELD);
         echo '<div class="notice inline bso-widget-save-status" style="display:none;"><p></p></div>';
+        echo '<div class="bso-widget-admin-navigation" style="margin:16px 0 24px;max-width:900px;">';
+        echo '<h2>' . esc_html__('Dashboard navigatie', 'bso-survival') . '</h2>';
+        echo '<p class="description">' . esc_html__('Kies op welke pagina de dashboardlinks voor onderdelen en teams moeten openen.', 'bso-survival') . '</p>';
+        echo '<table class="form-table" role="presentation"><tbody>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="bso-dashboard-parts-help-page-id">' . esc_html__('Onderdelenlijst pagina', 'bso-survival') . '</label></th>';
+        echo '<td><select id="bso-dashboard-parts-help-page-id" name="navigation[parts_help_page_id]">';
+        echo '<option value="0">' . esc_html__('Huidige dashboardpagina gebruiken', 'bso-survival') . '</option>';
+        foreach ($pages as $page) {
+            $pageId = (int) ($page->ID ?? 0);
+            if ($pageId <= 0) {
+                continue;
+            }
+
+            $selected = selected($partsHelpPageId, $pageId, false);
+            $title = (string) ($page->post_title ?? '');
+            echo '<option value="' . $pageId . '" ' . $selected . '>' . esc_html(sprintf('#%d - %s', $pageId, $title !== '' ? $title : __('(geen titel)', 'bso-survival'))) . '</option>';
+        }
+        echo '</select></td>';
+        echo '</tr>';
+        echo '<tr>';
+        echo '<th scope="row"><label for="bso-dashboard-team-score-page-id">' . esc_html__('Teamscore pagina', 'bso-survival') . '</label></th>';
+        echo '<td><select id="bso-dashboard-team-score-page-id" name="navigation[team_score_page_id]">';
+        echo '<option value="0">' . esc_html__('Huidige dashboardpagina gebruiken', 'bso-survival') . '</option>';
+        foreach ($pages as $page) {
+            $pageId = (int) ($page->ID ?? 0);
+            if ($pageId <= 0) {
+                continue;
+            }
+
+            $selected = selected($teamScorePageId, $pageId, false);
+            $title = (string) ($page->post_title ?? '');
+            echo '<option value="' . $pageId . '" ' . $selected . '>' . esc_html(sprintf('#%d - %s', $pageId, $title !== '' ? $title : __('(geen titel)', 'bso-survival'))) . '</option>';
+        }
+        echo '</select></td>';
+        echo '</tr>';
+        echo '</tbody></table>';
+        echo '</div>';
 
         foreach (DashboardWidgetRegistry::getSectionIds() as $section) {
             $widgetIds = DashboardWidgetRegistry::getSectionWidgetIds($section);
@@ -244,7 +286,28 @@ class DashboardWidgetAdminPage {
         }
 
         $layout['widths'] = $widths;
+        $layout['navigation'] = [
+            'parts_help_page_id' => isset($_POST['navigation']['parts_help_page_id']) ? (int) $_POST['navigation']['parts_help_page_id'] : 0,
+            'team_score_page_id' => isset($_POST['navigation']['team_score_page_id']) ? (int) $_POST['navigation']['team_score_page_id'] : 0,
+        ];
 
         return $layout;
+    }
+
+    /**
+     * @return array<int, object>
+     */
+    private function listPublishedPages(): array {
+        if (!function_exists('get_pages')) {
+            return [];
+        }
+
+        $pages = get_pages([
+            'post_status' => 'publish',
+            'sort_column' => 'post_title',
+            'sort_order' => 'asc',
+        ]);
+
+        return is_array($pages) ? $pages : [];
     }
 }

@@ -70,6 +70,7 @@ class DashboardController {
         }
 
         $layout = $this->layoutService->getLayoutForEvent($eventId);
+        $dashboardNavigation = isset($layout['navigation']) && is_array($layout['navigation']) ? $layout['navigation'] : [];
         $mainWidgetIds = $layout['main'] ?? DashboardWidgetRegistry::getSectionWidgetIds('main');
         $mainWidgetWidths = isset($layout['widths']['main']) && is_array($layout['widths']['main']) ? $layout['widths']['main'] : [];
         $mainWidgetIds = array_values(array_filter($mainWidgetIds, 'is_string'));

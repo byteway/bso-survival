@@ -16,6 +16,12 @@ class DashboardWidgetLayoutService {
         '1' => 4,
     ];
 
+    /** @var array<int, string> */
+    private const NAVIGATION_KEYS = [
+        'parts_help_page_id',
+        'team_score_page_id',
+    ];
+
     /** @var DashboardWidgetLayoutRepositoryInterface */
     private $repository;
 
@@ -121,9 +127,51 @@ class DashboardWidgetLayoutService {
             $sanitizedWidths['main']['message_widget'] = self::getDefaultWidthForWidget('message_widget');
         }
 
+        $sanitized['navigation'] = $this->sanitizeNavigationSettings($layout['navigation'] ?? []);
         $sanitized['widths'] = $sanitizedWidths;
 
         return $sanitized;
+    }
+
+    /**
+     * @param mixed $navigation
+     * @return array<string, int>
+     */
+    private function sanitizeNavigationSettings($navigation): array {
+        $rawNavigation = is_array($navigation) ? $navigation : [];
+        $sanitized = [];
+
+        foreach (self::NAVIGATION_KEYS as $key) {
+            $pageId = isset($rawNavigation[$key]) ? (int) $rawNavigation[$key] : 0;
+            if ($pageId <= 0) {
+                $sanitized[$key] = 0;
+                continue;
+            }
+
+            $sanitized[$key] = $this->isPublishedPage($pageId) ? $pageId : 0;
+        }
+
+        return $sanitized;
+    }
+
+    private function isPublishedPage(int $pageId): bool {
+        if ($pageId <= 0) {
+            return false;
+        }
+
+        if (!function_exists('get_post')) {
+            return true;
+        }
+
+        $post = get_post($pageId);
+        if (!is_object($post)) {
+            return false;
+        }
+
+        $postType = (string) ($post->post_type ?? '');
+        $postStatus = (string) ($post->post_status ?? '');
+
+        return $postType === 'page' && $postStatus === 'publish';
     }
 
     /**

@@ -17,6 +17,7 @@ $teamId = isset($teamId) ? (int) $teamId : (int) ($team->id ?? 0);
 $pageId = function_exists('get_queried_object_id') ? (int) get_queried_object_id() : 0;
 $canEditScores = !empty($canEditScores);
 $editorId = 'bso-team-score-editor-' . uniqid();
+$sectionAnchorId = 'bso-survival-team-score-event-' . (int) ($event->id ?? 0);
 $restUpdateBase = function_exists('rest_url') ? (string) rest_url('bso-survival/v1/scores/entries') : '';
 $restNonce = function_exists('wp_create_nonce') ? (string) wp_create_nonce('wp_rest') : '';
 
@@ -103,7 +104,7 @@ $sortIndicator = static function (string $columnKey) use ($activeSortBy, $active
     return '<span class="bso-sort-indicator bso-sort-indicator--active" aria-hidden="true">&#8595;</span>';
 };
 ?>
-<section class="bso-survival-team-score<?php echo $canEditScores ? ' bso-survival-team-score--editable' : ''; ?>" id="<?php echo esc_attr($editorId); ?>" data-team-score-editor="1" data-can-edit="<?php echo $canEditScores ? '1' : '0'; ?>" data-event-id="<?php echo (int) $event->id; ?>" data-rest-update-base="<?php echo esc_attr($restUpdateBase); ?>" data-rest-nonce="<?php echo esc_attr($restNonce); ?>">
+<section class="bso-survival-team-score<?php echo $canEditScores ? ' bso-survival-team-score--editable' : ''; ?>" id="<?php echo esc_attr($sectionAnchorId); ?>" data-editor-instance-id="<?php echo esc_attr($editorId); ?>" data-team-score-editor="1" data-can-edit="<?php echo $canEditScores ? '1' : '0'; ?>" data-event-id="<?php echo (int) $event->id; ?>" data-rest-update-base="<?php echo esc_attr($restUpdateBase); ?>" data-rest-nonce="<?php echo esc_attr($restNonce); ?>">
     <header class="bso-survival-team-score__header">
         <h2><?php echo esc_html($title); ?></h2>
         <?php if ($teams !== []) : ?>
@@ -148,46 +149,70 @@ $sortIndicator = static function (string $columnKey) use ($activeSortBy, $active
     <?php if (empty($rows)) : ?>
         <p><?php esc_html_e('Geen scoregegevens gevonden voor dit team.', 'bso-survival'); ?></p>
     <?php else : ?>
-        <div class="bso-survival-team-score__table-wrap">
-            <table class="bso-survival-team-score__table">
-                <thead>
-                    <tr>
-                        <th><a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('timeslot')); ?>"><?php esc_html_e('Tijdsrange', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('timeslot')); ?></a></th>
-                        <th><a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('part')); ?>"><?php esc_html_e('Onderdeel', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('part')); ?></a></th>
-                        <th><a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('raw')); ?>"><?php esc_html_e('Ruwe score', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('raw')); ?></a></th>
+        <div class="bso-survival-score-sortbar" role="navigation" aria-label="<?php esc_attr_e('Sorteer scores', 'bso-survival'); ?>">
+            <span class="bso-survival-score-sortbar__label"><?php esc_html_e('Sorteer op:', 'bso-survival'); ?></span>
+            <a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('timeslot')); ?>"><?php esc_html_e('Tijdsrange', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('timeslot')); ?></a>
+            <a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('part')); ?>"><?php esc_html_e('Onderdeel', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('part')); ?></a>
+            <a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('raw')); ?>"><?php esc_html_e('Ruwe score', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('raw')); ?></a>
+            <?php if ($canEditScores) : ?>
+                <a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('bonus')); ?>"><?php esc_html_e('Bonus', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('bonus')); ?></a>
+            <?php endif; ?>
+            <a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('joker')); ?>"><?php esc_html_e('Joker', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('joker')); ?></a>
+            <a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('position')); ?>"><?php esc_html_e('Positie', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('position')); ?></a>
+            <?php if ($canEditScores) : ?>
+                <a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('interim')); ?>"><?php esc_html_e('Tussentijdse score', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('interim')); ?></a>
+            <?php endif; ?>
+        </div>
+
+        <div class="bso-survival-score-cards bso-survival-score-cards--team">
+            <?php foreach ($rows as $row) : ?>
+                <?php
+                $scoreEntryId = (int) ($row['score_entry_id'] ?? 0);
+                $isRowEditable = $canEditScores && $scoreEntryId > 0;
+                $timeslotLabel = (string) ($row['timeslot_range'] ?? __('Geen tijdslot', 'bso-survival'));
+                $rawLabel = !empty($row['is_completed']) ? number_format((float) $row['raw_value'], 4, '.', '') : '-';
+                $bonusLabel = !empty($row['is_completed']) ? number_format((float) ($row['bonus_points'] ?? 0), 2, '.', '') : '-';
+                $jokerLabel = !empty($row['joker_applied']) ? __('Ja', 'bso-survival') : __('Nee', 'bso-survival');
+                $positionLabel = (string) (int) ($row['provisional_position'] ?? 0);
+                $interimLabel = (string) (int) ($row['interim_score'] ?? 0);
+                ?>
+                <article class="bso-survival-score-card<?php echo $isRowEditable ? ' bso-team-score-row-clickable' : ''; ?>" data-score-entry-id="<?php echo $scoreEntryId; ?>" data-team-name="<?php echo esc_attr((string) ($team->name ?? '')); ?>" data-part-name="<?php echo esc_attr((string) ($row['part_name'] ?? '')); ?>" data-timeslot-label="<?php echo esc_attr($timeslotLabel); ?>" data-raw-value="<?php echo esc_attr((string) ($row['raw_value'] ?? '0')); ?>" data-bonus-points="<?php echo esc_attr((string) ($row['bonus_points'] ?? '0')); ?>" data-joker-applied="<?php echo !empty($row['joker_applied']) ? '1' : '0'; ?>" data-editable="<?php echo $isRowEditable ? '1' : '0'; ?>">
+                    <div class="bso-survival-score-card__row bso-survival-score-card__row--timeslot">
+                        <span class="bso-survival-score-card__row-label"><?php esc_html_e('Tijdsrange', 'bso-survival'); ?></span>
+                        <span class="bso-survival-timeslot-tag"><?php echo esc_html($timeslotLabel); ?></span>
+                    </div>
+                    <div class="bso-survival-score-card__row bso-survival-score-card__row--subject">
+                        <span class="bso-survival-score-card__row-label"><?php esc_html_e('Onderdeel', 'bso-survival'); ?></span>
+                        <strong class="bso-survival-score-card__subject-value"><?php echo esc_html((string) ($row['part_name'] ?? '')); ?></strong>
+                    </div>
+                    <div class="bso-survival-score-card__metrics<?php echo $canEditScores ? ' is-editable' : ''; ?>">
+                        <div class="bso-survival-score-card__metric">
+                            <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Ruwe score', 'bso-survival'); ?></span>
+                            <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($rawLabel); ?></strong>
+                        </div>
                         <?php if ($canEditScores) : ?>
-                            <th><a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('bonus')); ?>"><?php esc_html_e('Bonus', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('bonus')); ?></a></th>
+                            <div class="bso-survival-score-card__metric">
+                                <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Bonus', 'bso-survival'); ?></span>
+                                <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($bonusLabel); ?></strong>
+                            </div>
                         <?php endif; ?>
-                        <th><a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('joker')); ?>"><?php esc_html_e('Joker', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('joker')); ?></a></th>
-                        <th><a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('position')); ?>"><?php esc_html_e('Positie', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('position')); ?></a></th>
+                        <div class="bso-survival-score-card__metric">
+                            <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Joker', 'bso-survival'); ?></span>
+                            <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($jokerLabel); ?></strong>
+                        </div>
+                        <div class="bso-survival-score-card__metric">
+                            <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Positie', 'bso-survival'); ?></span>
+                            <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($positionLabel); ?></strong>
+                        </div>
                         <?php if ($canEditScores) : ?>
-                            <th><a class="bso-sort-link" href="<?php echo esc_url($buildSortUrl('interim')); ?>"><?php esc_html_e('Tussentijdse score', 'bso-survival'); ?> <?php echo wp_kses_post($sortIndicator('interim')); ?></a></th>
+                            <div class="bso-survival-score-card__metric">
+                                <span class="bso-survival-score-card__metric-label"><?php esc_html_e('Tussentijdse score', 'bso-survival'); ?></span>
+                                <strong class="bso-survival-score-card__metric-value"><?php echo esc_html($interimLabel); ?></strong>
+                            </div>
                         <?php endif; ?>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($rows as $row) : ?>
-                        <?php
-                        $scoreEntryId = (int) ($row['score_entry_id'] ?? 0);
-                        $isRowEditable = $canEditScores && $scoreEntryId > 0;
-                        $timeslotLabel = (string) ($row['timeslot_range'] ?? __('Geen tijdslot', 'bso-survival'));
-                        ?>
-                        <tr<?php echo $isRowEditable ? ' class="bso-team-score-row-clickable"' : ''; ?> data-score-entry-id="<?php echo $scoreEntryId; ?>" data-team-name="<?php echo esc_attr((string) ($team->name ?? '')); ?>" data-part-name="<?php echo esc_attr((string) ($row['part_name'] ?? '')); ?>" data-timeslot-label="<?php echo esc_attr($timeslotLabel); ?>" data-raw-value="<?php echo esc_attr((string) ($row['raw_value'] ?? '0')); ?>" data-bonus-points="<?php echo esc_attr((string) ($row['bonus_points'] ?? '0')); ?>" data-joker-applied="<?php echo !empty($row['joker_applied']) ? '1' : '0'; ?>" data-editable="<?php echo $isRowEditable ? '1' : '0'; ?>">
-                            <td><span class="bso-survival-timeslot-tag"><?php echo esc_html((string) ($row['timeslot_range'] ?? __('Geen tijdslot', 'bso-survival'))); ?></span></td>
-                            <td><?php echo esc_html((string) $row['part_name']); ?></td>
-                            <td><?php echo esc_html(!empty($row['is_completed']) ? number_format((float) $row['raw_value'], 4, '.', '') : '-'); ?></td>
-                            <?php if ($canEditScores) : ?>
-                                <td><?php echo esc_html(!empty($row['is_completed']) ? number_format((float) ($row['bonus_points'] ?? 0), 2, '.', '') : '-'); ?></td>
-                            <?php endif; ?>
-                            <td><?php echo esc_html(!empty($row['joker_applied']) ? __('Ja', 'bso-survival') : __('Nee', 'bso-survival')); ?></td>
-                            <td><?php echo esc_html((string) (int) ($row['provisional_position'] ?? 0)); ?></td>
-                            <?php if ($canEditScores) : ?>
-                                <td><?php echo esc_html((string) (int) ($row['interim_score'] ?? 0)); ?></td>
-                            <?php endif; ?>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
+                    </div>
+                </article>
+            <?php endforeach; ?>
         </div>
 
         <?php if ($canEditScores) : ?>

@@ -199,6 +199,10 @@ class FakeTeamRepository implements TeamRepositoryInterface {
         return 22;
     }
 
+    public function countRegisteredByEventId(int $eventId): int {
+        return 22;
+    }
+
     /** @return object|null */
     public function findById(int $id) {
         return (object) ['id' => 2, 'name' => 'Team002'];

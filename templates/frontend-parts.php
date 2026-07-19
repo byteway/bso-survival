@@ -70,8 +70,10 @@ $escapeAttr = static function (string $text): string {
 
     return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
 };
+
+$sectionAnchorId = 'bso-survival-parts-event-' . (int) ($event->id ?? 0);
 ?>
-<section class="bso-survival-parts">
+<section class="bso-survival-parts" id="<?php echo esc_attr($sectionAnchorId); ?>">
     <header class="bso-survival-parts__header">
         <h2><?php echo esc_html($title); ?></h2>
         <p class="bso-survival-parts__meta">

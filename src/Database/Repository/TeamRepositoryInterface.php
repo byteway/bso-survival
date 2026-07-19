@@ -15,6 +15,8 @@ interface TeamRepositoryInterface {
 
     public function countByEventId(int $eventId): int;
 
+    public function countRegisteredByEventId(int $eventId): int;
+
     /** @return object|null */
     public function findByEventIdAndName(int $eventId, string $name);
 

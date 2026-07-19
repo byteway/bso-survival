@@ -90,7 +90,7 @@ class DashboardControllerTest extends TestCase {
             'event_id' => 7,
         ]);
 
-        $this->assertStringContainsString('Teampositieoverzicht', $output);
+        $this->assertStringContainsString('Podiumplekken', $output);
         $this->assertStringContainsString('Meldingen', $output);
         $this->assertStringNotContainsString('Tijdslot voortgang', $output);
         $this->assertStringContainsString('bso-survival-dashboard__widget--width-3-4', $output);
@@ -144,6 +144,48 @@ class DashboardControllerTest extends TestCase {
         $this->assertStringContainsString('Meldingen', $output);
         $this->assertStringNotContainsString('Contactzoeker', $output);
     }
+
+    /**
+     * @test
+     */
+    public function it_builds_dashboard_detail_links_from_target_page_without_leaking_dashboard_query_args(): void {
+        $previousGet = $_GET;
+        $_GET = [
+            'page_id' => '18',
+            'event_id' => '11',
+            'part_id' => '1',
+            'team_id' => '180',
+        ];
+
+        add_filter('bso_survival_dashboard_parts_help_url', [$this, 'filterPartsTargetUrl']);
+        add_filter('bso_survival_dashboard_team_score_url', [$this, 'filterTeamsTargetUrl']);
+
+        try {
+            $controller = new DashboardController(new FakeDashboardOverviewService());
+            $output = $controller->render([
+                'title' => 'Dashboard links',
+                'event_id' => 11,
+            ]);
+        } finally {
+            if (function_exists('remove_filter')) {
+                remove_filter('bso_survival_dashboard_parts_help_url', [$this, 'filterPartsTargetUrl']);
+                remove_filter('bso_survival_dashboard_team_score_url', [$this, 'filterTeamsTargetUrl']);
+            }
+            $_GET = $previousGet;
+        }
+
+        $this->assertStringContainsString('href="http://example.test/?page_id=103&amp;event_id=11&amp;part_id=1#bso-survival-parts-event-11" target="_blank" rel="noopener noreferrer"', $output);
+        $this->assertStringContainsString('href="http://example.test/?page_id=60&amp;event_id=11&amp;team_id=1#bso-survival-team-score-event-11" target="_blank" rel="noopener noreferrer"', $output);
+        $this->assertStringNotContainsString('page_id=18&amp;event_id=11&amp;part_id=1&amp;team_id=1', $output);
+    }
+
+    public function filterPartsTargetUrl(): string {
+        return 'http://example.test/?page_id=103';
+    }
+
+    public function filterTeamsTargetUrl(): string {
+        return 'http://example.test/?page_id=60';
+    }
 }
 
 class FakeDashboardOverviewService extends DashboardOverviewService {
@@ -161,13 +203,13 @@ class FakeDashboardOverviewService extends DashboardOverviewService {
                 'status' => 'gepland',
             ],
             'parts' => [
-                (object) ['name' => 'Kanovaren'],
-                (object) ['name' => 'Touwbaan'],
+                (object) ['id' => 1, 'name' => 'Kanovaren'],
+                (object) ['id' => 2, 'name' => 'Touwbaan'],
             ],
             'teams' => [
-                (object) ['name' => 'Team001'],
-                (object) ['name' => 'Team002'],
-                (object) ['name' => 'Team003'],
+                (object) ['id' => 1, 'name' => 'Team001'],
+                (object) ['id' => 2, 'name' => 'Team002'],
+                (object) ['id' => 3, 'name' => 'Team003'],
             ],
             'counts' => [
                 'parts' => 2,
@@ -227,8 +269,8 @@ class ClosedDashboardOverviewService extends DashboardOverviewService {
     public function getOverviewForEvent(int $eventId): array {
         return [
             'event' => (object) ['id' => $eventId, 'name' => 'Closed Event', 'status' => 'gepubliceerd'],
-            'parts' => [(object) ['name' => 'Kanovaren']],
-            'teams' => [(object) ['name' => 'Team001']],
+            'parts' => [(object) ['id' => 1, 'name' => 'Kanovaren']],
+            'teams' => [(object) ['id' => 1, 'name' => 'Team001']],
             'counts' => ['parts' => 1, 'teams' => 1],
             'status' => [
                 'event_status' => 'gepubliceerd',

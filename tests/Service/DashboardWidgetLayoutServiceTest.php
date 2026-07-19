@@ -81,6 +81,28 @@ class DashboardWidgetLayoutServiceTest extends TestCase {
         $this->assertSame('3/4', $saved['widths']['main']['timeslot_progress']);
         $this->assertSame('1', $saved['widths']['main']['message_widget']);
     }
+
+    /**
+     * @test
+     */
+    public function it_sanitizes_navigation_page_settings(): void {
+        $repository = new InMemoryDashboardWidgetLayoutRepository();
+        $service = new DashboardWidgetLayoutService($repository);
+
+        $saved = $service->saveLayoutForEvent(6, [
+            'navigation' => [
+                'parts_help_page_id' => 15,
+                'team_score_page_id' => -8,
+            ],
+        ]);
+
+        if (function_exists('get_post')) {
+            $this->assertSame(0, $saved['navigation']['parts_help_page_id']);
+        } else {
+            $this->assertSame(15, $saved['navigation']['parts_help_page_id']);
+        }
+        $this->assertSame(0, $saved['navigation']['team_score_page_id']);
+    }
 }
 
 class InMemoryDashboardWidgetLayoutRepository implements DashboardWidgetLayoutRepositoryInterface {

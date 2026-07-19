@@ -17,6 +17,10 @@
     function collectLayout(form) {
         var layout = {};
         var widths = {};
+        var navigation = {
+            parts_help_page_id: 0,
+            team_score_page_id: 0
+        };
 
         Array.prototype.forEach.call(form.querySelectorAll('.bso-widget-admin-section'), function (sectionEl) {
             var section = sectionEl.getAttribute('data-section');
@@ -37,9 +41,20 @@
             });
         });
 
+        var partsPageSelect = form.querySelector('select[name="navigation[parts_help_page_id]"]');
+        if (partsPageSelect) {
+            navigation.parts_help_page_id = parseInt(partsPageSelect.value, 10) || 0;
+        }
+
+        var teamsPageSelect = form.querySelector('select[name="navigation[team_score_page_id]"]');
+        if (teamsPageSelect) {
+            navigation.team_score_page_id = parseInt(teamsPageSelect.value, 10) || 0;
+        }
+
         return {
             layout: layout,
-            widths: widths
+            widths: widths,
+            navigation: navigation
         };
     }
 
@@ -75,7 +90,8 @@
             },
             body: JSON.stringify({
                 layout: payload.layout,
-                widths: payload.widths
+                widths: payload.widths,
+                navigation: payload.navigation
             })
         }).then(function (response) {
             if (!response.ok) {

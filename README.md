@@ -2,7 +2,7 @@
 
 BSO Survival v2 is de schone, uitbreidbare basis voor de volgende ontwikkelfase van de plugin.
 
-Laatste documentatie-update: 10 juli 2026.
+Laatste documentatie-update: 19 juli 2026.
 
 ## Status
 
@@ -26,6 +26,11 @@ De codebase staat nu in een vroeg maar werkend v2-fundament:
 - score-invoer uitgebreid met numeriek bonusveld per score-entry, inclusief sortering in admin en shortcode-tabellen
 - tie-resolutie bij gelijke ruwe score gebruikt bonuspunten als eerste tie-break
 - admin toegang en rollen toegevoegd: gebruiker-override per WordPress account voor settings/score/meldingen rechten
+- dashboard kernwaarden gebruikt nu expliciete registered-team telling (status-gedreven) i.p.v. impliciet totaal
+- dashboard statuskaarten tonen event/registratie via SVG-statusiconen met hovertekst
+- dashboard detailwidgets `Onderdelen` en `Teams` zijn klikbaar voor directe navigatie naar helptekst en teamscore
+- dashboard widget-admin ondersteunt nu event-specifieke doelpagina's voor kliknavigatie van `Onderdelen` en `Teams`
+- dashboard KPI-kaarten `Onderdelen` en `Teams` tonen nu respectievelijk `survival-parts.svg` en `survival-teams.svg`
 
 De basis voor dagafsluiting en publicatie is nu bruikbaar in beheerprocessen en kan verder worden uitgebreid met geavanceerde ranking- en communicatielagen.
 
@@ -100,6 +105,19 @@ Belangrijk voor dashboardpagina's:
 - Geef bij voorkeur altijd expliciet `event_id` mee, bijvoorbeeld: `[bso_survival_dashboard event_id="7"]`.
 - Zonder `event_id` kiest de shortcode automatisch het eerstvolgende actieve event vanaf vandaag.
 - Bovenin het dashboard staat een event-combobox met maximaal 5 actieve events vanaf vandaag naar de toekomst.
+- De kaart `Status` toont een event-statusicoon uit `assets/images/event-status/`; de tekst verschijnt op hover/focus.
+- De kaart `Onderdelen` toont `assets/images/survival-parts.svg` naast de actuele teller.
+- De kaart `Teams` toont `assets/images/survival-teams.svg` naast de actuele teller.
+- De kaart `Inschrijving` toont een registratie-statusicoon uit `assets/images/registration-status/`; de status-tekst verschijnt op hover/focus, terwijl de teller zichtbaar blijft.
+- De widget `Onderdelen` linkt per onderdeel naar de helpweergave met `event_id` + `part_id`.
+- De widget `Teams` linkt per team naar de teamscore-weergave met `event_id` + `team_id`.
+- In `Survival -> Dashboard Widgets` kun je per event instellen op welke pagina de links `Onderdelen` en `Teams` moeten openen.
+
+Optionele URL-overrides (filters):
+
+- `bso_survival_dashboard_parts_help_url`: override van basis-URL voor onderdeel-help links.
+- `bso_survival_dashboard_team_score_url`: override van basis-URL voor team-score links.
+- Zonder filter gebruikt dashboard automatisch de ingestelde adminpagina (`parts_help_page_id` / `team_score_page_id`) en anders de huidige pagina als fallback.
 
 Voorbeeld:
 

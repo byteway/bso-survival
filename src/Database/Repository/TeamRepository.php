@@ -48,6 +48,20 @@ class TeamRepository implements TeamRepositoryInterface {
         return (int) $count;
     }
 
+    public function countRegisteredByEventId(int $eventId): int {
+        $table = $this->tableName();
+        $sql = $this->wpdb->prepare(
+            "SELECT COUNT(*)
+             FROM {$table}
+             WHERE event_id = %d
+               AND LOWER(COALESCE(status, '')) NOT IN ('verwijderd', 'deleted', 'afgemeld', 'uitgeschreven', 'cancelled', 'canceled')",
+            $eventId
+        );
+        $count = $this->wpdb->get_var($sql);
+
+        return (int) $count;
+    }
+
     /** @return object|null */
     public function findByEventIdAndName(int $eventId, string $name) {
         $table = $this->tableName();

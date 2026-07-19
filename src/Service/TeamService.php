@@ -32,6 +32,11 @@ class TeamService {
         return $this->teams->countByEventId($eventId);
     }
 
+    public function countRegisteredTeamsForEvent(int $eventId): int {
+        $this->guardPositiveId($eventId, 'event id');
+        return $this->teams->countRegisteredByEventId($eventId);
+    }
+
     /**
      * @return object|null
      */

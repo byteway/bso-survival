@@ -1,6 +1,6 @@
 # Hooks and Filters (v2)
 
-Laatste documentatie-update: 7 juli 2026.
+Laatste documentatie-update: 19 juli 2026.
 
 ## Compact Hook Index
 
@@ -9,6 +9,7 @@ Laatste documentatie-update: 7 juli 2026.
 | Metadata | `bso_survival_metadata_error` | action | [src/Support/MetaDataHelper.php](../src/Support/MetaDataHelper.php) |
 | Registratie | `bso_survival_register_scoring_methods`, `bso_survival_dashboard_widgets_init` | action | [src/Service/ScoringMethodRegistry.php](../src/Service/ScoringMethodRegistry.php), [src/Service/DashboardWidgetRegistry.php](../src/Service/DashboardWidgetRegistry.php) |
 | Renderfouten | `bso_survival_dashboard_render_error`, `bso_survival_parts_render_error`, `bso_survival_teams_render_error`, `bso_survival_event_overview_render_error`, `bso_survival_event_summary_render_error` | action | [src/Frontend/*.php](../src/Frontend) |
+| Dashboard navigatie | `bso_survival_dashboard_parts_help_url`, `bso_survival_dashboard_team_score_url` | filter | [templates/frontend-dashboard.php](../templates/frontend-dashboard.php) |
 | Scoring filters | `bso_survival_score_normalized_points`, `bso_survival_position_proposal` | filter | [src/Service/ScoreComputationService.php](../src/Service/ScoreComputationService.php) |
 | Score entry | `bso_survival_before_score_validation`, `bso_survival_score_recorded` | action | [src/Service/ScoreEntryService.php](../src/Service/ScoreEntryService.php) |
 | Event status | `bso_survival_before_event_status_change`, `bso_survival_event_status_changed` | action | [src/Service/EventService.php](../src/Service/EventService.php) |
@@ -68,6 +69,19 @@ Laatste documentatie-update: 7 juli 2026.
 - bso_survival_event_summary_render_error
   - Wanneer compact eventoverzicht rendering faalt (bijvoorbeeld ongeldig event_id).
   - Parameters: message, event_id
+
+## Filters
+
+- bso_survival_dashboard_parts_help_url
+  - Overschrijft de basis-URL die dashboard gebruikt voor klikbare onderdelen in de widget `Onderdelen`.
+  - Verwacht return-type: string URL.
+  - Standaardwaarde: ingestelde adminpagina `parts_help_page_id`; bij ontbrekende instelling fallback naar huidige pagina.
+  - Parameters: default_url, overview, event_id
+- bso_survival_dashboard_team_score_url
+  - Overschrijft de basis-URL die dashboard gebruikt voor klikbare teams in de widget `Teams`.
+  - Verwacht return-type: string URL.
+  - Standaardwaarde: ingestelde adminpagina `team_score_page_id`; bij ontbrekende instelling fallback naar huidige pagina.
+  - Parameters: default_url, overview, event_id
 
 ## Shortcodes
 - bso_survival_dashboard

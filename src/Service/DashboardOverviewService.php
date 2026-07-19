@@ -41,6 +41,7 @@ class DashboardOverviewService {
         $teams = $this->teams->listTeamsForEvent($eventId);
         $partsCount = $this->parts->countPartsForEvent($eventId);
         $teamsCount = $this->teams->countTeamsForEvent($eventId);
+        $registeredTeamsCount = $this->teams->countRegisteredTeamsForEvent($eventId);
         $eventStatus = (string) ($event->status ?? '');
         $maxTeams = $this->extractMaxTeams((string) ($event->meta_data ?? ''));
         $isReadOnly = in_array($eventStatus, ['afgesloten', 'gepubliceerd'], true);
@@ -59,7 +60,7 @@ class DashboardOverviewService {
             'counts' => [
                 'parts' => $partsCount,
                 'teams' => $teamsCount,
-                'registered_teams' => $teamsCount,
+                'registered_teams' => $registeredTeamsCount,
                 'max_teams' => $maxTeams,
                 'published_final_standings' => is_array($publication['final_standings'] ?? null)
                     ? count($publication['final_standings'])
@@ -72,7 +73,7 @@ class DashboardOverviewService {
                 'is_ready_for_planning' => $partsCount > 0 && $teamsCount > 0,
                 'is_read_only' => $isReadOnly,
                 'is_published' => $isPublished,
-                'is_registration_full' => $maxTeams > 0 && $teamsCount >= $maxTeams,
+                'is_registration_full' => $maxTeams > 0 && $registeredTeamsCount >= $maxTeams,
                 'has_published_results' => is_array($publication['final_standings'] ?? null) && $publication['final_standings'] !== [],
             ],
         ];

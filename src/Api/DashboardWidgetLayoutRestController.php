@@ -144,6 +144,11 @@ class DashboardWidgetLayoutRestController {
                 $payload['widths'] = $widths;
             }
 
+            $navigation = $request->get_param('navigation');
+            if (is_array($navigation)) {
+                $payload['navigation'] = $navigation;
+            }
+
             return $payload;
         }
 
@@ -151,6 +156,10 @@ class DashboardWidgetLayoutRestController {
             $payload = $request['layout'];
             if (isset($request['widths']) && is_array($request['widths'])) {
                 $payload['widths'] = $request['widths'];
+            }
+
+            if (isset($request['navigation']) && is_array($request['navigation'])) {
+                $payload['navigation'] = $request['navigation'];
             }
 
             return $payload;
